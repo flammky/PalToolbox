@@ -1,0 +1,1 @@
+suspend fun main(args: Array<String>) = dev.dexsr.gmod.palworld.trainer.main(args)
