@@ -132,7 +132,7 @@ private fun SavFileTransform.decompressZlib(
                 val out = ByteArrayOutputStream()
                 decompressZlib(
                     offset + 1,
-                    inputStream,
+                    decompressed.inputStream(),
                     out,
                     8192,
                 )

@@ -1,4 +1,4 @@
-package dev.dexsr.gmod.palworld.trainer.composeui.main
+package dev.dexsr.gmod.palworld.trainer.main.composeui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect

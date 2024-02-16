@@ -3,8 +3,12 @@ package dev.dexsr.gmod.palworld.trainer.utilskt
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
 
-// replace iterator with IntRange.
-// only use on collection that has fast random access such as ArrayList, don't use on Node collection such as LinkedList
+// optimize iteration on collection such as ArrayList
+// do note that certain collection structure such as Node based LinkedList will be much slower
+
+/**
+    replace iterator with IntRange.
+ */
 @OptIn(ExperimentalContracts::class)
 inline fun <T> List<T>.fastForEach(action: (T) -> Unit) {
     contract { callsInPlace(action) }
@@ -14,7 +18,9 @@ inline fun <T> List<T>.fastForEach(action: (T) -> Unit) {
     }
 }
 
-// replace iterator with IntRange.
+/**
+    replace iterator with IntRange.
+ */
 @OptIn(ExperimentalContracts::class)
 inline fun <T> Array<T>.fastForEach(action: (T) -> Unit) {
     contract { callsInPlace(action) }

@@ -1,4 +1,4 @@
-package dev.dexsr.gmod.palworld.trainer.win32
+package dev.dexsr.gmod.palworld.trainer.platform.win32
 
 import java.util.concurrent.atomic.AtomicInteger
 

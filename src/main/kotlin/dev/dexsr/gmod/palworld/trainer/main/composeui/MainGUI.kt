@@ -1,4 +1,4 @@
-package dev.dexsr.gmod.palworld.trainer.composeui.main
+package dev.dexsr.gmod.palworld.trainer.main.composeui
 
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.IntSize

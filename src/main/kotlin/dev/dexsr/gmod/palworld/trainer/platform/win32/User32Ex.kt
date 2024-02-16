@@ -1,4 +1,4 @@
-package dev.dexsr.gmod.palworld.trainer.win32
+package dev.dexsr.gmod.palworld.trainer.platform.win32
 
 import com.sun.jna.platform.win32.BaseTSD.LONG_PTR
 import com.sun.jna.platform.win32.User32

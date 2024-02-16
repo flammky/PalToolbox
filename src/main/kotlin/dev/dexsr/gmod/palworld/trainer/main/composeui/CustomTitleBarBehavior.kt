@@ -1,4 +1,4 @@
-package dev.dexsr.gmod.palworld.trainer.composeui.main
+package dev.dexsr.gmod.palworld.trainer.main.composeui
 
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.mutableStateOf
@@ -14,8 +14,8 @@ import com.sun.jna.platform.win32.WinDef.*
 import com.sun.jna.platform.win32.WinUser
 import com.sun.jna.platform.win32.WinUser.WindowProc
 import com.sun.jna.win32.W32APIOptions
-import dev.dexsr.gmod.palworld.trainer.win32.CustomDecorationParameters
-import dev.dexsr.gmod.palworld.trainer.win32.User32Ex
+import dev.dexsr.gmod.palworld.trainer.platform.win32.CustomDecorationParameters
+import dev.dexsr.gmod.palworld.trainer.platform.win32.User32Ex
 import java.awt.Frame.MAXIMIZED_BOTH
 import java.awt.Toolkit
 import kotlin.contracts.ExperimentalContracts
@@ -225,7 +225,7 @@ internal class CustomWin32TitleBarBehavior(
                                         val size = lastValidatedFloatingWindowSize
                                         val insets = getScreenInsets()
                                         left = pos.x - insets.left
-                                        top = pos.y - insets. top
+                                        top = pos.y - insets.top
                                         right = left + size.width
                                         bottom = top + size.height
                                     }

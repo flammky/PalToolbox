@@ -1,6 +1,6 @@
 package dev.dexsr.gmod.palworld.trainer
 
-import dev.dexsr.gmod.palworld.trainer.composeui.main.MainGUI
+import dev.dexsr.gmod.palworld.trainer.main.composeui.MainGUI
 import dev.dexsr.gmod.palworld.trainer.utilskt.fastForEach
 
 suspend fun main(args: Array<String>) {
