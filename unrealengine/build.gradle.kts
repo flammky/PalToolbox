@@ -10,8 +10,8 @@ repositories {
 }
 
 dependencies {
-
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
+    implementation("com.squareup.okio:okio:3.8.0")
 }
 
 tasks.test {

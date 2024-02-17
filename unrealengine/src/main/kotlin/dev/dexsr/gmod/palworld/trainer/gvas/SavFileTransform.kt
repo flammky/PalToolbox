@@ -15,11 +15,10 @@ class SavFileTransform private constructor(
     var invalidFile = false
         private set
 
+    var invalidFileMsgKind: String? = null
+        private set
+
     var invalidFileMsg: String? = null
-        get() {
-            require(invalidFile)
-            return checkNotNull(field)
-        }
         private set
 
     var unhandled: Boolean = false
@@ -51,8 +50,12 @@ class SavFileTransform private constructor(
         this.isFileTooSmall = true
     }
 
-    fun markInvalidFile(msg: String) {
+    fun markInvalidFile(
+        kind: String,
+        msg: String = ""
+    ) {
         this.invalidFile = true
+        this.invalidFileMsgKind = kind
         this.invalidFileMsg = msg
     }
 

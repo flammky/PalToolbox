@@ -4,9 +4,12 @@ package dev.dexsr.gmod.palworld.trainer.gvas
 internal const val PALWD_SAV_MAGICBYTES = "PlZ"
 
 interface SavFileDecoder {
+
+    fun decode(arr: ByteArray): Any
 }
 
 interface SavFileEncoder {
 }
 
-interface SavFileCodec : SavFileDecoder, SavFileEncoder
+interface SavFileCodec : SavFileDecoder, SavFileEncoder {
+}

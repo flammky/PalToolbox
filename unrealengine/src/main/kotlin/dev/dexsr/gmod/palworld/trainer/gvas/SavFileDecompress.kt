@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.io.OutputStream
 import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.util.zip.InflaterInputStream
 
 // TODO: try it
@@ -27,7 +28,7 @@ fun SavFileTransform.decodeZlibCompressed(
 
     // check if compressed
     val (uncompressedSize, compressedSize) = inputStream.compressionSizeInfo()
-    if (uncompressedSize < 0 || compressedSize < 0 || compressedSize < uncompressedSize) {
+    if (uncompressedSize < 0 || compressedSize < 0 || compressedSize > uncompressedSize) {
         markInvalidFile(MSG_INVALID_COMPRESSION_INFO)
         return
     }
@@ -36,7 +37,7 @@ fun SavFileTransform.decodeZlibCompressed(
         return
     }
 
-    checkMagicBytes(magicBytes, inputStream, 8)
+    checkMagicBytes(magicBytes, inputStream, 0)
     if (invalidFile) return
 
     decompressZlib(totalOffset, uncompressedSize, compressedSize)
@@ -47,13 +48,13 @@ private fun InputStream.compressionSizeInfo(): Pair<Int, Int> = unCompressedSize
 private fun InputStream.unCompressedSizeInfo(): Int {
     val arr = ByteArray(4)
     read(/* b = */ arr, /* off = */ 0, /* len = */ 4)
-    return ByteBuffer.wrap(arr).getInt()
+    return ByteBuffer.wrap(arr).order(ByteOrder.LITTLE_ENDIAN).getInt()
 }
 
 private fun InputStream.compressedSizeInfo(): Int {
     val arr = ByteArray(4)
-    read(/* b = */ arr, /* off = */ 4, /* len = */ 4)
-    return ByteBuffer.wrap(arr).getInt()
+    read(/* b = */ arr, /* off = */ 0, /* len = */ 4)
+    return ByteBuffer.wrap(arr).order(ByteOrder.LITTLE_ENDIAN).getInt()
 }
 
 private fun InputStream.compressionType(extraOffset: Int): Int {
@@ -78,20 +79,19 @@ private fun SavFileTransform.checkMagicBytes(
 
 private fun SavFileTransform.decompressZlib(
     offset: Int,
-    compressedSizeInfo: Int,
     unCompressedSizeInfo: Int,
+    compressedSizeInfo: Int,
 ) {
-    if (inputStream.available() < offset + 1) {
+    if (inputStream.available() < 1) {
         markFileTooSmall()
         return
     }
     val type = run {
         val arr = ByteArray(1)
-        inputStream.read(arr, offset, 1)
+        inputStream.read(arr, 0, 1)
         arr.first()
     }
-
-    val contentLength = inputStream.available() - offset - 1
+    val contentLength = inputStream.available()
     var decompressed: ByteArray
     when (type) {
         0x30.toByte() -> {
@@ -106,7 +106,7 @@ private fun SavFileTransform.decompressZlib(
             decompressed = run {
                 val out = ByteArrayOutputStream()
                 decompressZlib(
-                    offset + 1,
+                    0,
                     inputStream,
                     out,
                     8192,
@@ -118,7 +118,7 @@ private fun SavFileTransform.decompressZlib(
             decompressed = run {
                 val out = ByteArrayOutputStream()
                 decompressZlib(
-                    offset + 1,
+                    0,
                     inputStream,
                     out,
                     8192,
@@ -131,7 +131,7 @@ private fun SavFileTransform.decompressZlib(
             decompressed = run {
                 val out = ByteArrayOutputStream()
                 decompressZlib(
-                    offset + 1,
+                    0,
                     decompressed.inputStream(),
                     out,
                     8192,
