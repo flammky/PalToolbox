@@ -1,4 +1,4 @@
-package dev.dexsr.gmod.palworld.trainer.gvas
+package dev.dexsr.gmod.palworld.trainer.ue.gvas
 
 import java.io.InputStream
 
@@ -35,12 +35,6 @@ class SavFileTransform private constructor(
 
     var compressionType: ByteArray? = null
         private set
-
-    private var _codec: SavFileCodec? = null
-        private set
-
-    val codec: SavFileCodec
-        get() = requireNotNull(_codec)
 
     fun markFileEmpty() {
         this.isFileEmpty = true
@@ -84,17 +78,12 @@ class SavFileTransform private constructor(
         this.contentMagicBytes = bytes
     }
 
-    private fun byCodec(codec: SavFileCodec) {
-        this._codec = codec
-    }
-
     companion object {
 
         fun open(
             inputStream: InputStream,
-            codec: SavFileCodec,
         ): SavFileTransform {
-            return SavFileTransform(inputStream).apply { byCodec(codec) }
+            return SavFileTransform(inputStream)
         }
     }
 }

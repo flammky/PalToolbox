@@ -1,4 +1,4 @@
-package dev.dexsr.gmod.palworld.trainer.gvas
+package dev.dexsr.gmod.palworld.trainer.ue.gvas
 
 import java.io.ByteArrayOutputStream
 import java.io.InputStream

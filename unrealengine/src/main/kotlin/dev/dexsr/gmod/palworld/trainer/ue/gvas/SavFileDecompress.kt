@@ -1,4 +1,4 @@
-package dev.dexsr.gmod.palworld.trainer.gvas
+package dev.dexsr.gmod.palworld.trainer.ue.gvas
 
 import java.io.BufferedInputStream
 import java.io.ByteArrayOutputStream
@@ -60,7 +60,7 @@ private fun InputStream.compressedSizeInfo(): Int {
 private fun InputStream.compressionType(extraOffset: Int): Int {
     val arr = ByteArray(4)
     read(/* b = */ arr, /* off = */ 8 + extraOffset, /* len = */ 4)
-    return ByteBuffer.wrap(arr).getInt()
+    return ByteBuffer.wrap(arr).order(ByteOrder.LITTLE_ENDIAN).getInt()
 }
 
 private fun SavFileTransform.checkMagicBytes(

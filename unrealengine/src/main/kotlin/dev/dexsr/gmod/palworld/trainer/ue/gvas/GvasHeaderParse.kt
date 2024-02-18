@@ -1,10 +1,9 @@
-package dev.dexsr.gmod.palworld.trainer.gvas
+package dev.dexsr.gmod.palworld.trainer.ue.gvas
 
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.charset.Charset
 import java.nio.charset.CodingErrorAction
-import java.util.UUID
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
@@ -17,7 +16,7 @@ object GvasHeaderConstants {
 }
 
 class GvasHeaderParseResult(
-    private val data: GvasHeader? = null
+    private val data: GvasFileHeader? = null
 ) {
 
     val valueOrNull
@@ -44,7 +43,7 @@ class GvasHeaderParseResult(
         errorMsg = msg
     }
 
-    fun onSuccess(block: (GvasHeader) -> Unit) {
+    fun onSuccess(block: (GvasFileHeader) -> Unit) {
         if (data != null) block(data)
     }
     fun onFailure(block: (GvasHeaderParseResult) -> Unit) {
@@ -61,7 +60,7 @@ class GvasHeaderParseResult(
 
 @OptIn(ExperimentalContracts::class)
 fun <R> GvasHeaderParseResult.fold(
-    onSuccess: (GvasHeader) -> R,
+    onSuccess: (GvasFileHeader) -> R,
     onFailure: (GvasHeaderParseResult) -> R
 ): R {
     contract {
@@ -79,7 +78,7 @@ fun ParseGvasHeader(buf: ByteBuffer): GvasHeaderParseResult {
     }
 
 
-    val header = GvasHeader(
+    val header = GvasFileHeader(
         magicBytes = magic,
         saveGameVersion = run {
             val saveGameVersion = buf.getInt()
@@ -106,11 +105,19 @@ fun ParseGvasHeader(buf: ByteBuffer): GvasHeaderParseResult {
         },
         customVersions = run {
             val count = buf.getInt()
-            List(count) { i ->
-                UUID(
-                    buf.getLong(),
-                    buf.getLong()
-                ).toString() to buf.getInt()
+            List(count) { _ ->
+                val b = ByteArray(16)
+                    .apply { buf.get(this) }
+                    .map { it.toInt() and 0xFF }
+
+                "%08x-%04x-%04x-%04x-%04x%08x".format(
+                    (b[3] shl 24) or (b[2] shl 16) or (b[1] shl 8) or b[0],
+                    (b[7] shl 8) or b[6],
+                    (b[5] shl 8) or b[4],
+                    (b[11] shl 8) or b[10],
+                    (b[9] shl 8) or b[8],
+                    (b[15] shl 24) or (b[14] shl 16) or (b[13] shl 8) or b[12]
+                ) to buf.getInt()
             }
         },
         saveGameClassName = readGvasHeaderStr(buf)
@@ -144,7 +151,7 @@ private fun readGvasHeaderStr(
             .onMalformedInput(CodingErrorAction.REPLACE)
             .onUnmappableCharacter(CodingErrorAction.REPLACE)
             .replaceWith("�")
-            .decode(ByteBuffer.wrap(arr))
+            .decode(ByteBuffer.wrap(arr).order(ByteOrder.LITTLE_ENDIAN))
             .toString()
     }
 }
