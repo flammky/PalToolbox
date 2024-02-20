@@ -25,7 +25,7 @@ import dev.dexsr.gmod.palworld.trainer.composeui.gestures.defaultSurfaceGestureM
 import dev.dexsr.gmod.palworld.trainer.composeui.text.nonFontScaled
 import dev.dexsr.gmod.palworld.trainer.composeui.text.nonScaledFontSize
 import dev.dexsr.gmod.palworld.trainer.savegame.composeui.saveGameMainScreenDrawerItem
-import dev.dexsr.gmod.palworld.trainer.themes.md3.*
+import dev.dexsr.gmod.palworld.trainer.uifoundation.themes.md3.*
 
 
 @Composable
@@ -242,7 +242,7 @@ fun MainScreenLayoutScreenHost(
         modifier = Modifier
             .fillMaxSize()
             .padding(bottom = 16.dp)
-            .background(remember { Color(44, 40, 48) })
+            .background(remember { Color(29, 24, 34) })
             .defaultSurfaceGestureModifiers()
 
     ) {

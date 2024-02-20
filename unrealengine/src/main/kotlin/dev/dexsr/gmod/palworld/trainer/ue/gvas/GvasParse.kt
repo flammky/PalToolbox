@@ -12,6 +12,7 @@ class GvasFileParseResult(
 }
 
 // TODO: complete it
+// TODO: make this suspend
 fun ParseGvasFile(
     data: ByteArray
 ): GvasFileParseResult {

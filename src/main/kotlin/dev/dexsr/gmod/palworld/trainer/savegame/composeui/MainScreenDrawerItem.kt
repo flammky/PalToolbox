@@ -13,7 +13,7 @@ fun saveGameMainScreenDrawerItem(): MainDrawerDestination {
         MainDrawerDestination(
             id = "savegame",
             icon = painter,
-            text = "Save Game",
+            text = "Save Games",
             content = content
         )
     }

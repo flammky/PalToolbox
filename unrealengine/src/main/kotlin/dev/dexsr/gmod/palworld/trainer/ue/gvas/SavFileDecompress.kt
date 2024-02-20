@@ -9,6 +9,7 @@ import java.nio.ByteOrder
 import java.util.zip.InflaterInputStream
 
 // TODO: try it
+// TODO: make suspend
 
 fun SavFileTransform.decodeZlibCompressed(
     magicBytes: ByteArray = PALWD_SAV_MAGICBYTES.toByteArray()

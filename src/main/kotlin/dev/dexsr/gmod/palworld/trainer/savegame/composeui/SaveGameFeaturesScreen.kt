@@ -1,111 +1,160 @@
 package dev.dexsr.gmod.palworld.trainer.savegame.composeui
 
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material.Button
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Icon
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
+import androidx.compose.material.ripple.rememberRipple
+import androidx.compose.runtime.*
+import androidx.compose.ui.*
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import dev.dexsr.gmod.palworld.trainer.savegame.composeui.libint.onExternalDrag
 import androidx.compose.ui.window.AwtWindow
+import dev.dexsr.gmod.palworld.trainer.composeui.HeightSpacer
 import dev.dexsr.gmod.palworld.trainer.composeui.LocalWindow
+import dev.dexsr.gmod.palworld.trainer.composeui.WidthSpacer
+import dev.dexsr.gmod.palworld.trainer.composeui.text.nonScaledFontSize
+import dev.dexsr.gmod.palworld.trainer.java.jFile
 import dev.dexsr.gmod.palworld.trainer.platform.content.filepicker.JnaFileChooserWindowHost
 import dev.dexsr.gmod.palworld.trainer.savegame.composeui.libint.DragData
+import dev.dexsr.gmod.palworld.trainer.savegame.composeui.libint.onExternalDrag
+import dev.dexsr.gmod.palworld.trainer.ue.gvas.GvasFile
+import dev.dexsr.gmod.palworld.trainer.uifoundation.themes.md3.MD3Spec
+import dev.dexsr.gmod.palworld.trainer.uifoundation.themes.md3.incrementsDp
+import dev.dexsr.gmod.palworld.trainer.uifoundation.themes.md3.padding
+import dev.dexsr.gmod.palworld.trainer.utilskt.fastForEach
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.awt.FileDialog
 import java.io.File
+import kotlin.coroutines.CoroutineContext
 
 
 @Composable
 fun SaveGameFeaturesScreen() {
+    val state = rememberSaveGameFeaturesScreenState()
 
-    val draggingInBounds = remember {
-        mutableStateOf(false)
-    }
-
-    @OptIn(ExperimentalComposeUiApi::class)
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .onExternalDrag(
-                LocalWindow.current,
-                onDragStart = { start ->
-                    println("dragStart=${start.dragPosition}")
-                    if (
-                        start.dragData is DragData.FilesList &&
-                        start.dragData.readFiles().any { it.endsWith(".sav") }
-                    ) {
-                        draggingInBounds.value = true
-                    }
-
-                },
-                onDrag = { drag ->
-                    check(drag.dragData is DragData.FilesList)
-                    println("onDrag=${drag.dragPosition}")
-                },
-                onDragExit = {
-                    println("dragExit")
-                    draggingInBounds.value = false
-                }
-            ) { drop ->
-                println("dropped=$drop, data=${drop.dragData}")
-                draggingInBounds.value = false
-            }
-            .composed {
-                var acc: Modifier = Modifier
-                if (draggingInBounds.value) {
-                    acc = acc.border(
-                        width = 1.dp,
-                        color = Color.Green
-                    )
-                }
-                acc
-            }
+            .dragAndDrop(state, showInBoundEffect = true)
     ) {
-        val chosenFile = remember {
-            mutableStateOf<File?>(null)
-        }
-        if (chosenFile.value == null) {
-            val openFilePickerDialogState = remember {
-                mutableStateOf(false)
-            }
-            Button(
-                modifier = Modifier.align(Alignment.Center),
-                enabled = true,
-                onClick = { openFilePickerDialogState.value = true }
-            ) {
-                Text(
-                    text = "PICK FILE TO EDIT",
-                    color = Color.White
+        CompositionLocalProvider(
+            LocalIndication provides rememberRipple(),
+        ) {
+            Column {
+                SaveGameFeaturesScreenFileSelectionPanel(
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .defaultMinSize(minWidth = 200.dp)
+                        .widthIn(max = 800.dp)
+                        .height(30.dp),
+                    state
                 )
-            }
-            if (openFilePickerDialogState.value) {
-                NativeFilePickerDialog("Open File (save game edit)") { file ->
-                    println("picked: $file")
-                    openFilePickerDialogState.value = false
-                }
+
+                // move to state ?
+                val editState = state.gvas?.let { gvas -> state.chosenFile?.let { jF ->
+                    remember(gvas, jF) { SaveGameEditState(jF, gvas) }
+                } }
+                SaveGameFeaturesScreenFileInfoPanel(
+                    modifier = Modifier
+                        .padding(
+                            start = 8.dp,
+                            top = 0.dp,
+                            end = 8.dp,
+                            bottom = 8.dp
+                        ),
+                    loading = state.loadingFile,
+                    editState = editState
+                )
+                editState?.let { SaveGameFeaturesScreenEditPanel(editState) }
             }
         }
     }
 }
 
 @Composable
+fun SaveGameFeaturesScreenFileSelectionPanel(
+    modifier: Modifier,
+    state: SaveGameFeaturesScreenState
+) = key(state.chosenFile) {
+    val openFilePicker = remember {
+        mutableStateOf(false)
+    }
+    Box(modifier = modifier
+        .fillMaxWidth()
+        .clip(RoundedCornerShape(4.dp))
+        .shadow(elevation = 2.dp, RoundedCornerShape(4.dp))
+        .clickable { openFilePicker.value = true }
+        .background(remember { Color(34, 30, 38) })
+        .padding(MD3Spec.padding.incrementsDp(1).dp)) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+        ) {
+            run {
+                val f = state.chosenFile
+                val fp = state.chosenFile?.absolutePath
+                val fp1 = remember(f) {
+                    var dash = false
+                    fp?.dropLastWhile { c -> !dash.also { dash = c == '\\' } }
+                }
+                val fp2 = remember(f) {
+                    var dash = false
+                    fp?.takeLastWhile { c -> !dash.also { dash = c == '\\' } }
+                }
+                val color = remember(f) {
+                    fp?.let { Color(250, 250, 250) } ?: Color.White.copy(alpha = 0.78f)
+                }
+                Text(
+                    modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
+                    text = fp1?.plus(fp2) ?: "Click here to choose File (*.sav)",
+                    style = MaterialTheme.typography.caption,
+                    color = color,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
+            WidthSpacer(MD3Spec.padding.incrementsDp(1).dp)
+            Icon(
+                modifier = Modifier.size(24.dp).align(Alignment.CenterVertically),
+                painter = painterResource("drawable/savegame_save2.png"),
+                contentDescription = null,
+                tint = Color.Unspecified
+            )
+        }
+    }
+    if (openFilePicker.value) NativeFilePickerDialog(
+        title = "Pick save game file to edit (*.sav)",
+        initialDir = state.chosenFile?.parent,
+        onCloseRequest = { state.filePick(it) ; openFilePicker.value = false }
+    )
+}
+
+@Composable
 private fun NativeFilePickerDialog(
     title: String,
+    initialDir: String?,
     onCloseRequest: (File?) -> Unit
 ) {
     val window = LocalWindow.current
     AwtWindow(
         visible = false,
         create = {
-            JnaFileChooserWindowHost(window, title)
+            JnaFileChooserWindowHost(window, title, initialDir)
                 .apply {
                     openAndInvokeOnCompletion { result ->
                         onCloseRequest(result.getOrNull())
@@ -143,3 +192,108 @@ private fun AwtFilePickerDialog(
     },
     dispose = FileDialog::dispose
 )
+
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+private fun Modifier.dragAndDrop(
+    state: SaveGameFeaturesScreenState,
+    showInBoundEffect: Boolean
+): Modifier {
+    val draggingInBoundState = remember {
+        mutableStateOf(false)
+    }
+    return this
+        .onExternalDrag(
+            LocalWindow.current,
+            onDragStart = { start ->
+                if (
+                    start.dragData is DragData.FilesList &&
+                    start.dragData.readFiles().any { it.endsWith(".sav") }
+                ) {
+                    draggingInBoundState.value = true
+                }
+
+            },
+            onDrag = { drag ->
+            },
+            onDragExit = {
+                draggingInBoundState.value = false
+            }
+        ) { drop ->
+            draggingInBoundState.value = false
+            if (drop.dragData is DragData.FilesList) {
+                state.fileDrop(drop.dragData.readFiles().firstOrNull()?.let(::jFile))
+            }
+        }
+        .then(
+            if (draggingInBoundState.value && showInBoundEffect) {
+                Modifier.border(
+                    width = 1.dp,
+                    color = Color.Green
+                )
+            } else Modifier
+        )
+}
+
+@Composable
+private fun SaveGameFeaturesScreenFileInfoPanel(
+    modifier: Modifier,
+    loading: Boolean,
+    editState: SaveGameEditState?
+) {
+    if (!loading && editState == null) {
+        return
+    }
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(4.dp))
+            .shadow(2.dp, shape = RoundedCornerShape(4.dp))
+            .background(remember { Color(74, 68, 88) })
+            .padding(vertical = MD3Spec.padding.incrementsDp(1).dp, horizontal = MD3Spec.padding.incrementsDp(2).dp)
+    ) {
+
+        val style = MaterialTheme.typography.caption
+            .copy(
+                color = remember { Color(250, 250, 250) },
+                fontWeight = FontWeight.Medium,
+                fontSize = MaterialTheme.typography.caption.nonScaledFontSize()
+            )
+
+        if (loading) {
+            Text(
+                modifier = Modifier,
+                text = "Parsing File ...",
+                style = style,
+                maxLines = 1,
+            )
+        } else if (editState != null) {
+            Text(
+                text = "Editing file: ${editState.fileName}",
+                style = style,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            HeightSpacer(MD3Spec.padding.incrementsDp(1).dp)
+
+            // fixme: let state object parse it and make UI logic simpler
+            Text(
+                text = editState.nameDescription,
+                style = style,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+@Composable
+private fun SaveGameFeaturesScreenEditPanel(
+    state: SaveGameEditState
+) {
+    state.properties.elements.fastForEach { prop ->
+        key(prop) {
+            Text(prop.nameString)
+        }
+    }
+}

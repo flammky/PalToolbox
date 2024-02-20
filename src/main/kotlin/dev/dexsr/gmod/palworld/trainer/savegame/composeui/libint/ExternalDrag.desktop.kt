@@ -44,6 +44,8 @@ import java.awt.dnd.DropTargetDropEvent
 import java.awt.dnd.DropTargetEvent
 import java.awt.dnd.DropTargetListener
 
+// we copy the implementation because LocalWindow.current will be null as we are embedding ComposePanel without ComposeWindow
+
 /**
  * Represent data that is being dragged (or dropped) to a component from outside an application.
  */
@@ -125,7 +127,7 @@ fun Modifier.onExternalDrag(
     if (!enabled) {
         return@composed Modifier
     }
-    val window = window
+    val window = /* LocalWindow.current ?: return@composed */ window
 
     val componentDragHandler = rememberUpdatedState(
         AwtWindowDropTarget.ComponentDragHandler(onDragStart, onDrag, onDragExit, onDrop)

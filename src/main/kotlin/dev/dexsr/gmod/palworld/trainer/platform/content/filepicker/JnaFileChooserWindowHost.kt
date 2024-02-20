@@ -7,7 +7,8 @@ import java.io.File
 
 class JnaFileChooserWindowHost(
     private val parentWindow: Window,
-    private val title: String,
+    private val initialTitle: String,
+    private val initialDir: String?
 ) : Window(parentWindow) {
     private val jnaFileChooser = JnaFileChooser()
     private val coroutineScope = CoroutineScope(SupervisorJob())
@@ -19,10 +20,11 @@ class JnaFileChooserWindowHost(
 
     override fun dispose() {
         super.dispose()
+        coroutineScope.cancel()
         current?.cancel()
     }
 
-    @OptIn(InternalCoroutinesApi::class)
+
     fun openAndInvokeOnCompletion(
         handle: (Result<File?>) -> Unit
     ): DisposableHandle {
@@ -31,7 +33,8 @@ class JnaFileChooserWindowHost(
             ?: run {
                 coroutineScope.async(Dispatchers.IO) {
                     runCatching {
-                        jnaFileChooser.setTitle(title)
+                        jnaFileChooser.setTitle(initialTitle)
+                        jnaFileChooser.setCurrentDirectory(initialDir)
                         jnaFileChooser.addFilter("Save File (*.sav)", "sav")
                         jnaFileChooser.showOpenDialog(parent = this@JnaFileChooserWindowHost)
                         jnaFileChooser.selectedFiles.first()
@@ -39,6 +42,7 @@ class JnaFileChooserWindowHost(
                 }
             }.also { current = it }
 
+        @OptIn(InternalCoroutinesApi::class)
         return task.invokeOnCompletion(onCancelling = true, invokeImmediately = true) { ex ->
             if (ex != null) handle.invoke(Result.failure(ex)) else handle.invoke(task.getCompleted())
         }
