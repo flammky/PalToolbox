@@ -12,11 +12,11 @@ import kotlinx.coroutines.delay
 // TODO: impl to affect bottom-left UI
 
 /**
-    default impl for writing [maxHp] periodically with [delay]
+    default impl for writing [hp] periodically with [delay]
  */
 
 suspend fun DefaultPalworldTrainer.instancePeriodicSetHP(
-    maxHp: Int,
+    hp: Int,
     delay: Long
 ) {
     val kernel32 = Native.load("kernel32", JnaKernel32Ext::class.java, W32APIOptions.DEFAULT_OPTIONS)
@@ -26,31 +26,33 @@ suspend fun DefaultPalworldTrainer.instancePeriodicSetHP(
 
     val procHandle = kernel32.OpenProcess(Kernel32.PROCESS_ALL_ACCESS, false, procId)
 
-    val moduleBaseAddr = kernel32.getModuleBaseAddress(processName, procId)
-        ?: error("Cannot get Module Base Address")
+    try {
+        val moduleBaseAddr = kernel32.getModuleBaseAddress(processName, procId)
+            ?: error("Cannot get Module Base Address")
 
-    val baseAddrOffset = 0x086BAAD0
+        val baseAddrOffset = 0x086BAAD0
 
-    var r = moduleBaseAddr
-    val pointerOffsets = listOf(baseAddrOffset, 0x8, 0xA0, 0xF0, 0xB0, 0x6C8, 0x108)
-    val pointerOffset = 0x2E8
+        var r = moduleBaseAddr
+        val pointerOffsets = listOf(baseAddrOffset, 0x8, 0xA0, 0xF0, 0xB0, 0x6C8, 0x108)
+        val pointerOffset = 0x2E8
 
-    pointerOffsets.fastForEach { off ->
-        val buf = Memory(8)
-        if (!kernel32.ReadProcessMemory(procHandle, r.share(off.toLong()), buf, buf.size().toInt(), null)) {
-            return
+        pointerOffsets.fastForEach { off ->
+            val buf = Memory(8)
+            if (!kernel32.ReadProcessMemory(procHandle, r.share(off.toLong()), buf, buf.size().toInt(), null)) {
+                return
+            }
+            r = Pointer(buf.getLong(0))
         }
-        r = Pointer(buf.getLong(0))
-    }
-    r = r.share(pointerOffset.toLong())
+        r = r.share(pointerOffset.toLong())
 
-    while (true) {
-        if (kernel32.ReadProcessMemory(procHandle, r, Memory(8), 8, null)) {
-            val buf = Memory(4).apply { setInt(0, maxHp * 1000) }
-            kernel32.WriteProcessMemory(procHandle, r, buf, 4, null)
-        } else break
-        delay(delay)
+        while (true) {
+            if (kernel32.ReadProcessMemory(procHandle, r, Memory(8), 8, null)) {
+                val buf = Memory(4).apply { setInt(0, hp * 1000) }
+                kernel32.WriteProcessMemory(procHandle, r, buf, 4, null)
+            } else break
+            delay(delay)
+        }
+    } finally {
+        kernel32.CloseHandle(procHandle)
     }
-
-    kernel32.CloseHandle(procHandle)
 }

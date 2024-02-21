@@ -8,13 +8,11 @@ import com.sun.jna.win32.W32APIOptions
 import dev.dexsr.gmod.palworld.trainer.utilskt.fastForEach
 import kotlinx.coroutines.delay
 
-// TODO: impl for NOP writer
-
 /**
-    default impl for writing [hunger] periodically with [delay]
+    default impl for writing [sp] periodically with [delay]
  */
-suspend fun DefaultPalworldTrainer.instancePeriodicSetHunger(
-    hunger: Int,
+suspend fun DefaultPalworldTrainer.instancePeriodicSetHealthStat(
+    sp: Int,
     delay: Long
 ) {
     val kernel32 = Native.load("kernel32", JnaKernel32Ext::class.java, W32APIOptions.DEFAULT_OPTIONS)
@@ -28,11 +26,11 @@ suspend fun DefaultPalworldTrainer.instancePeriodicSetHunger(
         val moduleBaseAddr = kernel32.getModuleBaseAddress(processName, procId)
             ?: error("Cannot get Module Base Address")
 
-        val baseAddrOffset = 0x0891EB30
+        val baseAddrOffset = 0x0886EA88
 
         var r = moduleBaseAddr
-        val pointerOffsets = listOf(baseAddrOffset, 0x20, 0x58, 0x68, 0xB0, 0xF8, 0x30)
-        val pointerOffset = 0x300
+        val pointerOffsets = listOf(baseAddrOffset, 0x0, 0x310, 0x1F0, 0x28, 0x108)
+        val pointerOffset = 0x3E4
 
         pointerOffsets.fastForEach { off ->
             val buf = Memory(8)
@@ -43,7 +41,7 @@ suspend fun DefaultPalworldTrainer.instancePeriodicSetHunger(
 
         while (true) {
             if (kernel32.ReadProcessMemory(procHandle, r, Memory(8), 8, null)) {
-                val buf = Memory(4).apply { setFloat(0, hunger.toFloat()) }
+                val buf = Memory(4).apply { setInt(0, sp) }
                 kernel32.WriteProcessMemory(procHandle, r, buf, 4, null)
             } else break
             delay(delay)
