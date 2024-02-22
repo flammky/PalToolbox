@@ -7,6 +7,7 @@ import dev.dexsr.gmod.palworld.trainer.ue.gvas.ParseGvasFile
 import dev.dexsr.gmod.palworld.trainer.ue.gvas.SavFileTransform
 import dev.dexsr.gmod.palworld.trainer.ue.gvas.decodeZlibCompressed
 import kotlinx.coroutines.*
+import org.jetbrains.skiko.MainUIDispatcher
 
 @Stable
 class SaveGameFeaturesScreenState : RememberObserver {
@@ -29,28 +30,42 @@ class SaveGameFeaturesScreenState : RememberObserver {
     val gvas get() = _gvas.value
 
     fun fileDrop(file: jFile?) {
+        file?.let {
+            if (file.extension != "sav") return
+        }
         _chosenFile.value = file
             ?: return
         loadPickedFile(file)
     }
 
     fun filePick(file: jFile?) {
+        file?.let {
+            if (file.extension != "sav") return
+        }
         _chosenFile.value = file
             ?: return
         loadPickedFile(file)
     }
 
+    @OptIn(InternalCoroutinesApi::class)
     private fun loadPickedFile(file: jFile) {
-        _loadingFile.value = true
-        coroutineScope.launch(Dispatchers.IO) {
-            file.inputStream().use { inStream ->
-                val decompress = SavFileTransform.open(inStream).apply { decodeZlibCompressed() }
-                decompress.contentDecompressedData?.let { arr ->
-                    val parse = ParseGvasFile(arr)
+        currentFileParse?.cancel()
+        currentFileParse = coroutineScope.launch(MainUIDispatcher) {
+            _loadingFile.value = true
+            withContext(Dispatchers.IO) {
+                file.inputStream().use { inStream ->
+                    val decompress = SavFileTransform.open(inStream).apply { decodeZlibCompressed() }
+                    decompress.contentDecompressedData?.let { arr ->
+                        val parse = ParseGvasFile(arr)
+                        ensureActive()
+                        parse.data?.let(_gvas::value::set)
+                    }
                     ensureActive()
-                    parse.data?.let(_gvas::value::set)
+                    _loadingFile.value = false
                 }
-                ensureActive()
+            }
+        }.apply {
+            invokeOnCompletion(onCancelling = true, invokeImmediately = true) {
                 _loadingFile.value = false
             }
         }

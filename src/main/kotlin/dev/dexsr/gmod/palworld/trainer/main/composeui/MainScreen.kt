@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import dev.dexsr.gmod.palworld.trainer.composeui.gestures.defaultSurfaceGestureModifiers
 import dev.dexsr.gmod.palworld.trainer.composeui.text.nonFontScaled
 import dev.dexsr.gmod.palworld.trainer.composeui.text.nonScaledFontSize
+import dev.dexsr.gmod.palworld.trainer.game.composeui.trainerMainScreenDrawerItem
 import dev.dexsr.gmod.palworld.trainer.savegame.composeui.saveGameMainScreenDrawerItem
 import dev.dexsr.gmod.palworld.trainer.uifoundation.themes.md3.*
 
@@ -208,6 +209,30 @@ fun MainScreenLayoutDrawerNavigationPanel(
 ) {
     Column(modifier.fillMaxSize()) {
         run {
+            val saveGame = trainerMainScreenDrawerItem()
+            val isSelected = currentDestinationId == saveGame.id
+            DrawerNavigationPanelItem(
+                modifier = Modifier
+                    .height(56.dp)
+                    .fillMaxWidth()
+                    .composed {
+                        Modifier
+                            .then(
+                                if (isSelected)
+                                    Modifier.background(remember { Color(31, 26, 36) })
+                                else
+                                    Modifier
+                            )
+                    }
+                    .clickable(
+                        enabled = !isSelected,
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = rememberRipple()
+                    ) { onDestinationClicked(saveGame) },
+                item = saveGame
+            )
+        }
+        run {
             val saveGame = saveGameMainScreenDrawerItem()
             val isSelected = currentDestinationId == saveGame.id
             DrawerNavigationPanelItem(
@@ -218,7 +243,7 @@ fun MainScreenLayoutDrawerNavigationPanel(
                         Modifier
                             .then(
                                 if (isSelected)
-                                    Modifier.background(remember { Color(34, 30, 38) })
+                                    Modifier.background(remember { Color(31, 26, 36) })
                                 else
                                     Modifier
                             )

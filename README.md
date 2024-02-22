@@ -6,7 +6,7 @@ this is my main project using [Jetbrains KMP](https://www.jetbrains.com/kotlin-m
 ## Main GUI
 will be updated on every GUI Update
 
-![Screenshot](https://github.com/flammky/PalTrainer/assets/94031495/46168cd7-1acf-4045-813e-9a584b5179a1)
+![Screenshot](https://github.com/flammky/PalTrainer/assets/94031495/a7a84bca-ee8d-4430-8aab-528ac7398132)
 
 ## Implemented Features
 

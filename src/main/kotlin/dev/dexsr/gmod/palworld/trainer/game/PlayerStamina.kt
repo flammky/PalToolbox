@@ -4,6 +4,8 @@ import com.sun.jna.Memory
 import com.sun.jna.Native
 import com.sun.jna.Pointer
 import com.sun.jna.platform.win32.Kernel32
+import com.sun.jna.platform.win32.WinNT
+import com.sun.jna.platform.win32.WinNT.HANDLE
 import com.sun.jna.ptr.IntByReference
 import com.sun.jna.win32.W32APIOptions
 import dev.dexsr.gmod.palworld.trainer.utilskt.fastForEach
@@ -51,7 +53,7 @@ suspend fun DefaultPalworldTrainer.infStaminaStatValue(
 
 suspend fun DefaultPalworldTrainer.instancePeriodicSetPlayerStamina(
     // value is stored as UInt
-    stamina: Int,
+    stamina: Int?,
     delay: Long
 ) {
     val kernel32 = Native.load("kernel32", JnaKernel32Ext::class.java, W32APIOptions.DEFAULT_OPTIONS)
@@ -80,9 +82,16 @@ suspend fun DefaultPalworldTrainer.instancePeriodicSetPlayerStamina(
         }
         r = r.share(pointerOffset.toLong())
 
+        var stamina = stamina?.times(1000)
         while (true) {
             if (kernel32.ReadProcessMemory(procHandle, r, Memory(8), 8, null)) {
-                val buf = Memory(4).apply { setInt(0, stamina * 1000) }
+                if (stamina == null) {
+                    stamina = getPlayerStaminaStatValue(
+                        getPlayerStaminaStatAddr(kernel32, procHandle, moduleBaseAddr) ?: break,
+                        kernel32, procHandle
+                    ) ?: break
+                }
+                val buf = Memory(4).apply { setInt(0, stamina) }
                 kernel32.WriteProcessMemory(procHandle, r, buf, 4, null)
             } else break
             delay(delay)
@@ -92,6 +101,7 @@ suspend fun DefaultPalworldTrainer.instancePeriodicSetPlayerStamina(
     }
 }
 
+// TODO put player stat value
 fun DefaultPalworldTrainer.infStamina2() {
     val kernel32 = Native.load("kernel32", JnaKernel32Ext::class.java, W32APIOptions.DEFAULT_OPTIONS)
     val processName = "Palworld-Win64-Shipping.exe"
@@ -156,4 +166,36 @@ fun DefaultPalworldTrainer.revertInfStamina2() {
     } finally {
         kernel32.CloseHandle(procHandle)
     }
+}
+
+private fun DefaultPalworldTrainer.getPlayerStaminaStatAddr(
+    kernel32: JnaKernel32Ext,
+    procHandle: WinNT.HANDLE,
+    moduleAddr: Pointer
+): Pointer? {
+    val baseAddrOffset = 0x0891FFC0
+
+    var r = moduleAddr
+    val pointerOffsets = listOf(baseAddrOffset, 0x0, 0x50, 0x698, 0x108)
+    val pointerOffset = 0x390
+
+    pointerOffsets.fastForEach { off ->
+        val buf = Memory(8)
+        if (!kernel32.ReadProcessMemory(procHandle, r.share(off.toLong()), buf, buf.size().toInt(), null)) {
+            return null
+        }
+        r = Pointer(buf.getLong(0))
+    }
+    r = r.share(pointerOffset.toLong())
+    return r
+}
+
+private fun DefaultPalworldTrainer.getPlayerStaminaStatValue(
+    addr: Pointer,
+    kernel32: JnaKernel32Ext,
+    procHandle: HANDLE
+): Int? {
+    val buf = Memory(8)
+    val read = kernel32.ReadProcessMemory(procHandle, addr, buf, buf.size().toInt(), null)
+    return if (read) buf.getInt(0) else null
 }

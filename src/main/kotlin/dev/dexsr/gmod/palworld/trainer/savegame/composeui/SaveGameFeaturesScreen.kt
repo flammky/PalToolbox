@@ -11,7 +11,9 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.runtime.*
-import androidx.compose.ui.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
@@ -28,18 +30,12 @@ import dev.dexsr.gmod.palworld.trainer.java.jFile
 import dev.dexsr.gmod.palworld.trainer.platform.content.filepicker.JnaFileChooserWindowHost
 import dev.dexsr.gmod.palworld.trainer.savegame.composeui.libint.DragData
 import dev.dexsr.gmod.palworld.trainer.savegame.composeui.libint.onExternalDrag
-import dev.dexsr.gmod.palworld.trainer.ue.gvas.GvasFile
 import dev.dexsr.gmod.palworld.trainer.uifoundation.themes.md3.MD3Spec
 import dev.dexsr.gmod.palworld.trainer.uifoundation.themes.md3.incrementsDp
 import dev.dexsr.gmod.palworld.trainer.uifoundation.themes.md3.padding
 import dev.dexsr.gmod.palworld.trainer.utilskt.fastForEach
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.awt.FileDialog
 import java.io.File
-import kotlin.coroutines.CoroutineContext
 
 
 @Composable
@@ -98,11 +94,12 @@ fun SaveGameFeaturesScreenFileSelectionPanel(
         .clip(RoundedCornerShape(4.dp))
         .shadow(elevation = 2.dp, RoundedCornerShape(4.dp))
         .clickable { openFilePicker.value = true }
-        .background(remember { Color(34, 30, 38) })
+        .background(remember { Color(41, 36, 46) })
         .padding(MD3Spec.padding.incrementsDp(1).dp)) {
         Row(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(horizontal = 2.dp)
         ) {
             run {
                 val f = state.chosenFile
@@ -120,7 +117,7 @@ fun SaveGameFeaturesScreenFileSelectionPanel(
                 }
                 Text(
                     modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
-                    text = fp1?.plus(fp2) ?: "Click here to choose File (*.sav)",
+                    text = fp1?.plus(fp2) ?: "Click here to select File (*.sav)",
                     style = MaterialTheme.typography.caption,
                     color = color,
                     maxLines = 1,
