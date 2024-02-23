@@ -25,6 +25,7 @@ import androidx.compose.ui.window.AwtWindow
 import dev.dexsr.gmod.palworld.trainer.composeui.HeightSpacer
 import dev.dexsr.gmod.palworld.trainer.composeui.LocalWindow
 import dev.dexsr.gmod.palworld.trainer.composeui.WidthSpacer
+import dev.dexsr.gmod.palworld.trainer.composeui.gestures.defaultSurfaceGestureModifiers
 import dev.dexsr.gmod.palworld.trainer.composeui.text.nonScaledFontSize
 import dev.dexsr.gmod.palworld.trainer.java.jFile
 import dev.dexsr.gmod.palworld.trainer.platform.content.filepicker.JnaFileChooserWindowHost
@@ -41,10 +42,11 @@ import java.io.File
 @Composable
 fun SaveGameFeaturesScreen() {
     val state = rememberSaveGameFeaturesScreenState()
-
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .background(remember { Color(29, 24, 34) })
+            .defaultSurfaceGestureModifiers()
             .dragAndDrop(state, showInBoundEffect = true)
     ) {
         CompositionLocalProvider(

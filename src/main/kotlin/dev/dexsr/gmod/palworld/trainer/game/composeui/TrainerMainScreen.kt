@@ -3,7 +3,9 @@ package dev.dexsr.gmod.palworld.trainer.game.composeui
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
+import androidx.compose.material.NavigationRailItem
 import androidx.compose.material.Text
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.runtime.*
@@ -19,6 +21,11 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogWindow
 import androidx.compose.ui.window.rememberDialogState
+import dev.dexsr.gmod.palworld.trainer.composeui.HeightSpacer
+import dev.dexsr.gmod.palworld.trainer.composeui.StableList
+import dev.dexsr.gmod.palworld.trainer.composeui.WidthSpacer
+import dev.dexsr.gmod.palworld.trainer.composeui.gestures.defaultSurfaceGestureModifiers
+import dev.dexsr.gmod.palworld.trainer.composeui.text.nonFontScaled
 import dev.dexsr.gmod.palworld.trainer.composeui.text.nonScaledFontSize
 import dev.dexsr.gmod.palworld.trainer.uifoundation.themes.md3.MD3Spec
 import dev.dexsr.gmod.palworld.trainer.uifoundation.themes.md3.incrementsDp
@@ -38,8 +45,11 @@ fun TrainerMainScreen(
     CompositionLocalProvider(
         LocalIndication provides rememberRipple()
     ) {
-        Box(
-            modifier.fillMaxSize()
+        Column(
+            modifier
+                .fillMaxSize()
+                .background(remember { Color(29, 24, 34) })
+                .defaultSurfaceGestureModifiers()
         ) {
 
             TrainerProcessSelectPanel(
@@ -54,6 +64,13 @@ fun TrainerMainScreen(
                     .height(30.dp),
                 state
             )
+
+            state.selectedProcess?.let { proc ->
+                TrainerContent(
+                    Modifier.padding(top = MD3Spec.padding.incrementsDp(3).dp),
+                    proc
+                )
+            }
         }
     }
 }
@@ -122,9 +139,9 @@ private fun SelectProcessWindow(
         title = "Select Game Process",
         icon = painterResource("drawable/palworld_p_icon_b.jpg")
     ) {
-       remember(window) {
-           window.minimumSize = Dimension(200, 200)
-       }
+        remember(window) {
+            window.minimumSize = Dimension(200, 200)
+        }
         SelectProcessWindowContent(onChosen = { proc ->
             state.userSelectProcess(proc)
             onCloseRequest()
@@ -201,6 +218,156 @@ fun SelectProcessWindowContent(
                         maxLines = 1,
                         style = style
                     )
+                }
+            }
+        }
+    }
+}
+
+private class TrainerContent(
+    val id: String,
+    val content: @Composable () -> Unit,
+)
+
+@Composable
+private fun TrainerContent(
+    modifier: Modifier,
+    process: TrainerTargetProcess
+) {
+    val dest = remember {
+        mutableStateOf<StableList<TrainerContent>>(StableList(emptyList()))
+    }
+
+    // the compose compiler will remember lambda for us
+    val onSelectClicked: (TrainerContent) -> Unit = { select ->
+        if (!dest.value.contains(select)) {
+            dest.value = StableList(
+                ArrayList<TrainerContent>()
+                    .apply { addAll(dest.value) ; add(select) }
+            )
+        } else {
+            dest.value = StableList(
+                ArrayList<TrainerContent>()
+                    .apply {
+                        dest.value.forEach {
+                            if (it.id != select.id) add(it)
+                        }
+                        add(select)
+                    }
+            )
+        }
+
+        println("destContents=${dest.value.map { "${it.id}" }}")
+    }
+
+    Row(
+        modifier = modifier
+            .padding(horizontal = MD3Spec.padding.incrementsDp(2).dp)
+    ) {
+        Column(modifier = Modifier.widthIn(max = 200.dp)) {
+            Row(modifier = Modifier.height(40.dp)) {
+                val select = remember {
+                    TrainerContent(
+                        id = "player",
+                        content =  { PlayerTrainer() }
+                    )
+                }
+                val selected = dest.value.lastOrNull()?.id == "player"
+                Row(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .defaultMinSize(minWidth = 100.dp)
+                        .clip(RoundedCornerShape(24.dp))
+                        .clickable(!selected) { onSelectClicked.invoke(select) }
+                        .then(
+                            if (selected) {
+                                Modifier
+                                    .background(
+                                        remember { Color(48, 40, 56) },
+                                    )
+                            } else {
+                                Modifier
+                            }
+                        )
+                        .padding(vertical = 4.dp, horizontal = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        modifier = Modifier.size(20.dp),
+                        painter = painterResource("drawable/simple_user_32px.png"),
+                        contentDescription = null,
+                        tint = remember { Color(168, 140, 196) }
+                    )
+                    WidthSpacer(MD3Spec.padding.incrementsDp(2).dp)
+                    Text(
+                        "Player",
+                        style = MaterialTheme.typography.body2
+                            .nonFontScaled()
+                            .copy(
+                                color = remember { Color(250, 250, 250) },
+                                fontWeight = FontWeight.SemiBold
+                            ),
+                        maxLines = 1
+                    )
+                }
+            }
+
+            HeightSpacer(MD3Spec.padding.incrementsDp(1).dp)
+            Row(modifier = Modifier.height(40.dp)) {
+
+                val select = remember {
+                    TrainerContent(
+                        id = "world",
+                        content =  { WorldTrainer() }
+                    )
+                }
+                val selected = dest.value.lastOrNull()?.id == "world"
+                Row(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .defaultMinSize(minWidth = 100.dp)
+                        .clip(RoundedCornerShape(24.dp))
+                        .clickable { onSelectClicked.invoke(select) }
+                        .then(
+                            if (selected) {
+                                Modifier
+                                    .background(
+                                        remember { Color(48, 40, 56) },
+                                    )
+                            } else {
+                                Modifier
+                            }
+                        )
+                        .padding(vertical = 4.dp, horizontal = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        modifier = Modifier.size(20.dp),
+                        painter = painterResource("drawable/simple_world_32px.png"),
+                        contentDescription = null,
+                        tint = remember { Color(168, 140, 196) }
+                    )
+                    WidthSpacer(MD3Spec.padding.incrementsDp(2).dp)
+                    Text(
+                        "World",
+                        style = MaterialTheme.typography.body2
+                            .nonFontScaled()
+                            .copy(
+                                color = remember { Color(250, 250, 250) },
+                                fontWeight = FontWeight.SemiBold
+                            ),
+                        maxLines = 1
+                    )
+                }
+            }
+        }
+
+        if (dest.value.isNotEmpty()) {
+            Box {
+                dest.value.fastForEach { v ->
+                    key(v.id) {
+                        v.content.invoke()
+                    }
                 }
             }
         }

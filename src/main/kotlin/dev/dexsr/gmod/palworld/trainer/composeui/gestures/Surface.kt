@@ -7,7 +7,7 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
 
-// fixme: in windows, consuming pointer event here should mean to provide matrix info to the TitleBar as well
+// fixme: in windows, consuming pointer event on title bar spot should mean to provide matrix info to the TitleBar as well
 // so we should expose a Composable rather than modifier factory
 fun Modifier.defaultSurfaceGestureModifiers() = consumeDownGesture(
     requireUnconsumed = true,

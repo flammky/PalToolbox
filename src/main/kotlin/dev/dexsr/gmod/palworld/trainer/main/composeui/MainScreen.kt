@@ -8,10 +8,7 @@ import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.ripple.rememberRipple
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -21,12 +18,14 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import dev.dexsr.gmod.palworld.trainer.composeui.StableList
 import dev.dexsr.gmod.palworld.trainer.composeui.gestures.defaultSurfaceGestureModifiers
 import dev.dexsr.gmod.palworld.trainer.composeui.text.nonFontScaled
 import dev.dexsr.gmod.palworld.trainer.composeui.text.nonScaledFontSize
 import dev.dexsr.gmod.palworld.trainer.game.composeui.trainerMainScreenDrawerItem
 import dev.dexsr.gmod.palworld.trainer.savegame.composeui.saveGameMainScreenDrawerItem
 import dev.dexsr.gmod.palworld.trainer.uifoundation.themes.md3.*
+import dev.dexsr.gmod.palworld.trainer.utilskt.fastForEach
 
 
 @Composable
@@ -177,7 +176,7 @@ fun MainScreenLayoutBody() {
     BoxWithConstraints {
         val maxWidth = maxWidth
         Row {
-            val dest = remember { mutableStateOf<MainDrawerDestination?>(null) }
+            val dest = remember { mutableStateOf<StableList<MainDrawerDestination>>(StableList(emptyList()), neverEqualPolicy()) }
             Column(
                 modifier = Modifier
                     .width(
@@ -190,8 +189,25 @@ fun MainScreenLayoutBody() {
                         .weight(1f)
                         .fillMaxHeight()
                         .fillMaxWidth(),
-                    onDestinationClicked = dest::value::set,
-                    currentDestinationId = dest.value?.id
+                    onDestinationClicked = { select ->
+                        if (!dest.value.contains(select)) {
+                            dest.value = StableList(
+                                ArrayList<MainDrawerDestination>()
+                                    .apply { addAll(dest.value) ; add(select) }
+                            )
+                        } else {
+                            dest.value = StableList(
+                                ArrayList<MainDrawerDestination>()
+                                    .apply {
+                                        dest.value.forEach {
+                                            if (it.id != select.id) add(it)
+                                        }
+                                        add(select)
+                                    }
+                            )
+                        }
+                    },
+                    currentDestinationId = dest.value.lastOrNull()?.id
                 )
                 Box(modifier = Modifier.height(80.dp).fillMaxWidth())
             }
@@ -209,8 +225,8 @@ fun MainScreenLayoutDrawerNavigationPanel(
 ) {
     Column(modifier.fillMaxSize()) {
         run {
-            val saveGame = trainerMainScreenDrawerItem()
-            val isSelected = currentDestinationId == saveGame.id
+            val trainer = trainerMainScreenDrawerItem()
+            val isSelected = currentDestinationId == trainer.id
             DrawerNavigationPanelItem(
                 modifier = Modifier
                     .height(56.dp)
@@ -228,8 +244,8 @@ fun MainScreenLayoutDrawerNavigationPanel(
                         enabled = !isSelected,
                         interactionSource = remember { MutableInteractionSource() },
                         indication = rememberRipple()
-                    ) { onDestinationClicked(saveGame) },
-                item = saveGame
+                    ) { onDestinationClicked(trainer) },
+                item = trainer
             )
         }
         run {
@@ -261,21 +277,24 @@ fun MainScreenLayoutDrawerNavigationPanel(
 
 @Composable
 fun MainScreenLayoutScreenHost(
-    currentDestination: MainDrawerDestination?
+    destinations: StableList<MainDrawerDestination>
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(bottom = 16.dp)
-            .background(remember { Color(29, 24, 34) })
-            .defaultSurfaceGestureModifiers()
-
-    ) {
-        currentDestination
-            ?.let { dest ->
-                key(dest.id) { dest.content.invoke() }
+    if (destinations.isEmpty()) {
+        HostNoDestinationSelected()
+    } else {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(bottom = 16.dp)
+                .background(remember { Color(29, 24, 34) })
+                .defaultSurfaceGestureModifiers()
+        ) {
+            destinations.fastForEach { dest ->
+                key(dest.id) {
+                    dest.content.invoke()
+                }
             }
-            ?: HostNoDestinationSelected()
+        }
     }
 }
 
