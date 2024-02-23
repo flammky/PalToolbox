@@ -18,11 +18,15 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import dev.dexsr.gmod.palworld.toolbox.game.gameMainScreenDrawItem
+import dev.dexsr.gmod.palworld.toolbox.gametools.gameToolsMainScreenDrawItem
+import dev.dexsr.gmod.palworld.toolbox.paldex.composeui.palDexMainScreenDrawerItem
+import dev.dexsr.gmod.palworld.toolbox.server.composeui.serverMainScreenDrawerItem
+import dev.dexsr.gmod.palworld.toolbox.trainer.composeui.trainerMainScreenDrawerItem
 import dev.dexsr.gmod.palworld.trainer.composeui.StableList
 import dev.dexsr.gmod.palworld.trainer.composeui.gestures.defaultSurfaceGestureModifiers
 import dev.dexsr.gmod.palworld.trainer.composeui.text.nonFontScaled
 import dev.dexsr.gmod.palworld.trainer.composeui.text.nonScaledFontSize
-import dev.dexsr.gmod.palworld.trainer.game.composeui.trainerMainScreenDrawerItem
 import dev.dexsr.gmod.palworld.trainer.savegame.composeui.saveGameMainScreenDrawerItem
 import dev.dexsr.gmod.palworld.trainer.uifoundation.themes.md3.*
 import dev.dexsr.gmod.palworld.trainer.utilskt.fastForEach
@@ -114,7 +118,7 @@ private fun MainScreenLayoutIconTitle(
         Spacer(Modifier.width(MD3Spec.padding.incrementsDp(2).dp))
         Text(
             modifier = Modifier.align(Alignment.CenterVertically),
-            text = "PALWORLD TRAINER",
+            text = "PALWORLD TOOLBOX",
             style = MaterialTheme.typography.subtitle2,
             fontSize = MaterialTheme.typography.subtitle2.nonScaledFontSize(),
             color = Color.White,
@@ -224,9 +228,15 @@ fun MainScreenLayoutDrawerNavigationPanel(
     currentDestinationId: String?
 ) {
     Column(modifier.fillMaxSize()) {
-        run {
-            val trainer = trainerMainScreenDrawerItem()
-            val isSelected = currentDestinationId == trainer.id
+        listOf(
+            gameMainScreenDrawItem(),
+            gameToolsMainScreenDrawItem(),
+            trainerMainScreenDrawerItem(),
+            saveGameMainScreenDrawerItem(),
+            serverMainScreenDrawerItem(),
+            palDexMainScreenDrawerItem()
+        ).sortedBy { it.name }.fastForEach { item ->
+            val isSelected = currentDestinationId == item.id
             DrawerNavigationPanelItem(
                 modifier = Modifier
                     .height(56.dp)
@@ -244,32 +254,8 @@ fun MainScreenLayoutDrawerNavigationPanel(
                         enabled = !isSelected,
                         interactionSource = remember { MutableInteractionSource() },
                         indication = rememberRipple()
-                    ) { onDestinationClicked(trainer) },
-                item = trainer
-            )
-        }
-        run {
-            val saveGame = saveGameMainScreenDrawerItem()
-            val isSelected = currentDestinationId == saveGame.id
-            DrawerNavigationPanelItem(
-                modifier = Modifier
-                    .height(56.dp)
-                    .fillMaxWidth()
-                    .composed {
-                        Modifier
-                            .then(
-                                if (isSelected)
-                                    Modifier.background(remember { Color(31, 26, 36) })
-                                else
-                                    Modifier
-                            )
-                    }
-                    .clickable(
-                        enabled = !isSelected,
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = rememberRipple()
-                    ) { onDestinationClicked(saveGame) },
-                item = saveGame
+                    ) { onDestinationClicked(item) },
+                item = item
             )
         }
     }
@@ -312,13 +298,13 @@ private fun DrawerNavigationPanelItem(
         Icon(
             modifier = Modifier.size(24.dp).align(Alignment.CenterVertically),
             painter = item.icon,
-            tint = Color.Unspecified,
+            tint = item.iconTint ?: Color.Unspecified,
             contentDescription = null
         )
         Spacer(Modifier.width(MD3Spec.padding.incrementsDp(2).dp))
         Text(
             modifier = Modifier.align(Alignment.CenterVertically),
-            text = item.text,
+            text = item.name,
             style = MaterialTheme.typography.subtitle2.nonFontScaled(),
             overflow = TextOverflow.Ellipsis,
             maxLines = 1,

@@ -1,7 +1,8 @@
-package dev.dexsr.gmod.palworld.trainer.game.composeui
+package dev.dexsr.gmod.palworld.toolbox.trainer.composeui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import dev.dexsr.gmod.palworld.trainer.main.composeui.MainDrawerDestination
 
@@ -9,13 +10,15 @@ import dev.dexsr.gmod.palworld.trainer.main.composeui.MainDrawerDestination
 fun trainerMainScreenDrawerItem(): MainDrawerDestination {
     val content = @Composable { TrainerMainScreen() }
     // TODO: icon
-    val painter = painterResource("drawable/palworld_icon_256px.png")
+    val painter =
+        painterResource("drawable/system_processes_32px.png")
     return remember(painter) {
         MainDrawerDestination(
-            id = "trainer",
+            id = "traier",
             icon = painter,
-            text = "Game",
-            content = content
+            name = "Trainer",
+            content = content,
+            iconTint = Color(168, 140, 196)
         )
     }
 }

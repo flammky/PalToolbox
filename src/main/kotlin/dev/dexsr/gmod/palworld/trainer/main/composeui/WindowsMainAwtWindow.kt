@@ -67,7 +67,7 @@ class WindowsMainAwtWindow(
         window
             .apply {
                 setSize(800, 600)
-                title = "PalWorld Trainer"
+                title = "PalWorld Toolbox"
                 iconImage = run {
                     val resourcePath = "drawable/palworld_p_icon.png"
                     val contextClassLoader = Thread.currentThread().contextClassLoader!!

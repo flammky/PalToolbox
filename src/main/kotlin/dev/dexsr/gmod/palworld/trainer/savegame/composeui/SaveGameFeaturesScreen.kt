@@ -130,9 +130,9 @@ fun SaveGameFeaturesScreenFileSelectionPanel(
             WidthSpacer(MD3Spec.padding.incrementsDp(1).dp)
             Icon(
                 modifier = Modifier.size(24.dp).align(Alignment.CenterVertically),
-                painter = painterResource("drawable/savegame_save2.png"),
+                painter = painterResource("drawable/simple_save_file_32px.png"),
                 contentDescription = null,
-                tint = Color.Unspecified
+                tint = remember { Color(168, 140, 196) }
             )
         }
     }

@@ -1,4 +1,4 @@
-package dev.dexsr.gmod.palworld.trainer.game.composeui
+package dev.dexsr.gmod.palworld.toolbox.trainer.composeui
 
 import androidx.compose.runtime.*
 import dev.dexsr.gmod.palworld.trainer.win32.Win32ProcessHandle

@@ -1,4 +1,4 @@
-package dev.dexsr.gmod.palworld.trainer.game.composeui
+package dev.dexsr.gmod.palworld.toolbox.trainer.composeui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
