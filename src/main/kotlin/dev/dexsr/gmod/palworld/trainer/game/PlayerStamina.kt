@@ -54,7 +54,8 @@ suspend fun DefaultPalworldTrainer.infStaminaStatValue(
 suspend fun DefaultPalworldTrainer.instancePeriodicSetPlayerStamina(
     // value is stored as UInt
     stamina: Int?,
-    delay: Long
+    delay: Long,
+    onSuccessWrite: () -> Unit = {}
 ) {
     val kernel32 = Native.load("kernel32", JnaKernel32Ext::class.java, W32APIOptions.DEFAULT_OPTIONS)
     val processName = "Palworld-Win64-Shipping.exe"
@@ -92,7 +93,8 @@ suspend fun DefaultPalworldTrainer.instancePeriodicSetPlayerStamina(
                     ) ?: break
                 }
                 val buf = Memory(4).apply { setInt(0, stamina) }
-                kernel32.WriteProcessMemory(procHandle, r, buf, 4, null)
+                val write = kernel32.WriteProcessMemory(procHandle, r, buf, 4, null)
+                if (write) onSuccessWrite()
             } else break
             delay(delay)
         }
@@ -102,8 +104,10 @@ suspend fun DefaultPalworldTrainer.instancePeriodicSetPlayerStamina(
 }
 
 // TODO put player stat value
-fun DefaultPalworldTrainer.infStamina2() {
-    val kernel32 = Native.load("kernel32", JnaKernel32Ext::class.java, W32APIOptions.DEFAULT_OPTIONS)
+fun DefaultPalworldTrainer.infStaminaInject(
+    onSuccessWrite: () -> Unit = {}
+) {
+    val kernel32 = JnaKernel32Ext.INSTANCE
     val processName = "Palworld-Win64-Shipping.exe"
     val procId = kernel32.getProcIdByExecName(processName)
         ?: error("${"Palworld-Win64-Shipping.exe"} is not running")
@@ -111,7 +115,16 @@ fun DefaultPalworldTrainer.infStamina2() {
     val procHandle = kernel32.OpenProcess(Kernel32.PROCESS_ALL_ACCESS, false, procId)
 
     try {
-        val injectAddr = Pointer(0x7FF65CA6BEC0)
+        val moduleBaseAddr = kernel32.getModuleBaseAddress(processName, procId)
+            ?: error("Cannot get Module Base Address")
+
+        val baseAddrOffset = 0x287BEC0
+
+        val buf = Memory(8)
+        if (!kernel32.ReadProcessMemory(procHandle, moduleBaseAddr.share(baseAddrOffset.toLong()), buf, buf.size().toInt(), null)) {
+            return
+        }
+        val injectAddr = moduleBaseAddr.share(baseAddrOffset.toLong())
 
         val code = byteArrayOf(
             0xC7.toByte(), 0x81.toByte(), 0xF0.toByte(), 0x02, 0x00, 0x00, 0x40, 0x42, 0x0F, 0x00, // mov [rcx+2F0], (int) 1000000,
@@ -130,12 +143,15 @@ fun DefaultPalworldTrainer.infStamina2() {
             code.size,
             written
         )
+        if (write) onSuccessWrite()
     } finally {
         kernel32.CloseHandle(procHandle)
     }
 }
 
-fun DefaultPalworldTrainer.revertInfStamina2() {
+fun DefaultPalworldTrainer.revertInfStaminaInject(
+    onSuccessWrite: () -> Unit = {}
+) {
     val kernel32 = Native.load("kernel32", JnaKernel32Ext::class.java, W32APIOptions.DEFAULT_OPTIONS)
     val processName = "Palworld-Win64-Shipping.exe"
     val procId = kernel32.getProcIdByExecName(processName)
@@ -144,7 +160,16 @@ fun DefaultPalworldTrainer.revertInfStamina2() {
     val procHandle = kernel32.OpenProcess(Kernel32.PROCESS_ALL_ACCESS, false, procId)
 
     try {
-        val injectAddr = Pointer(0x7FF65CA6BEC0)
+        val moduleBaseAddr = kernel32.getModuleBaseAddress(processName, procId)
+            ?: error("Cannot get Module Base Address")
+
+        val baseAddrOffset = 0x287BEC0
+
+        val buf = Memory(8)
+        if (!kernel32.ReadProcessMemory(procHandle, moduleBaseAddr.share(baseAddrOffset.toLong()), buf, buf.size().toInt(), null)) {
+            return
+        }
+        val injectAddr = moduleBaseAddr.share(baseAddrOffset.toLong())
 
         val code = byteArrayOf(
             0x48, 0x8B.toByte(), 0x81.toByte(), 0xF0.toByte(), 0x02, 0x00, 0x00,
@@ -163,6 +188,7 @@ fun DefaultPalworldTrainer.revertInfStamina2() {
             code.size,
             written
         )
+        if (write) onSuccessWrite()
     } finally {
         kernel32.CloseHandle(procHandle)
     }

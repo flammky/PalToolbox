@@ -17,7 +17,8 @@ import kotlinx.coroutines.delay
 
 suspend fun DefaultPalworldTrainer.instancePeriodicSetHP(
     hp: Int,
-    delay: Long
+    delay: Long,
+    onSuccessWrite: () -> Unit = {},
 ) {
     val kernel32 = Native.load("kernel32", JnaKernel32Ext::class.java, W32APIOptions.DEFAULT_OPTIONS)
     val processName = "Palworld-Win64-Shipping.exe"
@@ -48,7 +49,8 @@ suspend fun DefaultPalworldTrainer.instancePeriodicSetHP(
         while (true) {
             if (kernel32.ReadProcessMemory(procHandle, r, Memory(8), 8, null)) {
                 val buf = Memory(4).apply { setInt(0, hp * 1000) }
-                kernel32.WriteProcessMemory(procHandle, r, buf, 4, null)
+                val write = kernel32.WriteProcessMemory(procHandle, r, buf, 4, null)
+                if (write) onSuccessWrite()
             } else break
             delay(delay)
         }
