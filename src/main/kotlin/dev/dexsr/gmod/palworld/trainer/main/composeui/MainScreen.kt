@@ -18,8 +18,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import dev.dexsr.gmod.palworld.toolbox.game.gameMainScreenDrawItem
-import dev.dexsr.gmod.palworld.toolbox.gametools.gameToolsMainScreenDrawItem
+import dev.dexsr.gmod.palworld.toolbox.game.composeui.gameMainScreenDrawItem
+import dev.dexsr.gmod.palworld.toolbox.gametools.composeui.gameToolsMainScreenDrawItem
 import dev.dexsr.gmod.palworld.toolbox.paldex.composeui.palDexMainScreenDrawerItem
 import dev.dexsr.gmod.palworld.toolbox.server.composeui.serverMainScreenDrawerItem
 import dev.dexsr.gmod.palworld.toolbox.trainer.composeui.trainerMainScreenDrawerItem

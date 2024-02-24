@@ -1,9 +1,6 @@
 package dev.dexsr.gmod.palworld.trainer.ue.gvas
 
-import dev.dexsr.gmod.palworld.trainer.ue.gvas.rawdata.Character
-import dev.dexsr.gmod.palworld.trainer.ue.gvas.rawdata.Group
-import dev.dexsr.gmod.palworld.trainer.ue.gvas.rawdata.decode
-import dev.dexsr.gmod.palworld.trainer.ue.gvas.rawdata.encode
+import dev.dexsr.gmod.palworld.trainer.ue.gvas.rawdata.*
 
 val PALWORLD_TYPE_HINT = mapOf(
     ".worldSaveData.CharacterContainerSaveData.Key" to "StructProperty",
@@ -37,8 +34,11 @@ val PALWORLD_TYPE_HINT = mapOf(
 
 val PALWORLD_CUSTOM_PROPERTY_CODEC = mapOf<String, Pair<GVAS_PROPERTY_DECODER, GVAS_PROPERTY_ENCODER>>(
     ".worldSaveData.GroupSaveDataMap" to (Group::decode to Group::encode),
-    ".worldSaveData.CharacterSaveParameterMap.Value.RawData" to (Character::decode to Character::encode)
+    ".worldSaveData.CharacterSaveParameterMap.Value.RawData" to (Character::decode to Character::encode),
+    ".worldSaveData.ItemContainerSaveData.Value.RawData" to (ItemContainer::decode to ItemContainer::encode),
+    ".worldSaveData.ItemContainerSaveData.Value.Slots.Slots.RawData" to (ItemContainerSlot::decode to ItemContainerSlot::encode),
+    ".worldSaveData.DynamicItemSaveData.DynamicItemSaveData.RawData" to (DynamicItem::decode to DynamicItem :: encode)
 )
 
-typealias GVAS_PROPERTY_DECODER = (GvasReader, String, Int, String) -> GvasDict
+typealias GVAS_PROPERTY_DECODER = (GvasReader, String, Int, String) -> GvasProperty
 typealias GVAS_PROPERTY_ENCODER = (GvasReader, String, GvasMap<String, Any>) -> Int

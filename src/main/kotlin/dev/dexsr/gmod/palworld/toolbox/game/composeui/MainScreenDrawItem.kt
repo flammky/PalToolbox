@@ -1,4 +1,4 @@
-package dev.dexsr.gmod.palworld.toolbox.gametools
+package dev.dexsr.gmod.palworld.toolbox.game.composeui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -7,16 +7,16 @@ import androidx.compose.ui.res.painterResource
 import dev.dexsr.gmod.palworld.trainer.main.composeui.MainDrawerDestination
 
 @Composable
-fun gameToolsMainScreenDrawItem(): MainDrawerDestination {
-    val content = @Composable { GameToolsMainScreen() }
+fun gameMainScreenDrawItem(): MainDrawerDestination {
+    val content = @Composable { GameMainScreen() }
     // TODO: icon
     val painter =
-        painterResource("drawable/game_tools_32px.png")
+        painterResource("drawable/simple_file_32px.png")
     return remember(painter) {
         MainDrawerDestination(
-            id = "gametools",
+            id = "game",
             icon = painter,
-            name = "Game Tools",
+            name = "Game",
             content = content,
             iconTint = Color(168, 140, 196)
         )

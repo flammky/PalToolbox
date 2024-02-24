@@ -352,8 +352,9 @@ private fun GvasCharacterData.toJsonElement(): JsonElement {
     }
 }
 
-private fun GvasDict.toJsonElement(): JsonElement {
+private fun GvasDict?.toJsonElement(): JsonElement {
     return when (this) {
+        null -> JsonNull
         is GvasArrayDict -> toJsonElement()
         is GvasBoolDict -> toJsonElement()
         is GvasEnumDict -> toJsonElement()

@@ -6,6 +6,7 @@ import java.nio.ByteOrder
 import java.nio.charset.Charset
 import java.nio.charset.CodingErrorAction
 import java.util.UUID
+import kotlin.experimental.and
 
 // TODO: complete this
 
@@ -58,25 +59,24 @@ private fun readGvasBool(
 // LinkedHashMap ?
 private fun readGvasProperty(buf: ByteBuffer, typeName: String, size: Int, path: String, nestedCallerPath: String = ""): GvasProperty {
 
-    val value: GvasDict = run {
-        PALWORLD_CUSTOM_PROPERTY_CODEC[path]?.let { codec ->
-            if (nestedCallerPath.isNotEmpty() && path != nestedCallerPath) return@let
-            return@run codec.first.invoke(DefaultGvasReader(buf), typeName, size, nestedCallerPath)
-        }
-        when (typeName) {
-            "StructProperty" -> readGvasStruct(buf, path)
-            "IntProperty" -> readGvasIntProperty(buf)
-            "Int64Property" -> readGvasLongProperty(buf)
-            "FixedPoint64Property" -> readGvasFixedPoint64Property(buf)
-            "FloatProperty" -> readGvasFloatProperty(buf)
-            "StrProperty" -> readGvasStringProperty(buf)
-            "NameProperty" -> readGvasNameProperty(buf)
-            "EnumProperty" -> readGvasEnumProperty(buf)
-            "BoolProperty" -> readGvasBooleanProperty(buf)
-            "ArrayProperty" -> readGvasArrayProperty(buf, size - 4, path)
-            "MapProperty" -> readGvasMapProperty(buf, path)
-            else -> error("Unknown type: $typeName (${path})")
-        }
+    PALWORLD_CUSTOM_PROPERTY_CODEC[path]?.let { codec ->
+        if (nestedCallerPath.isNotEmpty() && path != nestedCallerPath) return@let
+        return codec.first.invoke(DefaultGvasReader(buf), typeName, size, nestedCallerPath)
+    }
+
+    val value: GvasDict =  when (typeName) {
+        "StructProperty" -> readGvasStruct(buf, path)
+        "IntProperty" -> readGvasIntProperty(buf)
+        "Int64Property" -> readGvasLongProperty(buf)
+        "FixedPoint64Property" -> readGvasFixedPoint64Property(buf)
+        "FloatProperty" -> readGvasFloatProperty(buf)
+        "StrProperty" -> readGvasStringProperty(buf)
+        "NameProperty" -> readGvasNameProperty(buf)
+        "EnumProperty" -> readGvasEnumProperty(buf)
+        "BoolProperty" -> readGvasBooleanProperty(buf)
+        "ArrayProperty" -> readGvasArrayProperty(buf, size - 4, path)
+        "MapProperty" -> readGvasMapProperty(buf, path)
+        else -> error("Unknown type: $typeName (${path})")
     }
     return GvasProperty(
         type = typeName,
@@ -384,6 +384,17 @@ private fun DefaultGvasReader(
     buf: ByteBuffer
 ): GvasReader {
     return object : GvasReader(buf) {
+
+        override val position: Int
+            get() = buf.position()
+
+        override val remaining: Int
+            get() = buf.remaining()
+
+        override fun position(pos: Int) {
+            buf.position(position)
+        }
+
         override fun properties(path: String): GvasMap<String, GvasProperty> {
             return readGvasProperties(buf, path)
         }
@@ -417,26 +428,104 @@ private fun DefaultGvasReader(
             return List(size) { mapper.invoke(this) }.cast()
         }
 
+        override fun readByteArray(): ByteArray {
+            val size = buf.getInt()
+            return ByteArray(size) { readByte() }
+        }
+
         override fun readByte(): Byte {
             return buf.get()
+        }
+
+        override fun readBoolean(): Boolean {
+            return buf.get() > 0
+        }
+
+        override fun readShort(): Short {
+            return buf.getShort()
+        }
+
+        override fun readUShortAsInt(): Int {
+            return buf.getShort().toUShort().toInt()
         }
 
         override fun readInt(): Int {
             return buf.getInt()
         }
 
+        override fun readUIntAsLong(): Long {
+            return buf.getInt().toUInt().toLong()
+        }
+
         override fun readLong(): Long {
             return buf.getLong()
-
-
         }
 
         override fun readBytes(count: Int): ByteArray {
             return ByteArray(count).apply { buf.get(this) }
         }
 
+        override fun readFloat(): Float {
+            return buf.getFloat()
+        }
+
+        override fun readDouble(): Double {
+            return buf.getDouble()
+        }
+
         override fun isEof(): Boolean {
             return !buf.hasRemaining()
         }
+
+        override fun readRemaining(): ByteArray {
+            return ByteArray(buf.remaining())
+                .apply { buf.get(this) }
+        }
+
+        override fun compressedShortRotator(): Triple<Float, Float, Float> {
+            val shortPitch = readShort().takeIf { readBoolean() } ?: 0
+            val shortYaw = readShort().takeIf { readBoolean() } ?: 0
+            val shortRoll = readShort().takeIf { readBoolean() } ?: 0
+            val pitch = shortPitch * (360.0 / 65536.0)
+            val yaw = shortYaw * (360.0 / 65536.0)
+            val roll = shortRoll * (360.0 / 65536.0)
+            return Triple(pitch.toFloat(), yaw.toFloat(), roll.toFloat())
+        }
+
+        override fun packedVector(scaleFactor: Int): Triple<Float?, Float?, Float?> {
+            val componentBitCountAndExtraInfo = (readInt().toLong() and UInt.MAX_VALUE.toLong()).toInt()
+            val componentBitCount = componentBitCountAndExtraInfo and 63
+            val extraInfo = componentBitCountAndExtraInfo shr 6
+            if (componentBitCount > 0) {
+                var x = serializeInt(componentBitCount)
+                var y = serializeInt(componentBitCount)
+                var z = serializeInt(componentBitCount)
+                val signBit = 1 shl (componentBitCount - 1)
+                x = (x and (signBit - 1)) - (x and signBit)
+                y = (x and (signBit - 1)) - (y and signBit)
+                z = (x and (signBit - 1)) - (z and signBit)
+
+                if (extraInfo != 0) {
+                    return Triple(x.toFloat() / scaleFactor, y.toFloat() / scaleFactor, z.toFloat() / scaleFactor)
+                }
+                return Triple(x.toFloat(), y.toFloat(), z.toFloat())
+            } else {
+                val receivedScalarTypeSize = if (extraInfo != 0) 8 else 4
+                return if (receivedScalarTypeSize == 8)
+                    Triple(readDouble().toFloat(), readDouble().toFloat(), readDouble().toFloat())
+                else
+                    Triple(readFloat(), readFloat(), readFloat())
+            }
+        }
+
+        private fun serializeInt(componentBitCount: Int): Int {
+            val b = readBytes((componentBitCount + 7) / 8)
+            if (componentBitCount % 8 != 0) {
+                b[b.size - 1] = b.last() and ((1 shl (componentBitCount % 8)) - 1).toByte()
+            }
+            return ByteBuffer.wrap(b).order(ByteOrder.LITTLE_ENDIAN).getInt()
+        }
+
+
     }
 }

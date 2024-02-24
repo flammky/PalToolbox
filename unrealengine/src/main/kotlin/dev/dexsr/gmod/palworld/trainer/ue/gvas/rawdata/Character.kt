@@ -18,7 +18,7 @@ fun Character.decode(
     typeName: String,
     size: Int,
     path: String
-): GvasDict {
+): GvasProperty {
     check(typeName == "ArrayProperty") {
         "CharacterKt.encode: Expected ArrayProperty, got$typeName"
     }
@@ -28,7 +28,7 @@ fun Character.decode(
         .cast<GvasAnyArrayPropertyValue>().values
         .cast<GvasByteArrayValue>().value
     value.value = decodeBytes(reader, charBytes)
-    return value.value
+    return value
 }
 
 fun Character.encode(

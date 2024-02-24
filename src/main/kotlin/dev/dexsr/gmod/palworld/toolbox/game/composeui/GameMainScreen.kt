@@ -1,4 +1,4 @@
-package dev.dexsr.gmod.palworld.toolbox.gametools
+package dev.dexsr.gmod.palworld.toolbox.game.composeui
 
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
@@ -13,7 +13,7 @@ import androidx.compose.ui.graphics.Color
 import dev.dexsr.gmod.palworld.trainer.composeui.gestures.defaultSurfaceGestureModifiers
 
 @Composable
-fun GameToolsMainScreen() {
+fun GameMainScreen() {
     CompositionLocalProvider(
         LocalIndication provides rememberRipple()
     ) {

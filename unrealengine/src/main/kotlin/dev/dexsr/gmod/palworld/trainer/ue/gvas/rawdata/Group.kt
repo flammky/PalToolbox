@@ -18,7 +18,7 @@ fun Group.decode(
     typeName: String,
     size: Int,
     path: String
-): GvasDict {
+): GvasProperty {
     check(typeName == "MapProperty") {
         "Expected MapProperty, got $typeName"
     }
@@ -42,7 +42,7 @@ fun Group.decode(
                 decodeBytes(reader, bytes, type)
             )
     }
-    return groupMap
+    return property
 }
 
 fun Group.encode(

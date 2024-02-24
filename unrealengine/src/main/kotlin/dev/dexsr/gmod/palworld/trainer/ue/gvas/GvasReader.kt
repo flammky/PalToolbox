@@ -7,6 +7,12 @@ abstract class GvasReader(
     private val buf: ByteBuffer
 ) {
 
+    abstract val position: Int
+
+    abstract val remaining: Int
+
+    abstract fun position(pos: Int)
+
     abstract fun properties(path: String): GvasMap<String, GvasProperty>
     abstract fun property(typeName: String, size: Int, path: String, nestedCallerPath: String): GvasProperty
 
@@ -19,11 +25,26 @@ abstract class GvasReader(
 
     abstract fun <T> readArray(mapper: (GvasReader) -> T): ArrayList<T>
 
+    abstract fun readByteArray(): ByteArray
+
+
+    abstract fun readBoolean(): Boolean
     abstract fun readByte(): Byte
+    abstract fun readShort(): Short
+    abstract fun readUShortAsInt(): Int
     abstract fun readInt(): Int
+    abstract fun readUIntAsLong(): Long
     abstract fun readLong(): Long
+    abstract fun readFloat(): Float
+    abstract fun readDouble(): Double
 
     abstract fun readBytes(count: Int): ByteArray
 
     abstract fun isEof(): Boolean
+
+    abstract fun readRemaining(): ByteArray
+
+    abstract fun compressedShortRotator(): Triple<Float, Float, Float>
+
+    abstract fun packedVector(scaleFactor: Int): Triple<Float?, Float?, Float?>
 }

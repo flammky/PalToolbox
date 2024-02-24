@@ -26,6 +26,7 @@ dependencies {
     implementation("net.java.dev.jna:jna:5.14.0")
     implementation("net.java.dev.jna:jna-platform:5.14.0")
     implementation("com.squareup.okio:okio:3.8.0")
+    implementation(kotlin("reflect"))
 }
 
 compose.desktop {
@@ -34,7 +35,7 @@ compose.desktop {
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "PalTrainer"
+            packageName = "PalToolbox"
             packageVersion = "1.0.0"
 
             windows {

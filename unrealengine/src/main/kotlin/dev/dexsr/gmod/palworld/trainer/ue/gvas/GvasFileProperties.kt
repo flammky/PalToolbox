@@ -53,7 +53,7 @@ class GvasMap<K, V> private constructor(
 class GvasProperty(
     val type: String,
     // fixme: make it immutable ?
-    var value: GvasDict
+    var value: GvasDict?
 )
 
 class GvasStructDict(
