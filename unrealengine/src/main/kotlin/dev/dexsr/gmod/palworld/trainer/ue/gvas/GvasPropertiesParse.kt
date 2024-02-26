@@ -119,7 +119,7 @@ private fun readGvasOptionalUUID(buf: ByteBuffer): UUID? {
 
 private fun readGvasStructValue(buf: ByteBuffer, structType: String, path: String = ""): GvasStruct {
     return when (structType) {
-        "Vector" -> readGvasPropertyVectorDict(buf)
+        "Vector" -> readGvasVector(buf)
         "DateTime" -> GvasDateTime(buf.getLong())
         "Guid" -> GvasGUID(readGvasUUID(buf).toString())
         "Quat" -> readGvasQuat(buf)
@@ -128,7 +128,7 @@ private fun readGvasStructValue(buf: ByteBuffer, structType: String, path: Strin
     }
 }
 
-private fun readGvasPropertyVectorDict(buf: ByteBuffer): GvasVector {
+private fun readGvasVector(buf: ByteBuffer): GvasVector {
     return GvasVector(
         readGvasPropertyDoubleOrNull(buf),
         readGvasPropertyDoubleOrNull(buf),
@@ -136,16 +136,22 @@ private fun readGvasPropertyVectorDict(buf: ByteBuffer): GvasVector {
     )
 }
 
-private fun readGvasPropertyDoubleOrNull(buf: ByteBuffer): Float? {
+private fun readGvasPropertyDoubleOrNull(buf: ByteBuffer): Double? {
     val v = buf.getDouble()
     if (v.isNaN() || v.isInfinite()) return null
-    return v.toFloat()
+    return v
+}
+
+private fun readGvasDouble(buf: ByteBuffer): Double? {
+    val v = buf.getDouble()
+    if (v.isNaN() || v.isInfinite()) return null
+    return v
 }
 
 private fun readGvasFloat(buf: ByteBuffer): Float? {
-    val v = buf.getDouble()
+    val v = buf.getFloat()
     if (v.isNaN() || v.isInfinite()) return null
-    return v.toFloat()
+    return v
 }
 
 private fun readGvasQuat(buf: ByteBuffer): GvasQuat {
@@ -483,9 +489,9 @@ private fun DefaultGvasReader(
         }
 
         override fun compressedShortRotator(): Triple<Float, Float, Float> {
-            val shortPitch = readShort().takeIf { readBoolean() } ?: 0
-            val shortYaw = readShort().takeIf { readBoolean() } ?: 0
-            val shortRoll = readShort().takeIf { readBoolean() } ?: 0
+            val shortPitch = if (readBoolean()) readShort() else 0
+            val shortYaw = if (readBoolean()) readShort() else 0
+            val shortRoll = if (readBoolean()) readShort() else 0
             val pitch = shortPitch * (360.0 / 65536.0)
             val yaw = shortYaw * (360.0 / 65536.0)
             val roll = shortRoll * (360.0 / 65536.0)
@@ -493,7 +499,7 @@ private fun DefaultGvasReader(
         }
 
         override fun packedVector(scaleFactor: Int): Triple<Float?, Float?, Float?> {
-            val componentBitCountAndExtraInfo = (readInt().toLong() and UInt.MAX_VALUE.toLong()).toInt()
+            val componentBitCountAndExtraInfo = readInt()
             val componentBitCount = componentBitCountAndExtraInfo and 63
             val extraInfo = componentBitCountAndExtraInfo shr 6
             if (componentBitCount > 0) {
@@ -521,11 +527,23 @@ private fun DefaultGvasReader(
         private fun serializeInt(componentBitCount: Int): Int {
             val b = readBytes((componentBitCount + 7) / 8)
             if (componentBitCount % 8 != 0) {
-                b[b.size - 1] = b.last() and ((1 shl (componentBitCount % 8)) - 1).toByte()
+                b[b.size - 1] = (b.last() and ((1 shl (componentBitCount % 8)) - 1).toByte())
             }
-            return ByteBuffer.wrap(b).order(ByteOrder.LITTLE_ENDIAN).getInt()
+            val padded = if (b.size < 4) byteArrayOf(*b, 0x0) else b
+            return ByteBuffer.wrap(padded).order(ByteOrder.LITTLE_ENDIAN).getInt()
         }
 
 
+        override fun ftransform(): GvasTransform {
+            return GvasTransform(
+                rotation = readGvasQuat(buf),
+                translation = readGvasVector(buf),
+                scale3D = readGvasVector(buf)
+            )
+        }
+
+        override fun readVector(): GvasVector {
+            return readGvasVector(buf)
+        }
     }
 }

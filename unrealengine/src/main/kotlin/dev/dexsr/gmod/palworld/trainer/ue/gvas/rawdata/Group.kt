@@ -46,9 +46,9 @@ fun Group.decode(
 }
 
 fun Group.encode(
-    reader: GvasReader,
+    writer: GvasWriter,
     typeName: String,
-    map: GvasMap<String, Any>
+    data: GvasProperty
 ): Int {
     TODO()
 }

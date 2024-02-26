@@ -3,10 +3,10 @@ package dev.dexsr.gmod.palworld.trainer.ue.gvas
 sealed class GvasStruct
 
 class GvasQuat(
-    val x: Float?,
-    val y: Float?,
-    val z: Float?,
-    val w: Float?
+    val x: Double?,
+    val y: Double?,
+    val z: Double?,
+    val w: Double?
 ) : GvasStruct()
 
 class GvasLinearColor(
@@ -21,9 +21,9 @@ class GvasGUID(
 ) : GvasStruct()
 
 class GvasVector(
-    val x: Float?,
-    val y: Float?,
-    val z: Float?
+    val x: Double?,
+    val y: Double?,
+    val z: Double?
 ) : GvasStruct()
 
 class GvasDateTime(
@@ -32,6 +32,12 @@ class GvasDateTime(
 
 class GvasStructMap(
     val v: GvasMap<String, GvasProperty>
+) : GvasStruct()
+
+class GvasTransform(
+    val rotation: GvasQuat,
+    val translation: GvasVector,
+    val scale3D: GvasVector
 ) : GvasStruct()
 
 sealed class GvasDict {
@@ -55,6 +61,11 @@ class GvasProperty(
     // fixme: make it immutable ?
     var value: GvasDict?
 )
+
+class GvasCustomProperty(
+    val customType: String,
+    var value: GvasDict?
+) : GvasDict()
 
 class GvasStructDict(
     val structType: String,

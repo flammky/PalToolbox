@@ -7,17 +7,20 @@ import java.nio.ByteOrder
 
 object FoliageModelInstance
 
+sealed class FoliageModelInstanceDict() : OpenGvasDict()
+
+
 class FoliageModelInstanceData(
     val modelInstanceId: String,
     val worldTransform: FoliageModelInstanceWorldTransform,
     val hp: Int,
-) : OpenGvasDict()
+) : FoliageModelInstanceDict()
 
 class FoliageModelInstanceWorldTransform(
     val rotator: FoliageModelInstanceRotator,
     val vector: FoliageModelInstanceVector,
     val scaleX: Float
-) : OpenGvasDict()
+) : FoliageModelInstanceDict()
 
 class FoliageModelInstanceRotator(
     val pitch: Float?,
@@ -41,11 +44,17 @@ fun FoliageModelInstance.decode(
         "ItemContainer.decode: ExpectedArrayProperty, got $typeName"
     }
     val value = reader.property(typeName, size, path, nestedCallerPath = path)
-    val dataBytes = value.value
-        .cast<GvasArrayDict>().value
+    val arrayDict = value
+        .value
+        .cast<GvasArrayDict>()
+    val dataBytes = arrayDict.value
         .cast<GvasAnyArrayPropertyValue>().values
         .cast<GvasByteArrayValue>().value
-    value.value = decodeBytes(reader, dataBytes)
+    value.value = ByteArrayRawData(
+        customType = typeName,
+        id = arrayDict.id,
+        value = decodeBytes(reader, dataBytes)
+    )
     return value
 }
 
@@ -55,6 +64,7 @@ private fun FoliageModelInstance.decodeBytes(
 ): FoliageModelInstanceData {
     val reader = parentReader.copy(ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN))
     val modelInstanceId =  reader.uuid().toString()
+    println("guid=$modelInstanceId")
     val (pitch, yaw, roll) = reader.compressedShortRotator()
     val (x, y, z) = reader.packedVector(1)
     val worldTransform = FoliageModelInstanceWorldTransform(
@@ -73,10 +83,10 @@ private fun FoliageModelInstance.decodeBytes(
     )
 }
 
-fun FoliageModelInstance.decode(
-    reader: GvasReader,
+fun FoliageModelInstance.encode(
+    writer: GvasWriter,
     typeName: String,
-    map: GvasMap<String, Any>
+    data: GvasProperty
 ): Int {
     TODO()
 }

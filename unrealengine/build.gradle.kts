@@ -10,7 +10,8 @@ repositories {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+    // will we really use okio ?
     implementation("com.squareup.okio:okio:3.8.0")
 }
 

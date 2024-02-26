@@ -5,31 +5,29 @@ import dev.dexsr.gmod.palworld.trainer.ue.util.cast
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
-object ItemContainer
+object WorkCollection
 
-sealed class ItemContainerDict() : OpenGvasDict()
+sealed class WorkCollectionDict() : OpenGvasDict()
 
 
-class GvasItemContainerData(
-    val permission: GvasItemContainerPermission
-) : ItemContainerDict()
+class WorkCollectionData(
+    val id: String,
+    val workIds: ArrayList<String>
+) : WorkCollectionDict()
 
-class GvasItemContainerPermission(
-    val typeA: ByteArray,
-    val typeB: ByteArray,
-    val itemStaticIds: ArrayList<String>
-)
-
-fun ItemContainer.decode(
+fun WorkCollection.decode(
     reader: GvasReader,
     typeName: String,
     size: Int,
-    path: String,
+    path: String
 ) : GvasProperty {
+
     require(typeName == "ArrayProperty") {
-        "ItemContainer.decode: ExpectedArrayProperty, got $typeName"
+        "Expected ArrayProperty, got=$typeName"
     }
+
     val value = reader.property(typeName, size, path, nestedCallerPath = path)
+
     val arrayDict = value
         .value
         .cast<GvasArrayDict>()
@@ -41,29 +39,30 @@ fun ItemContainer.decode(
         id = arrayDict.id,
         value = decodeBytes(reader, dataBytes)
     )
+
     return value
 }
 
-private fun ItemContainer.decodeBytes(
+private fun WorkCollection.decodeBytes(
     parentReader: GvasReader,
-    bytes: ByteArray,
-): GvasItemContainerData? {
-    if (bytes.isEmpty()) return null
-    val reader = parentReader.copy(ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN))
-    val data = GvasItemContainerData(
-        permission = GvasItemContainerPermission(
-            typeA = reader.readByteArray(),
-            typeB = reader.readByteArray(),
-            itemStaticIds = reader.readArray { reader.fstring() }
-        )
+    dataBytes: ByteArray
+): WorkCollectionData {
+
+    val reader = parentReader.copy(ByteBuffer.wrap(dataBytes).order(ByteOrder.LITTLE_ENDIAN))
+
+    val data = WorkCollectionData(
+        id = reader.uuid().toString(),
+        workIds = reader.readArray { reader.uuid().toString() }
     )
+    
     check(reader.isEof()) {
         "EOF not reached"
     }
+    
     return data
 }
 
-fun ItemContainer.encode(
+fun WorkCollection.encode(
     writer: GvasWriter,
     typeName: String,
     data: GvasProperty

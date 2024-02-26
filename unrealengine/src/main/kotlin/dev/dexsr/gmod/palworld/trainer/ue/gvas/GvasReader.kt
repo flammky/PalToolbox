@@ -47,4 +47,8 @@ abstract class GvasReader(
     abstract fun compressedShortRotator(): Triple<Float, Float, Float>
 
     abstract fun packedVector(scaleFactor: Int): Triple<Float?, Float?, Float?>
+
+    abstract fun ftransform(): GvasTransform
+
+    abstract fun readVector(): GvasVector
 }

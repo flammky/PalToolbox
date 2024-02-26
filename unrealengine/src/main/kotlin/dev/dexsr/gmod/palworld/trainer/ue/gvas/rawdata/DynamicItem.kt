@@ -18,7 +18,7 @@ class DynamicItemSaveDataId(
     val staticId: String
 )
 
-open class DynamicItemDict(
+sealed class DynamicItemDict(
     val type: String
 ) : OpenGvasDict()
 
@@ -53,18 +53,24 @@ fun DynamicItem.decode(
         "Expected ArrayProperty, got $typeName"
     }
     val value = reader.property(typeName, size, path, nestedCallerPath = path)
-    val dataBytes = value.value
-        .cast<GvasArrayDict>().value
+    val arrayDict = value
+        .value
+        .cast<GvasArrayDict>()
+    val dataBytes = arrayDict.value
         .cast<GvasAnyArrayPropertyValue>().values
         .cast<GvasByteArrayValue>().value
-    value.value = decodeBytes(reader, dataBytes)
+    value.value = ByteArrayRawData(
+        customType = typeName,
+        id = arrayDict.id,
+        value = decodeBytes(reader, dataBytes)
+    )
     return value
 }
 
 private fun DynamicItem.decodeBytes(
     parentReader: GvasReader,
     bytes: ByteArray,
-): GvasDict? {
+): DynamicItemSaveData? {
     if (bytes.isEmpty()) return null
     val buf = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN)
     val reader = parentReader.copy(buf)
@@ -88,7 +94,10 @@ private fun DynamicItem.decodeBytes(
         check(reader.isEof()) {
             "EOF not reached"
         }
-        return data
+        return DynamicItemSaveData(
+            id,
+            data
+        )
     }
 
     val pos = reader.position
@@ -111,7 +120,10 @@ private fun DynamicItem.decodeBytes(
     if (eof != true) {
         error("EOF not reached")
     }
-    return data
+    return DynamicItemSaveData(
+        id,
+        data
+    )
 }
 
 private fun DynamicItem.tryReadEgg(reader: GvasReader): DynamicItemDict? {
@@ -135,9 +147,9 @@ private fun DynamicItem.tryReadEgg(reader: GvasReader): DynamicItemDict? {
 }
 
 fun DynamicItem.encode(
-    reader: GvasReader,
+    writer: GvasWriter,
     typeName: String,
-    map: GvasMap<String, Any>
+    data: GvasProperty
 ): Int {
     TODO()
 }

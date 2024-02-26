@@ -23,18 +23,24 @@ fun Character.decode(
         "CharacterKt.encode: Expected ArrayProperty, got$typeName"
     }
     val value = reader.property(typeName, size, path, nestedCallerPath = path)
-    val charBytes = value.value
-        .cast<GvasArrayDict>().value
+    val arrayDict = value
+        .value
+        .cast<GvasArrayDict>()
+    val dataBytes = arrayDict.value
         .cast<GvasAnyArrayPropertyValue>().values
         .cast<GvasByteArrayValue>().value
-    value.value = decodeBytes(reader, charBytes)
+    value.value = ByteArrayRawData(
+        customType = typeName,
+        id = arrayDict.id,
+        value = decodeBytes(reader, dataBytes)
+    )
     return value
 }
 
 fun Character.encode(
-    reader: GvasReader,
+    reader: GvasWriter,
     typeName: String,
-    map: GvasMap<String, Any>
+    map: GvasProperty
 ): Int {
     TODO()
 }

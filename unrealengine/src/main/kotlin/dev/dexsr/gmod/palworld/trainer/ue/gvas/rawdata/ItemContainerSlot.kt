@@ -7,10 +7,13 @@ import java.nio.ByteOrder
 
 object ItemContainerSlot
 
+sealed class ItemContainerSlotDict() : OpenGvasDict()
+
+
 class GvasItemContainerSlotData(
     val permission: GvasItemContainerPermission,
     val corruptionProgressValue: Float
-) : OpenGvasDict()
+) : ItemContainerSlotDict()
 
 fun ItemContainerSlot.decode(
     reader: GvasReader,
@@ -22,18 +25,24 @@ fun ItemContainerSlot.decode(
         "ItemContainerSlot.decode: expected ArrayProperty got $typeName"
     }
     val value = reader.property(typeName, size, path, nestedCallerPath =  path)
-    val dataBytes = value.value
-        .cast<GvasArrayDict>().value
+    val arrayDict = value
+        .value
+        .cast<GvasArrayDict>()
+    val dataBytes = arrayDict.value
         .cast<GvasAnyArrayPropertyValue>().values
         .cast<GvasByteArrayValue>().value
-    value.value = decodeBytes(reader, dataBytes)
+    value.value = ByteArrayRawData(
+        customType = typeName,
+        id = arrayDict.id,
+        value = decodeBytes(reader, dataBytes)
+    )
     return value
 }
 
 private fun ItemContainerSlot.decodeBytes(
     parentReader: GvasReader,
     bytes: ByteArray,
-): GvasDict? {
+): GvasItemContainerSlotData? {
     if (bytes.isEmpty()) return null
     val reader = parentReader.copy(ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN))
     val data = GvasItemContainerSlotData(
@@ -51,9 +60,9 @@ private fun ItemContainerSlot.decodeBytes(
 }
 
 fun ItemContainerSlot.encode(
-    reader: GvasReader,
+    writer: GvasWriter,
     typeName: String,
-    map: GvasMap<String, Any>
+    data: GvasProperty
 ): Int {
     TODO()
 }

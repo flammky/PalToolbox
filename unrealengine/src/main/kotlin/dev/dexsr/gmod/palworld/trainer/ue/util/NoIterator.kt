@@ -30,3 +30,16 @@ internal inline fun <T> Array<T>.fastForEach(action: (T) -> Unit) {
     }
 }
 
+/**
+replace iterator with IntRange.
+ */
+@OptIn(ExperimentalContracts::class)
+internal inline fun ByteArray.fastForEach(action: (Byte) -> Unit) {
+    contract { callsInPlace(action) }
+    for (index in indices) {
+        val item = get(index)
+        action(item)
+    }
+}
+
+

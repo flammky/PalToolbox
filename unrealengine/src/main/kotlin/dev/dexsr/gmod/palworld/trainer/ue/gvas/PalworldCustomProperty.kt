@@ -37,8 +37,15 @@ val PALWORLD_CUSTOM_PROPERTY_CODEC = mapOf<String, Pair<GVAS_PROPERTY_DECODER, G
     ".worldSaveData.CharacterSaveParameterMap.Value.RawData" to (Character::decode to Character::encode),
     ".worldSaveData.ItemContainerSaveData.Value.RawData" to (ItemContainer::decode to ItemContainer::encode),
     ".worldSaveData.ItemContainerSaveData.Value.Slots.Slots.RawData" to (ItemContainerSlot::decode to ItemContainerSlot::encode),
-    ".worldSaveData.DynamicItemSaveData.DynamicItemSaveData.RawData" to (DynamicItem::decode to DynamicItem :: encode)
+    ".worldSaveData.DynamicItemSaveData.DynamicItemSaveData.RawData" to (DynamicItem::decode to DynamicItem :: encode),
+    ".worldSaveData.FoliageGridSaveDataMap.Value.ModelMap.Value.RawData" to (FoliageModel::decode to FoliageModel::encode),
+    ".worldSaveData.FoliageGridSaveDataMap.Value.ModelMap.Value.InstanceDataMap.Value.RawData" to (FoliageModelInstance::decode to FoliageModelInstance::encode),
+    ".worldSaveData.BaseCampSaveData.Value.RawData" to (BaseCamp::decode to BaseCamp::encode),
+    ".worldSaveData.BaseCampSaveData.Value.WorkerDirector.RawData" to (WorkerDirector::decode to WorkerDirector::encode),
+    ".worldSaveData.BaseCampSaveData.Value.WorkCollection.RawData" to (WorkCollection::decode to WorkCollection::encode),
+    ".worldSaveData.BaseCampSaveData.Value.ModuleMap" to (BaseCampModule::decode to BaseCampModule::encode)
+
 )
 
 typealias GVAS_PROPERTY_DECODER = (GvasReader, String, Int, String) -> GvasProperty
-typealias GVAS_PROPERTY_ENCODER = (GvasReader, String, GvasMap<String, Any>) -> Int
+typealias GVAS_PROPERTY_ENCODER = (GvasWriter, String, GvasProperty) -> Int

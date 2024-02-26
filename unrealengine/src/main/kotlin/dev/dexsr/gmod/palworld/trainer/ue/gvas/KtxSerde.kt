@@ -88,22 +88,23 @@ private fun GvasAnyArrayPropertyValue.toJsonElement(): JsonElement {
     return when(this.values) {
         is GvasByteArrayValue -> values.toJsonElement()
         is GvasStringArrayValue -> values.toJsonElement()
-        is OpenGvasTypedArray -> TODO()
+        is OpenGvasTypedArray<*> -> TODO()
     }
 }
+
 
 @OptIn(ExperimentalEncodingApi::class)
 private fun GvasByteArrayValue.toJsonElement(): JsonElement {
     return buildJsonObject {
         put("typeName", typeName)
-        put("value", "")
+        put("value", buildJsonArray { value.forEach { add(it.toInt()) }})
     }
 }
 
 private fun GvasStringArrayValue.toJsonElement(): JsonElement {
     return buildJsonObject {
-        put("typeName", typeName)
-        put("value", JsonArray(value.map { JsonPrimitive(it) }))
+        /*put("typeName", typeName)*/
+        put("values", JsonArray(value.map { JsonPrimitive(it) }))
     }
 }
 
@@ -113,16 +114,11 @@ private fun GvasStructArrayPropertyValue.toJsonElement(): JsonElement {
         put("prop_type", propType)
         put("values", buildJsonArray {
             values.fastForEach { struct ->
-                when (struct) {
-                    is GvasDateTime -> add(struct.v)
-                    is GvasGUID -> add(struct.v)
-                    is GvasLinearColor -> add(struct.toJsonElement())
-                    is GvasQuat -> add(struct.toJsonElement())
-                    is GvasStructMap -> add(struct.toJsonElement())
-                    is GvasVector -> add(struct.toJsonElement())
-                }
+                add(struct.toJsonElement())
             }
         })
+        put("typeName", typeName)
+        put("id", id)
     }
 }
 
@@ -201,7 +197,7 @@ private fun GvasInt64Dict.toJsonElement(): JsonElement {
     return buildJsonObject {
         put("id", id)
         put("value", JsonPrimitive(value))
-        put("type", GvasIntDict.TYPE_NAME)
+        put("type", GvasInt64Dict.TYPE_NAME)
     }
 }
 
@@ -260,6 +256,7 @@ private fun GvasStruct.toJsonElement(): JsonElement {
         is GvasQuat -> toJsonElement()
         is GvasStructMap -> toJsonElement()
         is GvasVector -> toJsonElement()
+        is GvasTransform -> toJsonElement()
     }
 }
 
@@ -268,6 +265,14 @@ private fun GvasVector.toJsonElement(): JsonElement {
         put("x", x)
         put("y", y)
         put("z", z)
+    }
+}
+
+private fun GvasTransform.toJsonElement(): JsonElement {
+    return buildJsonObject {
+        put("rotation", rotation.toJsonElement())
+        put("translation", translation.toJsonElement())
+        put("scale3D", scale3D.toJsonElement())
     }
 }
 
@@ -367,12 +372,266 @@ private fun GvasDict?.toJsonElement(): JsonElement {
         is GvasNameDict -> toJsonElement()
         is GvasStrDict -> toJsonElement()
         is GvasStructDict -> toJsonElement()
+        is GvasCustomProperty -> toJsonElement()
         is OpenGvasDict -> {
             when (this) {
+                is CustomRawData -> toJsonElement()
                 is GvasGroupDict -> toJsonElement()
                 is GvasCharacterData -> toJsonElement()
+                is GvasItemContainerData -> toJsonElement()
+                is GvasItemContainerSlotData -> toJsonElement()
+                is DynamicItemSaveData -> toJsonElement()
+                is DynamicItemDict -> toJsonElement()
+                is FoliageModelInstanceDict -> toJsonElement()
+                is FoliageModelDict -> toJsonElement()
+                is BaseCampDict -> toJsonElement()
+                is WorkerDirectorDict -> toJsonElement()
+                is WorkCollectionDict -> toJsonElement()
+                is BaseCampModuleData -> toJsonElement()
                 else -> TODO()
             }
         }
     }
+}
+
+private fun CustomRawData.toJsonElement(): JsonElement {
+    return when(this) {
+        is ByteArrayRawData -> toJsonElement()
+    }
+}
+
+private fun ByteArrayRawData.toJsonElement() = buildJsonObject {
+    put("arrayType", "ByteProperty")
+    put("id", id)
+    put("value", value.toJsonElement())
+    put("type", "ArrayProperty")
+    put("customType", customType)
+}
+
+private fun GvasCustomProperty.toJsonElement(): JsonElement {
+    return buildJsonObject {
+        put("value", value.toJsonElement())
+        put("customType", customType)
+    }
+}
+
+private fun GvasItemContainerData.toJsonElement() = buildJsonObject {
+    put("permission", permission.toJsonElement())
+}
+
+private fun GvasItemContainerPermission.toJsonElement() = buildJsonObject {
+    put("typeA", typeA.toJsonIntArray())
+    put("typeB", typeB.toJsonIntArray())
+    put("itemStaticIds", itemStaticIds.toJsonStringArray())
+}
+
+private fun GvasItemContainerSlotData.toJsonElement() = buildJsonObject {
+    put("permission", permission.toJsonElement())
+    put("corruptionProgressValue", corruptionProgressValue)
+}
+
+private fun DynamicItemSaveData.toJsonElement() = buildJsonObject {
+    put("id", id.toJsonElement())
+    put("data", data.toJsonElement())
+}
+
+private fun DynamicItemSaveDataId.toJsonElement() = buildJsonObject {
+    put("createdWorldId", createdWorldId)
+    put("localIdInCreatedWorld", localIdInCreatedWorld)
+    put("staticId", staticId)
+}
+
+private fun DynamicItemDict.toJsonElement() = when(this) {
+    is ArmorDynamicItem -> toJsonElement()
+    is EggDynamicItem -> toJsonElement()
+    is RawDynamicItem -> toJsonElement()
+    is WeaponDynamicItem -> toJsonElement()
+}
+
+private fun ArmorDynamicItem.toJsonElement() = buildJsonObject {
+    put("type", type)
+    put("durability", durability)
+}
+
+private fun EggDynamicItem.toJsonElement() = buildJsonObject {
+    put("type", type)
+    put("characterId", characterId)
+    put("object", `object`.toJsonMap())
+    put("unknownBytes", unknownBytes.toJsonIntArray())
+    put("unknownId", unknownId)
+}
+
+private fun RawDynamicItem.toJsonElement() = buildJsonObject {
+    put("type", type)
+    put("trailer", trailer.toJsonIntArray())
+}
+
+private fun WeaponDynamicItem.toJsonElement() = buildJsonObject {
+    put("type", type)
+    put("durability", durability)
+    put("remainingBullets", remainingBullets)
+    put("passiveSkillList", passiveSkillList.toJsonStringArray())
+}
+
+private fun ByteArray.toJsonIntArray() = buildJsonArray {
+    fastForEach { add(it.toInt()) }
+}
+
+private fun List<String>.toJsonStringArray() = buildJsonArray {
+    fastForEach { add(it) }
+}
+
+private fun GvasMap<String, GvasProperty>.toJsonMap() = buildJsonObject {
+    entries.forEach { (k, v) ->
+        put(k, v.value.toJsonElement())
+    }
+}
+
+// assume no node list usage
+private fun List<Int>.toJsonIntArray() = buildJsonArray {
+    fastForEach { add(it.toInt()) }
+}
+
+private fun FoliageModelInstanceDict.toJsonElement() = when(this) {
+    is FoliageModelInstanceData -> toJsonElement()
+    is FoliageModelInstanceWorldTransform -> toJsonElement()
+}
+
+private fun FoliageModelInstanceData.toJsonElement() = buildJsonObject {
+    put("modelInstanceId", modelInstanceId)
+    put("worldTransform", worldTransform.toJsonElement())
+    put("hp", hp)
+}
+
+private fun FoliageModelInstanceWorldTransform.toJsonElement() = buildJsonObject {
+    put("rotator", rotator.toJsonElement())
+    put("vector", vector.toJsonElement())
+    put("scaleX", scaleX)
+}
+
+private fun FoliageModelInstanceRotator.toJsonElement() = buildJsonObject {
+    put("pitch", pitch)
+    put("yaw", yaw)
+    put("roll", roll)
+}
+
+private fun FoliageModelInstanceVector.toJsonElement() = buildJsonObject {
+    put("x", x)
+    put("y", y)
+    put("z", z)
+}
+
+private fun FoliageModelDict.toJsonElement() = when (this) {
+    is FoliageModelCellCoord -> toJsonElement()
+    is FoliageModelData -> toJsonELement()
+}
+
+private fun FoliageModelCellCoord.toJsonElement() = buildJsonObject {
+    putVector(x, y, z)
+}
+
+private fun FoliageModelData.toJsonELement() = buildJsonObject {
+    put("modelId", modelId)
+    put("foliagePresetType", foliagePresetType)
+    put("cellCoord", cellCoord.toJsonElement())
+}
+
+private fun JsonObjectBuilder.putVector(x: Long, y: Long, z: Long) {
+    put("x", x)
+    put("y", y)
+    put("z", z)
+}
+
+private fun BaseCampDict.toJsonElement() = when(this) {
+    is BaseCampData -> toJsonElement()
+}
+
+private fun BaseCampData.toJsonElement() = buildJsonObject {
+    put("id", id)
+    put("name", name)
+    put("state", state)
+    put("transform", transform.toJsonElement())
+    put("areaRange", areaRange)
+    put("groupIdBelongTo", groupIdBelongTo)
+    put("fastTravelLocalTransform", fastTravelLocalTransform.toJsonElement())
+    put("ownerMapObjectInstanceId", ownerMapObjectInstanceId)
+}
+
+private fun WorkerDirectorDict.toJsonElement() = when(this) {
+    is WorkerDirectorData -> toJsonElement()
+}
+
+private fun WorkerDirectorData.toJsonElement() = buildJsonObject {
+    put("id", id)
+    put("spawnTransform", spawnTransform.toJsonElement())
+    put("currentOrderType", currentOrderType)
+    put("currentBattleType", currentBattleType)
+    put("containerId", containerId)
+}
+
+private fun WorkCollectionDict.toJsonElement() = when(this) {
+    is WorkCollectionData -> toJsonElement()
+}
+
+private fun WorkCollectionData.toJsonElement() = buildJsonObject {
+    put("id", id)
+    put("workIds", workIds.toJsonStringArray())
+}
+
+private fun BaseCampModuleDict.toJsonElement() = when(this) {
+    is BaseCampModuleData -> toJsonElement()
+    is BaseCampModulePassiveEffect -> toJsonElement()
+    is BaseCampModuleTransportItemCharacterInfo -> toJsonElement()
+}
+
+private fun BaseCampModuleData.toJsonElement() = buildJsonObject {
+    transportItemCharacterInfos?.let { l ->
+        put(
+            "transportItemCharacterInfos",
+            buildJsonArray { l.fastForEach { add(it.toJsonElement()) } }
+        )
+    }
+    passiveEffects?.let { l ->
+        put(
+            "passiveEffects",
+            buildJsonArray { l.fastForEach { add(it.toJsonElement()) } }
+        )
+    }
+    values?.let {
+        put(
+            "values",
+            values.toJsonIntArray()
+        )
+    }
+}
+
+
+private fun BaseCampModuleTransportItemCharacterInfo.toJsonElement() = buildJsonObject {
+    put("itemInfos", buildJsonArray {
+        itemInfos.fastForEach { e ->
+            add(e.toJsonElement())
+        }
+    })
+    put("characterLocation", characterLocation.toJsonElement())
+}
+
+private fun PalItemAndNumRead.toJsonElement() = buildJsonObject {
+    put("itemId", itemId.toJsonElement())
+    put("num", num)
+}
+
+private fun PalItemId.toJsonElement() = buildJsonObject {
+    put("staticId", staticId)
+    put("dynamicId", dynamicId.toJsonElement())
+}
+
+private fun PalItemDynamicId.toJsonElement() = buildJsonObject {
+    put("createdWorldId", createdWorldId)
+    put("localIdInCreatedWorld", localIdInCreatedWorld)
+}
+
+private fun BaseCampModulePassiveEffect.toJsonElement() = buildJsonObject {
+    put("type", type)
+    workHardType?.let { put("workHardType", workHardType) }
+    unknownTrailer?.let { put("unknownTrailer", unknownTrailer.toJsonIntArray()) }
 }
