@@ -51,4 +51,6 @@ abstract class GvasReader(
     abstract fun ftransform(): GvasTransform
 
     abstract fun readVector(): GvasVector
+
+    abstract fun readQuat(): GvasQuat
 }

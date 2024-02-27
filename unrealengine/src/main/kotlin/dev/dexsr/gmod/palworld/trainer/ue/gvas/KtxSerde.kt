@@ -157,7 +157,7 @@ private fun GvasBoolDict.toJsonElement(): JsonElement {
 private fun GvasEnumDict.toJsonElement(): JsonElement {
     return buildJsonObject {
         put("id", id)
-        put("value", value.toJsonElement())
+        put("value", enumValue.toJsonElement())
         put("type", GvasEnumDict.TYPE_NAME)
     }
 }
@@ -294,7 +294,7 @@ private fun GvasStructDict.toJsonElement(): JsonElement {
     }
 }
 
-private fun GvasGroupDict.toJsonElement(): JsonElement {
+private fun GvasGroupData.toJsonElement(): JsonElement {
     return buildJsonObject {
         put("groupType", groupType)
         put("groupId", groupId)
@@ -374,6 +374,7 @@ private fun GvasDict?.toJsonElement(): JsonElement {
         is GvasStructDict -> toJsonElement()
         is GvasCustomProperty -> toJsonElement()
         is OpenGvasDict -> {
+            // TODO: seal
             when (this) {
                 is CustomRawData -> toJsonElement()
                 is GvasGroupDict -> toJsonElement()
@@ -388,10 +389,157 @@ private fun GvasDict?.toJsonElement(): JsonElement {
                 is WorkerDirectorDict -> toJsonElement()
                 is WorkCollectionDict -> toJsonElement()
                 is BaseCampModuleData -> toJsonElement()
+                is WorkSaveDataDict -> toJsonElement()
                 else -> TODO()
             }
         }
     }
+}
+
+private fun WorkSaveDataDict.toJsonElement() = when(this) {
+    is WorkSaveDataClass -> toJsonElement()
+    is WorkSaveDataRaw -> toJsonElement()
+    is WorkSaveWorkAssignData -> toJsonElement()
+}
+
+private fun WorkSaveWorkAssignData.toJsonElement() = buildJsonObject {
+    put("id", id)
+    put("locationIndex", locationIndex)
+    put("assignType", assignType)
+    put("assignedIndividualId", assignedIndividualId.toJsonElement())
+    put("state", state)
+    put("fixed", fixed)
+}
+
+private fun WorkSaveDataRaw.toJsonElement() = buildJsonArray { values.fastForEach { add(it.toInt()) } }
+
+private fun WorkSaveDataClass.toJsonElement() = buildJsonObject {
+    workableData?.let {
+        put("workableData", workableData.toJsonElement())
+    }
+    put("transform", transform.toJsonElement())
+}
+
+private fun WorkSaveDataTransform.toJsonElement() = buildJsonObject {
+    put("transformType", transformType)
+    put("v2", v2)
+    put("data", data.toJsonElement())
+}
+
+private fun WorkSaveDataTransformData.toJsonElement() = when(this) {
+    is WorkSaveDataTransformRawData -> toJsonElement()
+    is WorkSaveDataTransformType1 -> toJsonElement()
+    is WorkSaveDataTransformType2 -> toJsonElement()
+    is WorkSaveDataTransformType3 -> toJsonElement()
+}
+
+private fun WorkSaveDataTransformRawData.toJsonElement() = buildJsonArray { rawData.forEach { add(it.toInt()) }}
+
+private fun WorkSaveDataTransformType1.toJsonElement() = buildJsonObject {
+    put("rotation", rotation.toJsonElement())
+    put("translation", translation.toJsonElement())
+    put("scale3D", scale3D.toJsonElement())
+}
+
+private fun WorkSaveDataTransformType2.toJsonElement() = buildJsonObject {
+    put("mapObjectInstanceId", mapObjectInstanceId)
+}
+
+private fun WorkSaveDataTransformType3.toJsonElement() = buildJsonObject {
+    put("guid", guid)
+    put("instanceId", instanceId)
+}
+
+private fun WorkSaveDataWorkableData.toJsonElement() = when(this) {
+    is WorkSaveBaseWorkableDefense -> toJsonElement()
+    is WorkSaveBaseWorkableProgress -> toJsonElement()
+    is WorkSaveBaseWorkableReviveCharacter -> toJsonElement()
+    is WorkSaveWorkableAssign -> toJsonElement()
+    is WorkSaveWorkableBase -> toJsonElement()
+    is WorkSaveWorkableLevelObject -> toJsonElement()
+}
+
+private fun WorkSaveWorkableLevelObject.toJsonElement() = buildJsonObject {
+    put("assign", assign.toJsonElement())
+    put("targetMapObjectModelId", targetMapObjectModelId)
+}
+
+private fun WorkSaveBaseWorkableDefense.toJsonElement() = buildJsonObject {
+    put("defenseCombatType", defenseCombatType)
+}
+
+private fun WorkSaveBaseWorkableProgress.toJsonElement() = buildJsonObject {
+    put("requiredWorkAmount", requiredWorkAmount)
+    put("workExp", workExp)
+    put("currentWorkAmount", currentWorkAmount)
+    put("autoWorkSelfAmountBySec", autoWorkSelfAmountBySec)
+}
+
+private fun WorkSaveBaseWorkableReviveCharacter.toJsonElement() = buildJsonObject {
+    put("targetIndividualId", targetIndividualId.toJsonElement())
+}
+
+private fun TargetIndividualId.toJsonElement() = buildJsonObject {
+    put("playerUid", playerUid)
+    put("instanceId", instanceId)
+}
+
+private fun WorkSaveWorkableAssign.toJsonElement() = buildJsonObject {
+    put("handleId", handleId)
+    put("locationIndex", locationIndex)
+    put("assignType", assignType)
+    put("assignedIndividualId", assignedIndividualId.toJsonElement())
+    put("state", state)
+    put("fixed", fixed)
+}
+
+private fun WorkSaveWorkableBase.toJsonElement() = buildJsonObject {
+    put("id", id)
+    put("workableBounds", workableBounds.toJsonElement())
+    put("baseCampIdBelongTo", baseCampIdBelongTo)
+    put("ownerMapObjectModelId", ownerMapObjectModelId)
+    put("ownerMapObjectConcreteModelId", ownerMapObjectConcreteModelId)
+    put("currentState", currentState)
+    put("assignLocations", buildJsonArray {
+        assignLocations.fastForEach { add(it.toJsonElement()) }
+    })
+    put("behaviorType", behaviorType)
+    put("assignDefineDataId", assignDefineDataId)
+    put("overrideWorkType", overrideWorkType)
+    put("assignableFixedType", assignableFixedType)
+    put("assignableOtomo", assignableOtomo)
+    put("canTriggerWorkerEvent", canTriggerWorkerEvent)
+    put("canStealAssign", canStealAssign)
+    workableData?.let {
+        put("workableData", workableData.toJsonElement())
+    }
+}
+
+private fun WorkSaveBaseWorkableData.toJsonElement() = when(this) {
+    is WorkSaveBaseWorkableDefense -> toJsonElement()
+    is WorkSaveBaseWorkableProgress -> toJsonElement()
+    is WorkSaveBaseWorkableReviveCharacter -> toJsonElement()
+}
+
+private fun WorkSaveBaseWorkableBounds.toJsonElement() = buildJsonObject {
+    put("location", location.toJsonElement())
+    put("rotation", rotation.toJsonElement())
+    put("boxSphereBounds", boxSphereBounds.toJsonElement())
+}
+
+private fun WorkSaveBaseBoxSphereBounds.toJsonElement() = buildJsonObject {
+    put("origin", origin.toJsonElement())
+    put("boxExtent", boxExtent.toJsonElement())
+    put("sphereRadius", sphereRadius)
+}
+
+private fun WorkSaveBaseAssignLocation.toJsonElement() = buildJsonObject {
+    put("location", location.toJsonElement())
+    put("facingDirection", facingDirection.toJsonElement())
+}
+
+private fun GvasGroupDict.toJsonElement() = when (this) {
+    is GvasGroupData -> toJsonElement()
 }
 
 private fun CustomRawData.toJsonElement(): JsonElement {

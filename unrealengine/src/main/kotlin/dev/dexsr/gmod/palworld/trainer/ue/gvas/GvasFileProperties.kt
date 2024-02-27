@@ -133,7 +133,7 @@ class GvasNameDict(
 
 class GvasEnumDict(
     val id: String?,
-    val value: GvasEnumDictValue,
+    val enumValue: GvasEnumDictValue,
 ) : GvasDict() {
 
     companion object {

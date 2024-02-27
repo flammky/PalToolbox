@@ -237,7 +237,7 @@ private fun readGvasEnumProperty(buf: ByteBuffer): GvasEnumDict {
     val enum_value = readGvasStr(buf)
     return GvasEnumDict(
         id = _id,
-        value = GvasEnumDictValue(
+        enumValue = GvasEnumDictValue(
             type = enumType,
             value = enum_value
         )
@@ -544,6 +544,10 @@ private fun DefaultGvasReader(
 
         override fun readVector(): GvasVector {
             return readGvasVector(buf)
+        }
+
+        override fun readQuat(): GvasQuat {
+            return readGvasQuat(buf)
         }
     }
 }

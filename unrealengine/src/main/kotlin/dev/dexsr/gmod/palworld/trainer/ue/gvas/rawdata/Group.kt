@@ -29,7 +29,7 @@ fun Group.decode(
         val type = v["value"]!!
             .cast<GvasStructMap>().v["GroupType"]!!
             .cast<GvasProperty>().value
-            .cast<GvasEnumDict>().value.value
+            .cast<GvasEnumDict>().enumValue.value
         val bytes = v["value"]!!
             .cast<GvasStructMap>().v["RawData"]!!
             .cast<GvasProperty>().value
@@ -55,10 +55,10 @@ fun Group.encode(
 
 private fun Any.castToStructMap(): GvasStructMap = cast()
 
-private fun Group.decodeBytes(parentReader: GvasReader, bytes: ByteArray, groupType: String): GvasGroupDict {
+private fun Group.decodeBytes(parentReader: GvasReader, bytes: ByteArray, groupType: String): GvasGroupData {
     val reader = parentReader.copy(ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN))
 
-    val groupData = GvasGroupDict(
+    val groupData = GvasGroupData(
         groupType = groupType,
         groupId = reader.uuid().toString(),
         groupName = reader.fstring(),
@@ -121,7 +121,9 @@ private fun Group.decodeBytes(parentReader: GvasReader, bytes: ByteArray, groupT
     return groupData
 }
 
-class GvasGroupDict(
+sealed class GvasGroupDict : OpenGvasDict()
+
+class GvasGroupData(
     val groupType: String,
     val groupId: String,
     val groupName: String,
@@ -130,9 +132,7 @@ class GvasGroupDict(
     val guild: GvasGroupGuildData?,
     val independentGuildData: GvasGroupIndependentGuildData?,
     val guildPlayersData: GvasGroupGuildPlayersData?,
-) : OpenGvasDict() {
-
-}
+) : GvasGroupDict()
 
 class GvasGroupOrgData(
     val orgType: Byte,
