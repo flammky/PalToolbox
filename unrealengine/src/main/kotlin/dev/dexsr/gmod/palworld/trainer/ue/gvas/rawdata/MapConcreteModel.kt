@@ -343,7 +343,7 @@ val NO_OP_TYPES = setOf(
 sealed class MapConcreteModelDict() : OpenGvasDict()
 
 class MapConcreteModelRawData(
-    val bytes: ByteArray
+    val values: ByteArray
 ) : MapConcreteModelDict()
 
 class MapConcreteModelData(
@@ -528,8 +528,8 @@ fun MapConcreteModel.decodeBytes(
                 waterStackRateValue = reader.readFloat(),
                 stateMachine = if (!reader.isEof()) {
                     StateMachine(
+                        growUpRequiredTime = reader.readFloat(),
                         growUpProgressTime = reader.readFloat(),
-                        growUpRequiredTime = reader.readFloat()
                     )
                 } else null
             )

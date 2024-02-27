@@ -18,7 +18,7 @@ class FoliageModelInstanceData(
 
 class FoliageModelInstanceWorldTransform(
     val rotator: FoliageModelInstanceRotator,
-    val vector: FoliageModelInstanceVector,
+    val location: FoliageModelInstanceVector,
     val scaleX: Float
 ) : FoliageModelInstanceDict()
 
@@ -51,9 +51,13 @@ fun FoliageModelInstance.decode(
         .cast<GvasAnyArrayPropertyValue>().values
         .cast<GvasByteArrayValue>().value
     value.value = ByteArrayRawData(
-        customType = typeName,
+        customType = path,
         id = arrayDict.id,
-        value = decodeBytes(reader, dataBytes)
+        value = GvasArrayDict(
+            arrayType = arrayDict.arrayType,
+            id = arrayDict.id,
+            value = GvasTransformedArrayValue(decodeBytes(reader, dataBytes))
+        )
     )
     return value
 }
@@ -64,12 +68,11 @@ private fun FoliageModelInstance.decodeBytes(
 ): FoliageModelInstanceData {
     val reader = parentReader.copy(ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN))
     val modelInstanceId =  reader.uuid().toString()
-    println("guid=$modelInstanceId")
     val (pitch, yaw, roll) = reader.compressedShortRotator()
     val (x, y, z) = reader.packedVector(1)
     val worldTransform = FoliageModelInstanceWorldTransform(
         rotator = FoliageModelInstanceRotator(pitch, yaw, roll),
-        vector = FoliageModelInstanceVector(x, y, z),
+        location = FoliageModelInstanceVector(x, y, z),
         scaleX = reader.readFloat()
     )
     val hp = reader.readInt()

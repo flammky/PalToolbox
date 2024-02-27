@@ -189,7 +189,7 @@ fun WorkSaveData.decode(
     }
 
     value.value = ByteArrayRawData(
-        customType = typeName,
+        customType = path,
         id = arrayDict.id,
         value = value.value
     )

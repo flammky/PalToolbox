@@ -60,8 +60,8 @@ private fun readGvasBool(
 private fun readGvasProperty(buf: ByteBuffer, typeName: String, size: Int, path: String, nestedCallerPath: String = ""): GvasProperty {
 
     PALWORLD_CUSTOM_PROPERTY_CODEC[path]?.let { codec ->
-        if (nestedCallerPath.isNotEmpty() && path != nestedCallerPath) return@let
-        return codec.first.invoke(DefaultGvasReader(buf), typeName, size, nestedCallerPath)
+        if (nestedCallerPath.isNotEmpty() && path == nestedCallerPath) return@let
+        return codec.first.invoke(DefaultGvasReader(buf), typeName, size, path)
     }
 
     val value: GvasDict =  when (typeName) {

@@ -24,7 +24,7 @@ object MapConcreteModelModule
 sealed class MapConcreteModelModuleDict : OpenGvasDict()
 
 class MapConcreteModelModuleRawData(
-    val bytes: ByteArray
+    val values: ByteArray
 ) : MapConcreteModelModuleDict()
 
 class MapConcreteModelModuleData(

@@ -36,11 +36,17 @@ fun MapObject.decode(
             .cast<GvasStructDict>().value
             .cast<GvasStructMap>().v["RawData"]
             .cast<GvasProperty>()
-        rawDataProp.value = MapModel.decodeBytes(
-            parentReader = reader,
-            bytes = rawDataProp.value.cast<GvasArrayDict>().value
-                .cast<GvasAnyArrayPropertyValue>().values
-                .cast<GvasByteArrayValue>().value
+        rawDataProp.value = GvasArrayDict(
+            arrayType = arrayDict.arrayType,
+            id = arrayDict.id,
+            value = GvasTransformedArrayValue(
+                value = MapModel.decodeBytes(
+                    parentReader = reader,
+                    bytes = rawDataProp.value.cast<GvasArrayDict>().value
+                        .cast<GvasAnyArrayPropertyValue>().values
+                        .cast<GvasByteArrayValue>().value
+                )
+            )
         )
 
         val connectorProp = mapObject
@@ -53,11 +59,17 @@ fun MapObject.decode(
             .cast<GvasStructDict>().value
             .cast<GvasStructMap>().v["RawData"]
             .cast<GvasProperty>()
-        connectorRawDataProp.value = Connector.decodeBytes(
-            parentReader = reader,
-            bytes = connectorRawDataProp.value.cast<GvasArrayDict>().value
-                .cast<GvasAnyArrayPropertyValue>().values
-                .cast<GvasByteArrayValue>().value
+        connectorRawDataProp.value = GvasArrayDict(
+            arrayType = arrayDict.arrayType,
+            id = arrayDict.id,
+            value = GvasTransformedArrayValue(
+                value = Connector.decodeBytes(
+                    parentReader = reader,
+                    bytes = connectorRawDataProp.value.cast<GvasArrayDict>().value
+                        .cast<GvasAnyArrayPropertyValue>().values
+                        .cast<GvasByteArrayValue>().value
+                )
+            )
         )
 
         val buildProcessProp = mapObject
@@ -70,11 +82,17 @@ fun MapObject.decode(
             .cast<GvasStructDict>().value
             .cast<GvasStructMap>().v["RawData"]
             .cast<GvasProperty>()
-        buildProcessRawDataProp.value = BuildProcess.decodeBytes(
-            parentReader = reader,
-            bytes = buildProcessRawDataProp.value.cast<GvasArrayDict>().value
-                .cast<GvasAnyArrayPropertyValue>().values
-                .cast<GvasByteArrayValue>().value
+        buildProcessRawDataProp.value = GvasArrayDict(
+            arrayType = arrayDict.arrayType,
+            id = arrayDict.id,
+            value = GvasTransformedArrayValue(
+                value = BuildProcess.decodeBytes(
+                    parentReader = reader,
+                    bytes = buildProcessRawDataProp.value.cast<GvasArrayDict>().value
+                        .cast<GvasAnyArrayPropertyValue>().values
+                        .cast<GvasByteArrayValue>().value
+                )
+            )
         )
 
         val concreteModelId = mapObject
@@ -88,12 +106,18 @@ fun MapObject.decode(
             .cast<GvasStructDict>().value
             .cast<GvasStructMap>().v["RawData"]
             .cast<GvasProperty>()
-        concreteModelRawDataProp.value = MapConcreteModel.decodeBytes(
-            parentReader = reader,
-            bytes = concreteModelRawDataProp.value.cast<GvasArrayDict>().value
-                .cast<GvasAnyArrayPropertyValue>().values
-                .cast<GvasByteArrayValue>().value,
-            objectId = concreteModelId
+        concreteModelRawDataProp.value = GvasArrayDict(
+            arrayType = arrayDict.arrayType,
+            id = arrayDict.id,
+            value = GvasTransformedArrayValue(
+                value = MapConcreteModel.decodeBytes(
+                    parentReader = reader,
+                    bytes = concreteModelRawDataProp.value.cast<GvasArrayDict>().value
+                        .cast<GvasAnyArrayPropertyValue>().values
+                        .cast<GvasByteArrayValue>().value,
+                    objectId = concreteModelId
+                )
+            )
         )
 
         for (module in concreteModelProp.value.cast<GvasStructDict>().value.cast<GvasStructMap>().v["ModuleMap"].cast<GvasProperty>().value.cast<GvasMapDict>().value) {
@@ -103,16 +127,22 @@ fun MapObject.decode(
             val moduleBytes = moduleRawDataProp.value.cast<GvasArrayDict>().value
                 .cast<GvasAnyArrayPropertyValue>().values
                 .cast<GvasByteArrayValue>().value
-            moduleRawDataProp.value = MapConcreteModelModule.decodeBytes(
-                parentReader = reader,
-                bytes = moduleBytes,
-                moduleType = moduleType
+            moduleRawDataProp.value = GvasArrayDict(
+                arrayType = arrayDict.arrayType,
+                id = arrayDict.id,
+                value = GvasTransformedArrayValue(
+                    value = MapConcreteModelModule.decodeBytes(
+                        parentReader = reader,
+                        bytes = moduleBytes,
+                        moduleType = moduleType
+                    )
+                )
             )
         }
     }
 
     value.value = ByteArrayRawData(
-        customType = typeName,
+        customType = path,
         id = arrayDict.id,
         value = value.value
     )

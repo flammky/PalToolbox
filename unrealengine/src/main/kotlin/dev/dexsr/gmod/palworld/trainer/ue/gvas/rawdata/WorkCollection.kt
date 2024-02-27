@@ -35,9 +35,13 @@ fun WorkCollection.decode(
         .cast<GvasAnyArrayPropertyValue>().values
         .cast<GvasByteArrayValue>().value
     value.value = ByteArrayRawData(
-        customType = typeName,
+        customType = path,
         id = arrayDict.id,
-        value = decodeBytes(reader, dataBytes)
+        value = GvasArrayDict(
+            arrayType = arrayDict.arrayType,
+            id = arrayDict.id,
+            value = GvasTransformedArrayValue(decodeBytes(reader, dataBytes))
+        )
     )
 
     return value

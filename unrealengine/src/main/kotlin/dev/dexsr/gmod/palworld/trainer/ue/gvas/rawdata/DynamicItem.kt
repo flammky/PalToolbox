@@ -7,41 +7,43 @@ import java.nio.ByteOrder
 
 object DynamicItem
 
+sealed class DynamicItemDict() : OpenGvasDict()
+
+
 class DynamicItemSaveData(
     val id: DynamicItemSaveDataId,
-    val data: DynamicItemDict
-) : OpenGvasDict()
-
+    val data: DynamicItemItemDict
+) : DynamicItemDict()
 class DynamicItemSaveDataId(
     val createdWorldId: String,
     val localIdInCreatedWorld: String,
     val staticId: String
 )
 
-sealed class DynamicItemDict(
+sealed class DynamicItemItemDict(
     val type: String
-) : OpenGvasDict()
+) : DynamicItemDict()
 
 class EggDynamicItem(
     val characterId: String,
     val `object`: GvasMap<String, GvasProperty>,
     val unknownBytes: ByteArray,
     val unknownId: String
-) : DynamicItemDict("egg")
+) : DynamicItemItemDict("egg")
 
 class ArmorDynamicItem(
     val durability: Float
-) : DynamicItemDict("armor")
+) : DynamicItemItemDict("armor")
 
 class WeaponDynamicItem(
     val durability: Float,
     val remainingBullets: Int,
     val passiveSkillList: ArrayList<String>,
-) : DynamicItemDict("weapon")
+) : DynamicItemItemDict("weapon")
 
 class RawDynamicItem(
     val trailer: ArrayList<Int>,
-) : DynamicItemDict("unknown")
+) : DynamicItemItemDict("unknown")
 
 fun DynamicItem.decode(
     reader: GvasReader,
@@ -60,9 +62,13 @@ fun DynamicItem.decode(
         .cast<GvasAnyArrayPropertyValue>().values
         .cast<GvasByteArrayValue>().value
     value.value = ByteArrayRawData(
-        customType = typeName,
+        customType = path,
         id = arrayDict.id,
-        value = decodeBytes(reader, dataBytes)
+        value = GvasArrayDict(
+            arrayType = arrayDict.arrayType,
+            id = arrayDict.id,
+            value = GvasTransformedArrayValue(decodeBytes(reader, dataBytes))
+        )
     )
     return value
 }
@@ -126,7 +132,7 @@ private fun DynamicItem.decodeBytes(
     )
 }
 
-private fun DynamicItem.tryReadEgg(reader: GvasReader): DynamicItemDict? {
+private fun DynamicItem.tryReadEgg(reader: GvasReader): DynamicItemItemDict? {
     val pos = reader.position
     var eof: Boolean? = null
     val egg = try {

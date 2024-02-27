@@ -7,11 +7,13 @@ import java.nio.ByteOrder
 
 object Character
 
+sealed class CharacterDict : OpenGvasDict()
+
 class GvasCharacterData(
     val `object`: GvasMap<String, GvasProperty>,
     val unknownBytes: ByteArray,
     val groupId: String
-): OpenGvasDict()
+): CharacterDict()
 
 fun Character.decode(
     reader: GvasReader,
@@ -24,15 +26,18 @@ fun Character.decode(
     }
     val value = reader.property(typeName, size, path, nestedCallerPath = path)
     val arrayDict = value
-        .value
-        .cast<GvasArrayDict>()
+        .value.cast<GvasArrayDict>()
     val dataBytes = arrayDict.value
         .cast<GvasAnyArrayPropertyValue>().values
         .cast<GvasByteArrayValue>().value
     value.value = ByteArrayRawData(
-        customType = typeName,
+        customType = path,
         id = arrayDict.id,
-        value = decodeBytes(reader, dataBytes)
+        value = GvasArrayDict(
+            arrayType = arrayDict.arrayType,
+            id = arrayDict.id,
+            value = GvasTransformedArrayValue(decodeBytes(reader, dataBytes))
+        )
     )
     return value
 }

@@ -81,6 +81,7 @@ private fun GvasArrayPropertyValue.toJsonElement(): JsonElement {
     return when(this) {
         is GvasAnyArrayPropertyValue -> toJsonElement()
         is GvasStructArrayPropertyValue -> toJsonElement()
+        is GvasTransformedArrayValue -> value.toJsonElement()
     }
 }
 
@@ -377,12 +378,12 @@ private fun GvasDict?.toJsonElement(): JsonElement {
             // TODO: seal
             when (this) {
                 is CustomRawData -> toJsonElement()
+                is CharacterDict -> toJsonElement()
                 is GvasGroupDict -> toJsonElement()
-                is GvasCharacterData -> toJsonElement()
                 is GvasItemContainerData -> toJsonElement()
                 is GvasItemContainerSlotData -> toJsonElement()
                 is DynamicItemSaveData -> toJsonElement()
-                is DynamicItemDict -> toJsonElement()
+                is DynamicItemItemDict -> toJsonElement()
                 is FoliageModelInstanceDict -> toJsonElement()
                 is FoliageModelDict -> toJsonElement()
                 is BaseCampDict -> toJsonElement()
@@ -390,10 +391,369 @@ private fun GvasDict?.toJsonElement(): JsonElement {
                 is WorkCollectionDict -> toJsonElement()
                 is BaseCampModuleData -> toJsonElement()
                 is WorkSaveDataDict -> toJsonElement()
-                else -> TODO()
+                is MapModelDict -> toJsonElement()
+                is ConnectorDict -> toJsonElement()
+                is BuildProcessDict -> toJsonElement()
+                is MapConcreteModelDict -> toJsonElement()
+                is MapConcreteModelModuleDict -> toJsonElement()
+                else -> TODO("no JsonElement serializer for type=${this::class.qualifiedName}")
             }
         }
     }
+}
+
+private fun MapConcreteModelModuleDict.toJsonElement() = when(this) {
+    is MapConcreteModelModuleData -> toJsonElement()
+    is MapConcreteModelModuleRawData -> buildJsonObject {
+        put("values", buildJsonArray { values.fastForEach {
+            add(it.toInt())
+        } })
+    }
+    is MapConcreteModelModuleItemDict -> toJsonElement()
+}
+
+private fun MapConcreteModelModuleData.toJsonElement() = buildJsonObject {
+    item?.let {
+        item.toJsonElement().entries.forEach { (k, v) ->
+            put(k, v)
+        }
+    }
+}
+
+private fun MapConcreteModelModuleItemDict.toJsonElement() = when(this) {
+    is MapConcreteModelModuleItemContainer -> toJsonElement()
+    is MapConcreteModuleCharacterContainer -> toJsonElement()
+    is MapConcreteModulePasswordLock -> toJsonElement()
+    is MapConcreteModuleSwitch -> toJsonElement()
+    is MapConcreteModuleWorkee -> toJsonElement()
+    is ModuleSlotIndexes -> toJsonElement()
+    is PlayerLockInfo -> toJsonElement()
+}
+
+private fun MapConcreteModuleWorkee.toJsonElement() = buildJsonObject {
+    put("targetWorkId", targetWorkId)
+}
+
+private fun MapConcreteModuleSwitch.toJsonElement() = buildJsonObject {
+    put("switchState", switchState)
+}
+
+private fun MapConcreteModulePasswordLock.toJsonElement() = buildJsonObject {
+    put("lockState", lockState)
+    put("password", password)
+    put("playerInfos", buildJsonArray {
+        playerInfos.fastForEach { add(it.toJsonElement()) }
+    })
+}
+
+private fun PlayerLockInfo.toJsonElement() = buildJsonObject {
+    put("playerUid", playerUid)
+    put("tryFailedCount", tryFailedCount)
+    put("trySuccessCache", trySuccessCache)
+}
+
+private fun MapConcreteModuleCharacterContainer.toJsonElement() = buildJsonObject {
+    put("targetContainerId", targetContainerId)
+}
+
+private fun MapConcreteModelModuleItemContainer.toJsonElement() = buildJsonObject {
+    put("targetContainerId", targetContainerId)
+    put("slotAttributeIndexes", buildJsonArray {
+        slotAttributeIndexes.fastForEach { add(it.toJsonElement()) }
+    })
+    put("allSlotAttribute", buildJsonArray {
+        allSlotAttribute.fastForEach { add(it) }
+    })
+    put("dropItemAtDisposed", dropItemAtDisposed)
+    put("usageType", usageType)
+}
+
+private fun ModuleSlotIndexes.toJsonElement() = buildJsonObject {
+    put("attribute", attribute)
+    put("indexes", buildJsonArray {
+        indexes.fastForEach { add(it.toInt()) }
+    })
+}
+
+private fun MapConcreteModelDict.toJsonElement(): JsonElement = when(this) {
+    is MapConcreteModelData -> toJsonElement()
+    is BaseCampPoint -> toJsonElement()
+    is BreedFarmModel -> toJsonElement()
+    is ConvertItemModel -> buildJsonObject { putToJsonBuilder(this) }
+    is DeathDroppedCharacterModel -> buildJsonObject { putToJsonBuilder(this) }
+    is DeathPenaltyStorageModel -> buildJsonObject { putToJsonBuilder(this) }
+    is DefenseBulletLauncherModel -> buildJsonObject { putToJsonBuilder(this) }
+    is DropItemModel -> buildJsonObject { putToJsonBuilder(this) }
+    is FarmBlockV2Model -> buildJsonObject { putToJsonBuilder(this) }
+    is FastTravelPointModel -> buildJsonObject { putToJsonBuilder(this) }
+    is GenerateEnergyModel -> buildJsonObject { putToJsonBuilder(this) }
+    is HatchingEggModel -> buildJsonObject { putToJsonBuilder(this) }
+    is ItemDropOnDamageModel -> buildJsonObject { putToJsonBuilder(this) }
+    is ItemModelDynamicId -> buildJsonObject { putToJsonBuilder(this) }
+    is ItemModelId -> buildJsonObject { putToJsonBuilder(this) }
+    is PalEggModel -> buildJsonObject { putToJsonBuilder(this) }
+    is PickupItemOnLevelModel -> buildJsonObject { putToJsonBuilder(this) }
+    is ProductItemModel -> buildJsonObject { putToJsonBuilder(this) }
+    is RecoverOtomoModel -> buildJsonObject { putToJsonBuilder(this) }
+    is ShippingItemModel -> buildJsonObject { putToJsonBuilder(this) }
+    is SignboardModel -> buildJsonObject { putToJsonBuilder(this) }
+    is StateMachine -> buildJsonObject { putToJsonBuilder(this) }
+    is TorchModel -> buildJsonObject { putToJsonBuilder(this) }
+    is TreasureBoxModel -> buildJsonObject { putToJsonBuilder(this) }
+    is MapConcreteModelRawData -> buildJsonObject {
+        put("values", buildJsonArray { values.fastForEach { add(it.toInt()) } })
+    }
+}
+
+private fun BreedFarmModel.toJsonElement() = buildJsonObject { putToJsonBuilder(this) }
+
+private fun BaseCampPoint.toJsonElement() = buildJsonObject { putToJsonBuilder(this) }
+
+private fun MapConcreteModelData.toJsonElement() = buildJsonObject {
+    put("instanceId", instanceId)
+    put("modelInstanceId", modelInstanceId)
+    put("concreteModelType", concreteModelType)
+    concreteModel?.let {
+        concreteModel.putToJsonBuilder(this)
+    }
+}
+
+private fun MapConcreteModelItem.putToJsonBuilder(builder: JsonObjectBuilder) = when(this) {
+    is BaseCampPoint -> putToJsonBuilder(builder)
+    is BreedFarmModel -> putToJsonBuilder(builder)
+    is ConvertItemModel -> putToJsonBuilder(builder)
+    is DeathDroppedCharacterModel -> putToJsonBuilder(builder)
+    is DeathPenaltyStorageModel -> putToJsonBuilder(builder)
+    is DefenseBulletLauncherModel -> putToJsonBuilder(builder)
+    is DropItemModel -> putToJsonBuilder(builder)
+    is FarmBlockV2Model -> putToJsonBuilder(builder)
+    is FastTravelPointModel -> putToJsonBuilder(builder)
+    is GenerateEnergyModel -> putToJsonBuilder(builder)
+    is HatchingEggModel -> putToJsonBuilder(builder)
+    is ItemDropOnDamageModel -> putToJsonBuilder(builder)
+    is ItemModelDynamicId -> putToJsonBuilder(builder)
+    is ItemModelId -> putToJsonBuilder(builder)
+    is PalEggModel -> putToJsonBuilder(builder)
+    is PickupItemOnLevelModel -> putToJsonBuilder(builder)
+    is ProductItemModel -> putToJsonBuilder(builder)
+    is RecoverOtomoModel -> putToJsonBuilder(builder)
+    is ShippingItemModel -> putToJsonBuilder(builder)
+    is SignboardModel -> putToJsonBuilder(builder)
+    is StateMachine -> putToJsonBuilder(builder)
+    is TorchModel -> putToJsonBuilder(builder)
+    is TreasureBoxModel -> putToJsonBuilder(builder)
+}
+
+private fun ItemDropOnDamageModel.putToJsonBuilder(builder: JsonObjectBuilder) = builder.apply {
+    put("dropItemInfos", buildJsonArray {
+        dropItemInfos.fastForEach { add(it.toJsonElement()) }
+    })
+}
+
+private fun ItemModelId.putToJsonBuilder(builder: JsonObjectBuilder) = builder.apply {
+    put("staticId", staticId)
+    put("dynamicId", dynamicId.toJsonElement())
+}
+
+private fun ItemModelDynamicId.putToJsonBuilder(builder: JsonObjectBuilder) = builder.apply {
+    put("createdWorldId", createdWorldId)
+    put("localIdInCreatedWorld", localIdInCreatedWorld)
+}
+
+private fun HatchingEggModel.putToJsonBuilder(builder: JsonObjectBuilder) = builder.apply {
+    put("hatchedCharacterSaveParameter", buildJsonObject {
+        hatchedCharacterSaveParameter.entries.forEach { (k, v) ->
+            put(k, v.value.toJsonElement())
+        }
+    })
+    put("unknownBytes", unknownBytes)
+    put("hatchedCharacterGuid", hatchedCharacterGuid)
+}
+
+private fun GenerateEnergyModel.putToJsonBuilder(builder: JsonObjectBuilder) = builder.apply {
+    put("storedEnergyAmount", storedEnergyAmount)
+}
+
+private fun FastTravelPointModel.putToJsonBuilder(builder: JsonObjectBuilder) = builder.apply {
+    put("locationInstanceId", locationInstanceId)
+}
+
+private fun FarmBlockV2Model.putToJsonBuilder(builder: JsonObjectBuilder) = builder.apply {
+    put("cropDataId", cropDataId)
+    put("currentState", currentState)
+    put("cropProgressRateValue", cropProgressRateValue)
+    put("waterStackRateValue", waterStackRateValue)
+    stateMachine?.let {
+        put("stateMachine", stateMachine.toJsonElement())
+    }
+}
+
+private fun TreasureBoxModel.putToJsonBuilder(builder: JsonObjectBuilder) = builder.apply {
+    put("treasureGradeType", treasureGradeType)
+}
+
+private fun TorchModel.putToJsonBuilder(builder: JsonObjectBuilder) = builder.apply {
+    put("extinctionDateTime", extinctionDateTime)
+}
+
+private fun StateMachine.putToJsonBuilder(builder: JsonObjectBuilder) = builder.apply {
+    put("growUpRequiredTime", growUpRequiredTime)
+    put("growUpProgressTime", growUpProgressTime)
+}
+
+private fun SignboardModel.putToJsonBuilder(builder: JsonObjectBuilder) = builder.apply {
+    put("signboardText", signboardText)
+}
+
+private fun ShippingItemModel.putToJsonBuilder(builder: JsonObjectBuilder) = builder.apply {
+    put("shippingHours", buildJsonArray {
+        shippingHours.fastForEach { add(it) }
+    })
+}
+
+private fun RecoverOtomoModel.putToJsonBuilder(builder: JsonObjectBuilder) = builder.apply {
+    put("recoverAmountBySec", recoverAmountBySec)
+}
+
+private fun ProductItemModel.putToJsonBuilder(builder: JsonObjectBuilder) = builder.apply {
+    put("workSpeedAdditionalRate", workSpeedAdditionalRate)
+    put("productItemId", productItemId)
+}
+
+private fun PickupItemOnLevelModel.putToJsonBuilder(builder: JsonObjectBuilder) = builder.apply {
+    put("autoPickedUp", autoPickedUp)
+}
+
+private fun PalEggModel.putToJsonBuilder(builder: JsonObjectBuilder) = builder.apply {
+    put("unknownBytes", unknownBytes)
+}
+
+private fun BaseCampPoint.putToJsonBuilder(builder: JsonObjectBuilder) = builder.apply {
+    put("baseCampId", baseCampId)
+}
+
+private fun BreedFarmModel.putToJsonBuilder(builder: JsonObjectBuilder) = builder.apply {
+    put("spawnedEggInstanceIds", buildJsonArray {
+        spawnedEggInstanceIds.fastForEach { add(it) }
+    })
+}
+
+private fun ConvertItemModel.putToJsonBuilder(builder: JsonObjectBuilder) = builder.apply {
+    put("currentRecipeId", currentRecipeId)
+    put("remainProductNum", remainProductNum)
+    put("requestedProductNum", requestedProductNum)
+    put("workSpeedAdditionalRate", workSpeedAdditionalRate)
+}
+
+private fun DeathDroppedCharacterModel.putToJsonBuilder(builder: JsonObjectBuilder) = builder.apply {
+    put("storedParameterId", storedParameterId)
+    put("ownerPlayerId", ownerPlayerId)
+}
+
+private fun DeathPenaltyStorageModel.putToJsonBuilder(builder: JsonObjectBuilder) = builder.apply {
+    put("ownerPlayerUid", ownerPlayerUid)
+}
+
+private fun DefenseBulletLauncherModel.putToJsonBuilder(builder: JsonObjectBuilder) = builder.apply {
+    put("remainingBullets", remainingBullets)
+    put("magazineSize", magazineSize)
+    put("bulletItemName", bulletItemName)
+}
+
+private fun DropItemModel.putToJsonBuilder(builder: JsonObjectBuilder) = builder.apply {
+    put("autoPickedUp", autoPickedUp)
+    put("itemId", itemId.toJsonElement())
+}
+
+private fun ItemModelId.toJsonElement() = buildJsonObject {
+    put("staticId", staticId)
+    put("dynamicId", dynamicId.toJsonElement())
+}
+
+private fun ItemModelDynamicId.toJsonElement() = buildJsonObject {
+    put("createdWorldId", createdWorldId)
+    put("localIdInCreatedWorld", localIdInCreatedWorld)
+}
+
+private fun BuildProcessDict.toJsonElement() = when(this) {
+    is BuildProcessData -> toJsonElement()
+}
+
+private fun BuildProcessData.toJsonElement() = buildJsonObject {
+    put("state", state)
+    put("id", id)
+}
+
+private fun ConnectorDict.toJsonElement() = when(this) {
+    is ConnectorData -> toJsonElement()
+    is ConnectorRawData -> buildJsonObject {
+        put("values", buildJsonArray { values.fastForEach { add(it.toInt()) } })
+    }
+}
+
+private fun ConnectorData.toJsonElement() = buildJsonObject {
+    put("supportedLevel", supportedLevel)
+    put("connect", connect.toJsonElement())
+    otherConnectors?.let {
+        put("otherConnectors", buildJsonArray {
+            otherConnectors.fastForEach { add(it.toJsonElement()) }
+        })
+    }
+}
+
+private fun ConnectorOtherConnector.toJsonElement() = buildJsonObject {
+    put("index", index)
+    put("connect", buildJsonArray {
+        connect.fastForEach { add(it.toJsonElement()) }
+    })
+}
+
+private fun ConnectorConnect.toJsonElement() = buildJsonObject {
+    put("index", index)
+    put("anyPlace", buildJsonArray {
+        anyPlace.fastForEach { add(it.toJsonElement()) }
+    })
+}
+
+private fun ConnectorConnectInfo.toJsonElement() = buildJsonObject {
+    put("connectToModelInstanceId", connectToModelInstanceId)
+    put("index", index)
+}
+
+private fun MapModelDict.toJsonElement() = when(this) {
+    is MapModelData -> toJsonElement()
+    is MapModelHpData -> toJsonElement()
+    is StageInstanceIdOwner -> toJsonElement()
+}
+
+private fun MapModelData.toJsonElement() = buildJsonObject {
+    put("instanceId", instanceId)
+    put("concreteModelInstanceId", concreteModelInstanceId)
+    put("baseCampIdBelongTo", baseCampIdBelongTo)
+    put("groupIdBelongTo", groupIdBelongTo)
+    put("hp", hp.toJsonElement())
+    put("initialTransformCache", initialTransformCache.toJsonElement())
+    put("repairWorkId", repairWorkId)
+    put("ownerSpawnerLevelObjectInstanceId", ownerSpawnerLevelObjectInstanceId)
+    put("ownerInstanceId", ownerInstanceId)
+    put("buildPlayerUid", buildPlayerUid)
+    put("interactRestrictType", interactRestrictType)
+    put("stageInstanceIdBelongTo", stageInstanceIdBelongTo.toJsonElement())
+    put("createdAt", createdAt)
+}
+
+private fun MapModelHpData.toJsonElement() = buildJsonObject {
+    put("current", current)
+    put("max", max)
+}
+
+private fun StageInstanceIdOwner.toJsonElement() = buildJsonObject {
+    put("id", id)
+    put("valid", valid)
+}
+
+private fun CharacterDict.toJsonElement() = when(this) {
+    is GvasCharacterData -> toJsonElement()
 }
 
 private fun WorkSaveDataDict.toJsonElement() = when(this) {
@@ -549,10 +909,9 @@ private fun CustomRawData.toJsonElement(): JsonElement {
 }
 
 private fun ByteArrayRawData.toJsonElement() = buildJsonObject {
-    put("arrayType", "ByteProperty")
-    put("id", id)
-    put("value", value.toJsonElement())
-    put("type", "ArrayProperty")
+    value.toJsonElement().castOrNull<JsonObject>()?.entries?.forEach { (k, v) ->
+        put(k, v)
+    }
     put("customType", customType)
 }
 
@@ -589,7 +948,7 @@ private fun DynamicItemSaveDataId.toJsonElement() = buildJsonObject {
     put("staticId", staticId)
 }
 
-private fun DynamicItemDict.toJsonElement() = when(this) {
+private fun DynamicItemItemDict.toJsonElement() = when(this) {
     is ArmorDynamicItem -> toJsonElement()
     is EggDynamicItem -> toJsonElement()
     is RawDynamicItem -> toJsonElement()
@@ -653,7 +1012,7 @@ private fun FoliageModelInstanceData.toJsonElement() = buildJsonObject {
 
 private fun FoliageModelInstanceWorldTransform.toJsonElement() = buildJsonObject {
     put("rotator", rotator.toJsonElement())
-    put("vector", vector.toJsonElement())
+    put("location", location.toJsonElement())
     put("scaleX", scaleX)
 }
 

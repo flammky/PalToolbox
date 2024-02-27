@@ -184,6 +184,10 @@ class GvasAnyArrayPropertyValue(
     val values: GvasTypedArray<*>
 ): GvasArrayPropertyValue()
 
+class GvasTransformedArrayValue(
+    val value: GvasDict?
+) : GvasArrayPropertyValue()
+
 sealed class GvasTypedArray<T> {
     abstract val typeName: String
 }
