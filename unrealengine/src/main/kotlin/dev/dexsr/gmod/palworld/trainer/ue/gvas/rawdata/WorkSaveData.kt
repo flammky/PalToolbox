@@ -188,6 +188,12 @@ fun WorkSaveData.decode(
         }
     }
 
+    value.value = ByteArrayRawData(
+        customType = typeName,
+        id = arrayDict.id,
+        value = value.value
+    )
+
     return value
 }
 

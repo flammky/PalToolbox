@@ -3,7 +3,7 @@ package dev.dexsr.gmod.palworld.trainer.ue.util
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
 
-// TODO: linter
+// TODO: same linter as the cast (as/as?) operator
 
 @OptIn(ExperimentalContracts::class)
 internal inline fun <reified R> Any?.cast(): R {

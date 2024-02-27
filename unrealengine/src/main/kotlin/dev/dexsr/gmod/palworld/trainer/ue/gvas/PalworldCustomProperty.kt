@@ -44,7 +44,8 @@ val PALWORLD_CUSTOM_PROPERTY_CODEC = mapOf<String, Pair<GVAS_PROPERTY_DECODER, G
     ".worldSaveData.BaseCampSaveData.Value.WorkerDirector.RawData" to (WorkerDirector::decode to WorkerDirector::encode),
     ".worldSaveData.BaseCampSaveData.Value.WorkCollection.RawData" to (WorkCollection::decode to WorkCollection::encode),
     ".worldSaveData.BaseCampSaveData.Value.ModuleMap" to (BaseCampModule::decode to BaseCampModule::encode),
-    ".worldSaveData.WorkSaveData" to (WorkSaveData::decode to WorkSaveData::encode)
+    ".worldSaveData.WorkSaveData" to (WorkSaveData::decode to WorkSaveData::encode),
+    ".worldSaveData.MapObjectSaveData" to (MapObject::decode to MapObject::encode)
 )
 
 typealias GVAS_PROPERTY_DECODER = (GvasReader, String, Int, String) -> GvasProperty
