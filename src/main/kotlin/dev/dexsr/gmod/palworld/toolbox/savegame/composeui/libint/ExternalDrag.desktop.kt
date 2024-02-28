@@ -14,35 +14,21 @@
  * limitations under the License.
  */
 
-package dev.dexsr.gmod.palworld.trainer.savegame.composeui.libint
+package dev.dexsr.gmod.palworld.toolbox.savegame.composeui.libint
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.State
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
-import dev.dexsr.gmod.palworld.trainer.savegame.composeui.libint.AwtWindowDragTargetListener.WindowDragValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.unit.Density
+import dev.dexsr.gmod.palworld.toolbox.savegame.composeui.libint.AwtWindowDragTargetListener.WindowDragValue
 import java.awt.Point
 import java.awt.Window
-import java.awt.dnd.DnDConstants
-import java.awt.dnd.DropTarget
-import java.awt.dnd.DropTargetDragEvent
-import java.awt.dnd.DropTargetDropEvent
-import java.awt.dnd.DropTargetEvent
-import java.awt.dnd.DropTargetListener
+import java.awt.dnd.*
 
 // we copy the implementation because LocalWindow.current will be null as we are embedding ComposePanel without ComposeWindow
 

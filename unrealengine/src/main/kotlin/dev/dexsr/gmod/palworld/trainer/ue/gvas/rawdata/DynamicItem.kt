@@ -134,7 +134,7 @@ private fun DynamicItem.decodeBytes(
 
 private fun DynamicItem.tryReadEgg(reader: GvasReader): DynamicItemItemDict? {
     val pos = reader.position
-    var eof: Boolean? = null
+    var eof: Boolean
     val egg = try {
         EggDynamicItem(
             characterId = reader.fstring(),
@@ -146,7 +146,7 @@ private fun DynamicItem.tryReadEgg(reader: GvasReader): DynamicItemItemDict? {
         reader.position(pos)
         return null
     }
-    if (eof == false) {
+    if (!eof) {
         error( "DynamicItem.tryReadEgg: EOF not reached")
     }
     return egg

@@ -1,4 +1,4 @@
-package dev.dexsr.gmod.palworld.trainer.savegame.composeui.libint
+package dev.dexsr.gmod.palworld.toolbox.savegame.composeui.libint
 
 import androidx.compose.ui.ExperimentalComposeUiApi
 

@@ -4,13 +4,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.Color
@@ -21,13 +22,13 @@ import androidx.compose.ui.unit.dp
 import dev.dexsr.gmod.palworld.toolbox.game.composeui.gameMainScreenDrawItem
 import dev.dexsr.gmod.palworld.toolbox.gametools.composeui.gameToolsMainScreenDrawItem
 import dev.dexsr.gmod.palworld.toolbox.paldex.composeui.palDexMainScreenDrawerItem
+import dev.dexsr.gmod.palworld.toolbox.savegame.composeui.saveGameMainScreenDrawerItem
 import dev.dexsr.gmod.palworld.toolbox.server.composeui.serverMainScreenDrawerItem
 import dev.dexsr.gmod.palworld.toolbox.trainer.composeui.trainerMainScreenDrawerItem
 import dev.dexsr.gmod.palworld.trainer.composeui.StableList
 import dev.dexsr.gmod.palworld.trainer.composeui.gestures.defaultSurfaceGestureModifiers
 import dev.dexsr.gmod.palworld.trainer.composeui.text.nonFontScaled
 import dev.dexsr.gmod.palworld.trainer.composeui.text.nonScaledFontSize
-import dev.dexsr.gmod.palworld.trainer.savegame.composeui.saveGameMainScreenDrawerItem
 import dev.dexsr.gmod.palworld.trainer.uifoundation.themes.md3.*
 import dev.dexsr.gmod.palworld.trainer.utilskt.fastForEach
 
@@ -39,7 +40,6 @@ fun MainScreen() {
 }
 
 @Composable
-@OptIn(ExperimentalComposeUiApi::class)
 fun MainScreen(
     state: MainScreenState
 ) {
@@ -227,7 +227,7 @@ fun MainScreenLayoutDrawerNavigationPanel(
     onDestinationClicked: (MainDrawerDestination) -> Unit,
     currentDestinationId: String?
 ) {
-    Column(modifier.fillMaxSize()) {
+    Column(modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         listOf(
             gameMainScreenDrawItem(),
             gameToolsMainScreenDrawItem(),

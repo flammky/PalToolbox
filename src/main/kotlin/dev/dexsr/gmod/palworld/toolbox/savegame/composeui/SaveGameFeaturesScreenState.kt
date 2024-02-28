@@ -1,4 +1,4 @@
-package dev.dexsr.gmod.palworld.trainer.savegame.composeui
+package dev.dexsr.gmod.palworld.toolbox.savegame.composeui
 
 import androidx.compose.runtime.*
 import dev.dexsr.gmod.palworld.trainer.java.jFile

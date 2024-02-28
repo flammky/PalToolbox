@@ -1,6 +1,5 @@
 package dev.dexsr.gmod.palworld.trainer.ue.gvas
 
-import java.io.BufferedInputStream
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.io.OutputStream
@@ -159,7 +158,8 @@ private fun decompressZlib(
     outStream: OutputStream,
     bufferSize: Int,
 ) {
-    val inputStream = BufferedInputStream(input, bufferSize)
-        .apply { skip(offset.toLong()) }
-    InflaterInputStream(inputStream).copyTo(outStream, bufferSize)
+    InflaterInputStream(
+        input.buffered(bufferSize)
+            .apply { skip(offset.toLong()) }
+    ).copyTo(outStream, bufferSize)
 }

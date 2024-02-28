@@ -39,7 +39,7 @@ compose.desktop {
             packageVersion = "1.0.0"
 
             windows {
-                iconFile.set(project.file("src/main/resources/drawable/palworld_p_icon_b.ico"))
+                iconFile.set(project.file("src/main/resources/drawable/P_11.ico"))
             }
         }
     }
