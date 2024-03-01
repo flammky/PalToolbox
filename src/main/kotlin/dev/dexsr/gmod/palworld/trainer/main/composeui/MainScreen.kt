@@ -183,16 +183,15 @@ fun MainScreenLayoutBody() {
             val dest = remember { mutableStateOf<StableList<MainDrawerDestination>>(StableList(emptyList()), neverEqualPolicy()) }
             Column(
                 modifier = Modifier
-                    .width(
-                        (15f / 100 * maxWidth.value)
-                            .coerceIn(150f..250f).dp
+                    .widthIn(
+                        max = (10f / 100 * maxWidth.value)
+                            .coerceIn(150f..200f).dp,
                     )
             ) {
                 MainScreenLayoutDrawerNavigationPanel(
                     modifier = Modifier
                         .weight(1f)
-                        .fillMaxHeight()
-                        .fillMaxWidth(),
+                        .fillMaxHeight(),
                     onDestinationClicked = { select ->
                         if (!dest.value.contains(select)) {
                             dest.value = StableList(
@@ -213,7 +212,7 @@ fun MainScreenLayoutBody() {
                     },
                     currentDestinationId = dest.value.lastOrNull()?.id
                 )
-                Box(modifier = Modifier.height(80.dp).fillMaxWidth())
+                Box(modifier = Modifier.height(80.dp).width(100.dp))
             }
             Spacer(modifier = Modifier.width(MD3Spec.padding.incrementsDp(2).dp))
             MainScreenLayoutScreenHost(dest.value)
@@ -227,36 +226,42 @@ fun MainScreenLayoutDrawerNavigationPanel(
     onDestinationClicked: (MainDrawerDestination) -> Unit,
     currentDestinationId: String?
 ) {
-    Column(modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        listOf(
-            gameMainScreenDrawItem(),
-            gameToolsMainScreenDrawItem(),
-            trainerMainScreenDrawerItem(),
-            saveGameMainScreenDrawerItem(),
-            serverMainScreenDrawerItem(),
-            palDexMainScreenDrawerItem()
-        ).sortedBy { it.name }.fastForEach { item ->
-            val isSelected = currentDestinationId == item.id
-            DrawerNavigationPanelItem(
-                modifier = Modifier
-                    .height(56.dp)
-                    .fillMaxWidth()
-                    .composed {
-                        Modifier
-                            .then(
-                                if (isSelected)
-                                    Modifier.background(remember { Color(31, 26, 36) })
-                                else
-                                    Modifier
-                            )
-                    }
-                    .clickable(
-                        enabled = !isSelected,
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = rememberRipple()
-                    ) { onDestinationClicked(item) },
-                item = item
-            )
+    Box(
+        modifier
+            .fillMaxHeight()
+            .verticalScroll(rememberScrollState())
+    ) {
+        Column(modifier = Modifier) {
+            listOf(
+                gameMainScreenDrawItem(),
+                gameToolsMainScreenDrawItem(),
+                trainerMainScreenDrawerItem(),
+                saveGameMainScreenDrawerItem(),
+                serverMainScreenDrawerItem(),
+                palDexMainScreenDrawerItem()
+            ).sortedBy { it.name }.fastForEach { item ->
+                val isSelected = currentDestinationId == item.id
+                DrawerNavigationPanelItem(
+                    modifier = Modifier
+                        .height(56.dp)
+                        .fillMaxWidth()
+                        .composed {
+                            Modifier
+                                .then(
+                                    if (isSelected)
+                                        Modifier.background(remember { Color(31, 26, 36) })
+                                    else
+                                        Modifier
+                                )
+                        }
+                        .clickable(
+                            enabled = !isSelected,
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = rememberRipple()
+                        ) { onDestinationClicked(item) },
+                    item = item
+                )
+            }
         }
     }
 }
@@ -291,8 +296,6 @@ private fun DrawerNavigationPanelItem(
 ) {
     Row(
         modifier = modifier
-            .fillMaxWidth()
-            .fillMaxHeight()
             .padding(vertical = 10.dp, horizontal = 15.dp)
     ) {
         Icon(

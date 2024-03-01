@@ -26,6 +26,7 @@ import androidx.compose.ui.window.AwtWindow
 import dev.dexsr.gmod.palworld.toolbox.composeui.WorkInProgressScreen
 import dev.dexsr.gmod.palworld.toolbox.savegame.composeui.libint.DragData
 import dev.dexsr.gmod.palworld.toolbox.savegame.composeui.libint.onExternalDrag
+import dev.dexsr.gmod.palworld.toolbox.savegame.composeui.players.PlayersEditPanel
 import dev.dexsr.gmod.palworld.trainer.composeui.HeightSpacer
 import dev.dexsr.gmod.palworld.trainer.composeui.LocalWindow
 import dev.dexsr.gmod.palworld.trainer.composeui.StableList
@@ -66,10 +67,12 @@ fun SaveGameFeaturesScreen() {
                     state
                 )
 
-                // move to state ?
-                val editState = state.gvas?.let { gvas -> state.chosenFile?.let { jF ->
-                    remember(gvas, jF) { SaveGameEditState(jF, gvas) }
-                } }
+                val editState = state.chosenFile?.let {
+                    val coroutineScope = rememberCoroutineScope()
+                    val keyS = remember { mutableStateOf(it to 0, neverEqualPolicy()) }
+                        .apply { if (value.first !== it) value = it to value.second + 1 }
+                    remember(keyS.value) { SaveGameEditState(it, coroutineScope) }
+                }
                 SaveGameFeaturesScreenFileInfoPanel(
                     modifier = Modifier
                         .padding(
@@ -78,11 +81,10 @@ fun SaveGameFeaturesScreen() {
                             end = 8.dp,
                             bottom = 8.dp
                         ),
-                    loading = state.loadingFile,
                     editState = editState
                 )
-                editState?.let {
-                    SaveGameFeaturesScreenFileInfo(
+                if (editState?.showEditor == true) {
+                    /*SaveGameFeaturesScreenFileInfo(
                         Modifier.padding(
                             start = 8.dp,
                             top = 0.dp,
@@ -90,7 +92,7 @@ fun SaveGameFeaturesScreen() {
                             bottom = 8.dp
                         ),
                         editState
-                    )
+                    )*/
                     SaveGameFeaturesScreenEditPanel(editState)
                 }
             }
@@ -253,12 +255,10 @@ private fun Modifier.dragAndDrop(
 @Composable
 private fun SaveGameFeaturesScreenFileInfoPanel(
     modifier: Modifier,
-    loading: Boolean,
     editState: SaveGameEditState?
 ) {
-    if (!loading) {
-        return
-    }
+    val msg = editState?.topFileOperationMsg
+        ?: return
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(4.dp))
@@ -274,15 +274,17 @@ private fun SaveGameFeaturesScreenFileInfoPanel(
                 fontSize = MaterialTheme.typography.caption.nonScaledFontSize()
             )
 
-        if (loading) {
-            Text(
-                modifier = Modifier,
-                text = "Parsing File ...",
-                style = style,
-                maxLines = 1,
-            )
+        Text(
+            modifier = Modifier,
+            text = msg,
+            style = style,
+            maxLines = 1,
+        )
+
+        /*if (loading) {
+
         } else if (editState != null) {
-            /*Text(
+            *//*Text(
                 text = "Editing file: ${editState.fileName}",
                 style = style,
                 maxLines = 1,
@@ -297,8 +299,8 @@ private fun SaveGameFeaturesScreenFileInfoPanel(
                 style = style,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
-            )*/
-        }
+            )*//*
+        }*/
     }
 }
 
@@ -314,6 +316,7 @@ private fun SaveGameFeaturesScreenFileInfo(
         modifier = modifier
             .clip(RoundedCornerShape(4.dp))
             .background(Color(24 * 2, 20 * 2, 28 * 2))
+            // maybe no ?
             // TODO: make so ripple expand as container expand
             .clickable { expanded = !expanded }
             .padding(horizontal = 8.dp, vertical = 4.dp)
@@ -360,7 +363,7 @@ private fun SaveGameFeaturesScreenEditPanel(
         top = 0.dp,
         end = 8.dp,
         bottom = 8.dp
-    ))
+    ), state)
 }
 
 private class SaveGameEditContent(
@@ -372,6 +375,7 @@ private class SaveGameEditContent(
 @Composable
 private fun SaveGameEditContent(
     modifier: Modifier,
+    saveGameEditState: SaveGameEditState
 ) {
     val dest = remember {
         mutableStateOf<StableList<SaveGameEditContent>>(StableList(emptyList()))
@@ -406,7 +410,10 @@ private fun SaveGameEditContent(
                 val select = remember {
                     SaveGameEditContent(
                         id = "players",
-                        content =  { WorkInProgressScreen(Modifier.background(remember { Color(29, 24, 34) })) }
+                        content =  { PlayersEditPanel(
+                            Modifier,
+                            saveGameEditState
+                        ) }
                     )
                 }
                 val selected = dest.value.lastOrNull()?.id == "players"
@@ -549,7 +556,7 @@ private fun SaveGameEditContent(
         }
 
         if (dest.value.isNotEmpty()) {
-            Box {
+            Box(modifier = Modifier.padding(horizontal = MD3Spec.padding.incrementsDp(2).dp)) {
                 dest.value.fastForEach { v ->
                     key(v.id) {
                         v.content.invoke()

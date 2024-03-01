@@ -2,6 +2,7 @@ pluginManagement {
     repositories {
         gradlePluginPortal()
         maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
+        google()
     }
 
     plugins {
@@ -13,5 +14,18 @@ plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "0.5.0"
 }
 
+
 rootProject.name = "PalToolbox"
 include("unrealengine")
+
+dependencyResolutionManagement {
+
+    versionCatalogs.create("libs") {
+
+        library(
+            "androidx.compose.material3.material3",
+            "androidx.compose.material3",
+            "material3"
+        ).version("1.2.0")
+    }
+}

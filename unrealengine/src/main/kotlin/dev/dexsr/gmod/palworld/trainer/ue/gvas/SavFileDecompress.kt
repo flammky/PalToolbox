@@ -12,10 +12,10 @@ import java.util.zip.InflaterInputStream
 
 fun SavFileTransform.decodeZlibCompressed(
     magicBytes: ByteArray = PALWD_SAV_MAGICBYTES.toByteArray()
-) {
+): SavFileTransform {
     if (inputStream.available() < 1) {
         markFileEmpty()
-        return
+        return this
     }
 
     // for now assert that there should be compression info
@@ -23,24 +23,25 @@ fun SavFileTransform.decodeZlibCompressed(
     val totalOffset = compressionSizeInfoByteCount + magicBytes.size
     if (inputStream.available() < totalOffset) {
         markFileTooSmall()
-        return
+        return this
     }
 
     // check if compressed
     val (uncompressedSize, compressedSize) = inputStream.compressionSizeInfo()
     if (uncompressedSize < 0 || compressedSize < 0 || compressedSize > uncompressedSize) {
-        markInvalidFile(MSG_INVALID_COMPRESSION_INFO)
-        return
+        markInvalidFile(MSG_INVALID_COMPRESSION_INFO, "compressedSize=$compressedSize, uncompressedSize=$uncompressedSize")
+        return this
     }
     if (compressedSize == 0) {
-        markInvalidFile(MSG_COMPRESSION_INFO_EMPTY)
-        return
+        markInvalidFile(MSG_COMPRESSION_INFO_EMPTY, "compressedSize=0")
+        return this
     }
 
     checkMagicBytes(magicBytes, inputStream, 0)
-    if (invalidFile) return
+    if (invalidFile) return this
 
     decompressZlib(totalOffset, uncompressedSize, compressedSize)
+    return this
 }
 
 private fun InputStream.compressionSizeInfo(): Pair<Int, Int> = unCompressedSizeInfo() to compressedSizeInfo()
@@ -71,7 +72,7 @@ private fun SavFileTransform.checkMagicBytes(
     val arr = ByteArray(magicBytes.size)
     inStream.read(arr, offset, magicBytes.size)
     if (!magicBytes.contentEquals(arr)) {
-        markInvalidFile(MSG_WRONG_MAGIC_BYTES)
+        markInvalidFile(MSG_WRONG_MAGIC_BYTES, "magic byte was ${arr.contentToString()}")
         return
     }
     setMagicBytes(magicBytes)
@@ -100,7 +101,7 @@ private fun SavFileTransform.decompressZlib(
         }
         0x31.toByte() -> {
             if (compressedSizeInfo != contentLength) {
-                markInvalidFile(MSG_WRONG_COMPRESSION_INFO)
+                markInvalidFile(MSG_WRONG_COMPRESSION_INFO, "compressedSizeInfo($compressedSizeInfo) does not equal inputLength($contentLength)")
                 return
             }
             decompressed = run {
@@ -126,7 +127,8 @@ private fun SavFileTransform.decompressZlib(
                 out.toByteArray()
             }
             if (compressedSizeInfo != decompressed.size) {
-                markInvalidFile(MSG_WRONG_COMPRESSION_INFO)
+                markInvalidFile(MSG_WRONG_COMPRESSION_INFO, "compressedSizeInfo($compressedSizeInfo) does not equal compressedLength($contentLength)")
+                return
             }
             decompressed = run {
                 val out = ByteArrayOutputStream()
@@ -140,12 +142,12 @@ private fun SavFileTransform.decompressZlib(
             }
         }
         else -> {
-            markInvalidFile(MSG_UNKNOWN_COMPRESSION_INFO)
+            markInvalidFile(MSG_UNKNOWN_COMPRESSION_INFO, "unknown compression type=$type")
             return
         }
     }
     if (unCompressedSizeInfo != decompressed.size) {
-        markInvalidFile(MSG_WRONG_COMPRESSION_INFO)
+        markInvalidFile(MSG_WRONG_COMPRESSION_INFO, "unCompressedSizeInfo($unCompressedSizeInfo) does not equal decompressedLength(${decompressed.size})")
         return
     }
     setDecompressedData(decompressed, byteArrayOf(type))

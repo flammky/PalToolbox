@@ -1,8 +1,10 @@
 package dev.dexsr.gmod.palworld.trainer.main.composeui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
@@ -263,6 +265,8 @@ internal class CustomWin32TitleBarBehavior(
 
     private fun revalidateWindowStateSnapshots() {
         var setShowRestore = false
+
+        Modifier.clickable(enabled = false, onClick = {})
 
         if (!promiseWindowWillBeRestored) {
             // check full-screen

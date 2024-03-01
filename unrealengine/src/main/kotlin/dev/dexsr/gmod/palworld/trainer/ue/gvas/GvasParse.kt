@@ -2,10 +2,14 @@ package dev.dexsr.gmod.palworld.trainer.ue.gvas
 
 import java.nio.ByteBuffer
 
+// TODO
+
 class GvasFileParseResult(
-    val header: GvasHeaderParseResult,
+    val header: GvasHeaderParseResult?,
+    val properties: GvasPropertiesParseResult?,
     val data: GvasFile? = null
 ) {
+
 
     fun headerParseFailure() {}
     fun propertiesParseFailure() {}
@@ -13,19 +17,16 @@ class GvasFileParseResult(
 
 // TODO: complete it
 // TODO: make this suspend
-fun ParseGvasFile(
+suspend fun ParseGvasFile(
     data: ByteArray
 ): GvasFileParseResult {
     val buf = ByteBuffer.wrap(data)
     val header = ParseGvasHeader(buf)
-    val file = header.valueOrNull
+    val (file, properties) = header.valueOrNull
         ?.let { headerValue ->
             val parseProperties = ParseGvasProperties(buf)
-            val properties = parseProperties.getOrNull()
-                ?: return GvasFileParseResult(header, null)
-                    .apply {
-                        propertiesParseFailure()
-                    }
+            val properties = parseProperties.valueOrNull
+                ?: return GvasFileParseResult(header, parseProperties, null)
             val trailer = run {
                 val dst = ByteArray(buf.remaining())
                 buf.get(dst)
@@ -38,14 +39,15 @@ fun ParseGvasFile(
                 headerValue,
                 properties,
                 trailer
-            )
+            ) to parseProperties
         }
-        ?: return GvasFileParseResult(header)
+        ?: return GvasFileParseResult(header, null)
             .apply {
                 headerParseFailure()
             }
     return GvasFileParseResult(
         header = header,
+        properties = properties,
         data = file
     )
 }

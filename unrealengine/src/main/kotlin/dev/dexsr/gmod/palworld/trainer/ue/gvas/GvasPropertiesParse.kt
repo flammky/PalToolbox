@@ -8,14 +8,51 @@ import java.nio.charset.CodingErrorAction
 import java.util.UUID
 import kotlin.experimental.and
 
+class GvasPropertiesParseResult(
+    private val data: GvasFileProperties?
+) {
+
+    val valueOrNull
+        get() = data
+
+    var errorKindSet: LinkedHashSet<String>? = null
+        private set
+
+    var errorMsg: String? = null
+        private set
+
+    fun onError(msg: String) {
+        errorMsg = msg
+    }
+
+    fun onSuccess(block: (GvasFileProperties) -> Unit) {
+        if (data != null) block(data)
+    }
+    fun onFailure(block: (GvasPropertiesParseResult) -> Unit) {
+        if (data == null) block(this)
+    }
+}
+
 // TODO: complete this
 
-fun ParseGvasProperties(buf: ByteBuffer): Result<GvasFileProperties> {
+fun ParseGvasProperties(buf: ByteBuffer): GvasPropertiesParseResult {
     return runCatching {
         GvasFileProperties(readGvasProperties(buf.order(ByteOrder.LITTLE_ENDIAN)))
-    }.onFailure {
-        it.printStackTrace()
-    }
+    }.fold(
+        onSuccess = { props ->
+            GvasPropertiesParseResult(props)
+        },
+        onFailure = { ex ->
+            GvasPropertiesParseResult(null).apply {
+                val msg = if (ex is IllegalStateException) {
+                    "Unexpected data: $ex"
+                } else {
+                    "Unexpected exception: $ex"
+                }
+                onError(msg)
+            }
+        }
+    )
 }
 
 private fun readGvasStr(
@@ -40,7 +77,6 @@ private fun readGvasStr(
     return try {
         String(arr, encoding)
     } catch (e: Exception) {
-        e.printStackTrace()
         encoding.newDecoder()
             .onMalformedInput(CodingErrorAction.REPLACE)
             .onUnmappableCharacter(CodingErrorAction.REPLACE)

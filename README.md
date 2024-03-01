@@ -6,7 +6,7 @@ will be updated on every GUI Update
 
 > UI will be heavily written using [Jetbrains KMP](https://www.jetbrains.com/kotlin-multiplatform/) and will be deployed on Windows, and the Web, and eventually other OS.
 
-![Screenshot](https://github.com/flammky/PalToolbox/assets/94031495/1b0db500-7129-4223-bda8-fa2ab51a83f3)
+![Screenshot](https://github.com/flammky/PalToolbox/assets/94031495/43e7a0fb-fe4d-4e44-9638-3cc551a80e8e)
 
 ## Implemented Features
 // TODO
@@ -25,7 +25,7 @@ will be updated on every GUI Update
 >
 > It's recommended to only use option that are marked Stable on specific version.
 
-Interface to interact with the world memory at runtime, to give yourself less restricting experience
+Interface to interact with the world memory at runtime.
 
 ## Planned Features
 - Paldex

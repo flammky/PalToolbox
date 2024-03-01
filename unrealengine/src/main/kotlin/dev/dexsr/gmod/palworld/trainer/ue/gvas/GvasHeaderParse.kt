@@ -43,11 +43,14 @@ class GvasHeaderParseResult(
         errorMsg = msg
     }
 
-    fun onSuccess(block: (GvasFileHeader) -> Unit) {
-        if (data != null) block(data)
+    inline fun onSuccess(block: (GvasFileHeader) -> Unit): GvasHeaderParseResult {
+        valueOrNull?.let(block)
+        return this
     }
-    fun onFailure(block: (GvasHeaderParseResult) -> Unit) {
-        if (data == null) block(this)
+
+    inline fun onFailure(block: (GvasHeaderParseResult) -> Unit): GvasHeaderParseResult {
+        if (valueOrNull == null) block(this)
+        return this
     }
 
     companion object {

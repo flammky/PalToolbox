@@ -25,7 +25,7 @@ fun MainGUI(
                 PlatformMainAwtWindow()
                     .apply {
                         minimumSize = Dimension(600, 400)
-                        size = Dimension(1280, 720)
+                        size = Dimension(960, 540)
 
                         // first show at center
                         run {

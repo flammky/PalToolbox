@@ -27,6 +27,7 @@ dependencies {
     implementation("net.java.dev.jna:jna-platform:5.14.0")
     implementation("com.squareup.okio:okio:3.8.0")
     implementation(kotlin("reflect"))
+
 }
 
 compose.desktop {
@@ -42,6 +43,9 @@ compose.desktop {
                 iconFile.set(project.file("src/main/resources/drawable/P_11.ico"))
             }
         }
+    }
+    dependencies {
+        implementation(compose.material3)
     }
 }
 

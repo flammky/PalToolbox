@@ -138,12 +138,10 @@ private class PlayerInfiniteStaminaTrainerWorker(
         task = coroutineScope.launch(MainUIDispatcher) {
             val ctx = coroutineContext
             onLoadingChanged(true)
-            withContext(Dispatchers.IO) {
-                DefaultPalworldTrainer.instancePeriodicSetPlayerStamina(null, 300) {
-                    ctx.ensureActive()
-                    onLoadingChanged(false)
-                    onEnableChanged(true)
-                }
+            DefaultPalworldTrainer.instancePeriodicSetPlayerStamina(null, 300) {
+                ctx.ensureActive()
+                onLoadingChanged(false)
+                onEnableChanged(true)
             }
             onLoadingChanged(false)
         }

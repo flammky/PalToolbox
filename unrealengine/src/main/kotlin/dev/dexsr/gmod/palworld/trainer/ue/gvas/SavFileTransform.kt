@@ -21,7 +21,7 @@ class SavFileTransform private constructor(
     var invalidFileMsg: String? = null
         private set
 
-    var unhandled: Boolean = false
+    var unhandledDecompressionType: Boolean = false
         private set
 
     var contentMagicBytes: ByteArray? = null
@@ -54,7 +54,7 @@ class SavFileTransform private constructor(
     }
 
     fun markUnhandled() {
-        this.unhandled = true
+        this.unhandledDecompressionType = true
     }
 
     fun setDecompressedData(

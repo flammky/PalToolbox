@@ -6,17 +6,20 @@ import androidx.compose.material.ripple.RippleTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.awt.ComposePanel
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toAwtImage
 import androidx.compose.ui.res.loadImageBitmap
 import androidx.compose.ui.window.ApplicationScope
+import androidx.compose.ui.window.WindowExceptionHandler
 import com.sun.jna.Native
 import com.sun.jna.Pointer
 import com.sun.jna.platform.win32.WinDef
 import dev.dexsr.gmod.palworld.trainer.composeui.LocalComposeApplicationScope
 import dev.dexsr.gmod.palworld.trainer.composeui.LocalWindow
 import javax.swing.UIManager
+
 
 class WindowsMainAwtWindow(
     private val applicationScope: ApplicationScope
@@ -38,6 +41,13 @@ class WindowsMainAwtWindow(
         } catch (e: Exception) {
         }
         val window = this
+
+        @OptIn(ExperimentalComposeUiApi::class)
+        pane.exceptionHandler = WindowExceptionHandler { thr ->
+
+            // TODO: we can dump exception here
+            throw thr
+        }
 
         pane.setContent {
             CompositionLocalProvider(
