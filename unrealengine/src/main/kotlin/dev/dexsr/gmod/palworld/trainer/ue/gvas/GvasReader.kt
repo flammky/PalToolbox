@@ -3,9 +3,7 @@ package dev.dexsr.gmod.palworld.trainer.ue.gvas
 import java.nio.ByteBuffer
 import java.util.UUID
 
-abstract class GvasReader(
-    private val buf: ByteBuffer
-) {
+abstract class GvasReader() {
 
     abstract val position: Int
 

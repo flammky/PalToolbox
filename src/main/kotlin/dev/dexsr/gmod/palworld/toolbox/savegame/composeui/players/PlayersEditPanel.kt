@@ -13,6 +13,8 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.neverEqualPolicy
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,7 +24,11 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -44,6 +50,7 @@ fun PlayersEditPanel(
 
     Box(
         modifier = modifier
+            .fillMaxSize()
             .background(remember { Color(29, 24, 34) })
             .defaultSurfaceGestureModifiers()
     ) {
@@ -68,17 +75,51 @@ fun PlayersEditPanel(
                         if (id == null) return@Box
                         PlayersEditPanelPlayersLazyListItem(
                             Modifier,
-                            getName = { "Turtl$i" },
+                            getName = remember(editState, id) {
+                                val snapshot = derivedStateOf { playersEditState.playerName(id) }
+                                ; // why ?
+                                {
+                                    snapshot.value?.name ?: ""
+                                }
+                            },
                             getUid = { "$id" },
-                            { editState.userRequestEditPlayer(id) }
+                            onClick = { editState.userRequestEditPlayer(id) }
                         )
+
+                        val id = pagingData.getContent(i)
+                        Box(
+                            modifier = Modifier
+                                .height(36.dp)
+                                .fillMaxWidth()
+                        ) {
+                            if (id == null) return@Box
+                            PlayersEditPanelPlayersLazyListItem(
+                                modifier = Modifier,
+                                getName = remember(editState, id) {
+                                    val snapshot = derivedStateOf { playersEditState.playerName(id) } // ; <- fixes it
+                                    // I thought it will infer it as () -> String
+                                    // typed on a variable work as well
+                                    val a = {
+                                        snapshot.value?.name ?: ""
+                                    }
+                                    a
+                                },
+                                getUid = { "$id" },
+                                onClick = { editState.userRequestEditPlayer(id) }
+                            )
+                        }
                     }
                 }
             }
         }
 
+
         editState.editPlayer?.let {
-            PlayerEditor(it, editState)
+            PlayerEditor(
+                it,
+                remember(editState, it) { derivedStateOf { playersEditState.playerName(it) } }.value?.name ?: "",
+                editState
+            )
         }
     }
 }
@@ -129,10 +170,11 @@ private fun PlayersEditPanelPlayersLazyListItem(
 @Composable
 private fun PlayerEditor(
     uid: String,
+    name: String,
     editState: SaveGameEditState,
     modifier: Modifier = Modifier,
 ) {
-    val pState = rememberSaveGamePlayerEditorState(uid)
+    val pState = rememberSaveGamePlayerEditorState(uid, name)
 
     Box(
         modifier = modifier
@@ -225,16 +267,20 @@ private fun PlayerEditor(
             ) {
                 RevertibleTextField(
                     modifier = Modifier.padding(top = 2.dp),
-                    value = pState.mutName ?: "",
-                    onValueChange = pState::userChangeNickName,
+                    value = remember { derivedStateOf(neverEqualPolicy()) {
+                        TextFieldValue(pState.mutName ?: "", pState.mutNameCursor)
+                    } }.value,
+                    onValueChange = pState::nickNameFieldChange,
                     onRevert = pState::revertNickName,
                     labelText = "Nickname"
                 )
 
-                RevertibleTextField(
+                RevertibleUUIdTextField(
                     modifier = Modifier.padding(top = 2.dp),
-                    value = pState.mutUid ?: "",
-                    onValueChange = pState::userChangeUID,
+                    value = remember { derivedStateOf(neverEqualPolicy()) {
+                        TextFieldValue(pState.mutUid ?: "", pState.mutUidCursor)
+                    } }.value,
+                    onValueChange = pState::uidTextFieldChange,
                     onRevert = pState::revertUid,
                     labelText = "UID"
                 )
@@ -243,13 +289,15 @@ private fun PlayerEditor(
     }
 }
 
+
 @Composable
 private fun RevertibleTextField(
     modifier: Modifier,
-    value: String,
+    value: TextFieldValue,
     labelText: String,
-    onValueChange: (String) -> Unit,
+    onValueChange: (TextFieldValue) -> Unit,
     onRevert: () -> Unit,
+    visualTransformation: VisualTransformation = VisualTransformation.None
 ) {
     val ins = remember { MutableInteractionSource() }
     val colors = TextFieldDefaults.colors(
@@ -267,6 +315,7 @@ private fun RevertibleTextField(
             fontWeight = FontWeight.Medium,
         ),
         cursorBrush = SolidColor(Color(252, 252, 252)),
+        visualTransformation = visualTransformation,
         decorationBox = {
             @OptIn(ExperimentalMaterial3Api::class)
             (OutlinedTextFieldDefaults.DecorationBox(
@@ -274,7 +323,7 @@ private fun RevertibleTextField(
                 innerTextField = it,
                 enabled = true,
                 singleLine = true,
-                visualTransformation = VisualTransformation.None,
+                visualTransformation = visualTransformation,
                 interactionSource = ins,
                 colors = colors,
                 contentPadding = PaddingValues(start = 12.dp, end = 12.dp, bottom = 4.dp),
@@ -315,6 +364,70 @@ private fun RevertibleTextField(
         }
     )
 }
+
+@Composable
+private fun RevertibleUUIdTextField(
+    modifier: Modifier,
+    value: TextFieldValue,
+    labelText: String,
+    onValueChange: (TextFieldValue) -> Unit,
+    onRevert: () -> Unit,
+) = RevertibleTextField(
+    modifier, value, labelText, onValueChange, onRevert,
+    visualTransformation = VisualTransformation { str ->
+
+        var segment = 0
+        val stb = StringBuilder()
+            .apply {
+                repeat(minOf(str.length, 8)) { append(str[it]) }
+
+
+                // 00000000-0000-0000-0000-000000000001
+
+                if (length < 8 || str.length == length) return@apply
+                append('-') ; segment++
+                repeat(minOf(str.length - 8, 4)) { append(str[8 + it]) }
+
+                if (length < 13 || str.length < 13) return@apply
+                append('-') ; segment++
+                repeat(minOf(str.length - (8 + 4), 4)) { append(str[12 + it]) }
+
+                if (length < 18 || str.length < 17) return@apply
+                append('-') ; segment++
+                repeat(minOf(str.length - (8 + 4 + 4), 4)) { append(str[16 + it]) }
+
+                if (length < 23 || str.length < 21) return@apply
+                append('-') ; segment++
+                repeat(minOf(str.length - (8 + 4 + 4 + 4), 12)) { append(str[20 + it]) }
+            }
+
+        TransformedText(
+            AnnotatedString(stb.toString()),
+            offsetMapping = object : OffsetMapping {
+                override fun originalToTransformed(offset: Int): Int {
+                   return when {
+                       offset <= 8 -> offset
+                       offset <= 12 -> offset + 1
+                       offset <= 16 -> offset + 2
+                       offset <= 20 -> offset + 3
+                       else -> offset + 4
+                   }
+                }
+
+                override fun transformedToOriginal(offset: Int): Int {
+                    return when {
+                        offset <= 8 -> offset
+                        offset <= 13 -> offset - 1
+                        offset <= 18 -> offset - 2
+                        offset <= 23 -> offset - 3
+                        else -> offset - 4
+                    }
+                }
+
+            }
+        )
+    }
+)
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable

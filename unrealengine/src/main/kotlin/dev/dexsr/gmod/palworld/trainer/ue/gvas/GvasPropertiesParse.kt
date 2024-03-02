@@ -35,9 +35,23 @@ class GvasPropertiesParseResult(
 
 // TODO: complete this
 
-fun ParseGvasProperties(buf: ByteBuffer): GvasPropertiesParseResult {
+fun ParseGvasProperties(
+    buf: ByteBuffer,
+    customProperties: Map<String, GVAS_PROPERTY_CODEC> = PALWORLD_CUSTOM_PROPERTY_CODEC
+): GvasPropertiesParseResult = ParseGvasProperties(
+    reader = DefaultGvasReader(
+        buf.order(ByteOrder.LITTLE_ENDIAN),
+        customProperties
+    ),
+    customProperties = customProperties
+)
+
+fun ParseGvasProperties(
+    reader: GvasReader,
+    customProperties: Map<String, GVAS_PROPERTY_CODEC> = PALWORLD_CUSTOM_PROPERTY_CODEC
+): GvasPropertiesParseResult {
     return runCatching {
-        GvasFileProperties(readGvasProperties(buf.order(ByteOrder.LITTLE_ENDIAN)))
+        GvasFileProperties(reader.properties(""))
     }.fold(
         onSuccess = { props ->
             GvasPropertiesParseResult(props)
@@ -93,15 +107,22 @@ private fun readGvasBool(
 }
 
 // LinkedHashMap ?
-private fun readGvasProperty(buf: ByteBuffer, typeName: String, size: Int, path: String, nestedCallerPath: String = ""): GvasProperty {
+private fun readGvasProperty(
+    buf: ByteBuffer,
+    typeName: String,
+    size: Int,
+    customProperties: Map<String, GVAS_PROPERTY_CODEC>,
+    path: String,
+    nestedCallerPath: String = ""
+): GvasProperty {
 
-    PALWORLD_CUSTOM_PROPERTY_CODEC[path]?.let { codec ->
+    customProperties[path]?.let { codec ->
         if (nestedCallerPath.isNotEmpty() && path == nestedCallerPath) return@let
         return codec.first.invoke(DefaultGvasReader(buf), typeName, size, path)
     }
 
     val value: GvasDict =  when (typeName) {
-        "StructProperty" -> readGvasStruct(buf, path)
+        "StructProperty" -> readGvasStruct(buf, customProperties, path)
         "IntProperty" -> readGvasIntProperty(buf)
         "Int64Property" -> readGvasLongProperty(buf)
         "FixedPoint64Property" -> readGvasFixedPoint64Property(buf)
@@ -110,8 +131,8 @@ private fun readGvasProperty(buf: ByteBuffer, typeName: String, size: Int, path:
         "NameProperty" -> readGvasNameProperty(buf)
         "EnumProperty" -> readGvasEnumProperty(buf)
         "BoolProperty" -> readGvasBooleanProperty(buf)
-        "ArrayProperty" -> readGvasArrayProperty(buf, size - 4, path)
-        "MapProperty" -> readGvasMapProperty(buf, path)
+        "ArrayProperty" -> readGvasArrayProperty(buf, size - 4, customProperties, path)
+        "MapProperty" -> readGvasMapProperty(buf, customProperties, path)
         else -> error("Unknown type: $typeName (${path})")
     }
     return GvasProperty(
@@ -120,11 +141,15 @@ private fun readGvasProperty(buf: ByteBuffer, typeName: String, size: Int, path:
     )
 }
 
-private fun readGvasStruct(buf: ByteBuffer, path: String): GvasStructDict {
+private fun readGvasStruct(
+    buf: ByteBuffer,
+    customProperties: Map<String, GVAS_PROPERTY_CODEC>,
+    path: String,
+): GvasStructDict {
     val structType = readGvasStr(buf)
     val structId = readGvasUUID(buf).toString()
     val _id = readGvasOptionalUUID(buf)?.toString()
-    val value = readGvasStructValue(buf, structType, path)
+    val value = readGvasStructValue(buf, structType, customProperties, path)
     return GvasStructDict(
         structType,
         structId,
@@ -153,14 +178,14 @@ private fun readGvasOptionalUUID(buf: ByteBuffer): UUID? {
     return readGvasUUID(buf)
 }
 
-private fun readGvasStructValue(buf: ByteBuffer, structType: String, path: String = ""): GvasStruct {
+private fun readGvasStructValue(buf: ByteBuffer, structType: String, customProperties: Map<String, GVAS_PROPERTY_CODEC>, path: String = ""): GvasStruct {
     return when (structType) {
         "Vector" -> readGvasVector(buf)
         "DateTime" -> GvasDateTime(buf.getLong())
         "Guid" -> GvasGUID(readGvasUUID(buf).toString())
         "Quat" -> readGvasQuat(buf)
         "LinearColor" -> readGvasLinearColor(buf)
-        else -> GvasStructMap(readGvasProperties(buf, path))
+        else -> GvasStructMap(readGvasProperties(buf, customProperties, path))
     }
 }
 
@@ -208,7 +233,11 @@ private fun readGvasLinearColor(buf: ByteBuffer): GvasLinearColor {
     )
 }
 
-private fun readGvasProperties(buf: ByteBuffer, path: String = ""): GvasMap<String, GvasProperty> {
+private fun readGvasProperties(
+    buf: ByteBuffer,
+    customProperties: Map<String, GVAS_PROPERTY_CODEC>,
+    path: String = ""
+): GvasMap<String, GvasProperty> {
     val properties = GvasMap<String, GvasProperty>()
 
     while (true) {
@@ -219,7 +248,7 @@ private fun readGvasProperties(buf: ByteBuffer, path: String = ""): GvasMap<Stri
         check(size <= Int.MAX_VALUE) {
             "property size was unexpectedly big ($size)"
         }
-        properties[name] = readGvasProperty(buf, typeName, size.toInt(), "$path.${name}")
+        properties[name] = readGvasProperty(buf, typeName, size.toInt(), customProperties,"$path.${name}")
     }
 
     return properties
@@ -287,12 +316,12 @@ private fun readGvasBooleanProperty(buf: ByteBuffer): GvasBoolDict {
     )
 }
 
-private fun readGvasArrayProperty(buf: ByteBuffer, size: Int, path: String): GvasArrayDict {
+private fun readGvasArrayProperty(buf: ByteBuffer, size: Int, customProperties: Map<String, GVAS_PROPERTY_CODEC>, path: String): GvasArrayDict {
     val arrayType = readGvasStr(buf)
     return GvasArrayDict(
         arrayType = arrayType,
         id = readGvasOptionalUUID(buf)?.toString(),
-        value = readGvasArrayPropertyValue(buf, arrayType, size, path)
+        value = readGvasArrayPropertyValue(buf, arrayType, size, customProperties, path)
     )
 }
 
@@ -302,7 +331,7 @@ private fun readGvasByteList(buf: ByteBuffer, size: Int): ByteArray {
     return arr
 }
 
-private fun readGvasArrayPropertyValue(buf: ByteBuffer, arrayType: String, size: Int, path: String): GvasArrayPropertyValue {
+private fun readGvasArrayPropertyValue(buf: ByteBuffer, arrayType: String, size: Int, customProperties: Map<String, GVAS_PROPERTY_CODEC>, path: String): GvasArrayPropertyValue {
     val count = buf.getInt()
     val value = when(arrayType) {
         "StructProperty" -> {
@@ -313,7 +342,7 @@ private fun readGvasArrayPropertyValue(buf: ByteBuffer, arrayType: String, size:
             val id = readGvasUUID(buf)
             buf.get()
             val values = Array(count) { i ->
-                readGvasStructValue(buf, typeName, "$${path}.${propName}")
+                readGvasStructValue(buf, typeName, customProperties, "$${path}.${propName}")
             }
             GvasStructArrayPropertyValue(
                 propName,
@@ -371,7 +400,7 @@ private fun readGvasArrayValues(
     }
 }
 
-private fun readGvasMapProperty(buf: ByteBuffer, path: String): GvasMapDict {
+private fun readGvasMapProperty(buf: ByteBuffer, customProperties: Map<String, GVAS_PROPERTY_CODEC>, path: String): GvasMapDict {
     val keyType = readGvasStr(buf)
     val valueType = readGvasStr(buf)
     val id = readGvasOptionalUUID(buf)?.toString()
@@ -388,8 +417,8 @@ private fun readGvasMapProperty(buf: ByteBuffer, path: String): GvasMapDict {
     val values = List<GvasMap<String, Any>>(count) { i ->
         GvasMap<String, Any>()
             .apply {
-                put("key", readGvasPropValue(buf, keyType, keyStructType ?: "", keyPath))
-                put("value", readGvasPropValue(buf, valueType, valueStructType ?: "", valuePath))
+                put("key", readGvasPropValue(buf, keyType, keyStructType ?: "", customProperties, keyPath))
+                put("value", readGvasPropValue(buf, valueType, valueStructType ?: "", customProperties, valuePath))
             }
     }
     return GvasMapDict(
@@ -410,10 +439,11 @@ private fun readGvasPropValue(
     buf: ByteBuffer,
     typeName: String,
     structTypeName: String,
+    customProperties: Map<String, GVAS_PROPERTY_CODEC>,
     path: String
 ): Any {
     return when (typeName) {
-        "StructProperty" -> readGvasStructValue(buf, structTypeName, path)
+        "StructProperty" -> readGvasStructValue(buf, structTypeName, customProperties, path)
         "EnumProperty" -> readGvasStr(buf)
         "NameProperty" -> readGvasStr(buf)
         "IntProperty" -> buf.getInt()
@@ -422,10 +452,11 @@ private fun readGvasPropValue(
     }
 }
 
-private fun DefaultGvasReader(
-    buf: ByteBuffer
+fun DefaultGvasReader(
+    buf: ByteBuffer,
+    customProperties: Map<String, GVAS_PROPERTY_CODEC> = PALWORLD_CUSTOM_PROPERTY_CODEC
 ): GvasReader {
-    return object : GvasReader(buf) {
+    return object : GvasReader() {
 
         override val position: Int
             get() = buf.position()
@@ -438,11 +469,11 @@ private fun DefaultGvasReader(
         }
 
         override fun properties(path: String): GvasMap<String, GvasProperty> {
-            return readGvasProperties(buf, path)
+            return readGvasProperties(buf, customProperties, path)
         }
 
         override fun property(typeName: String, size: Int, path: String, nestedCallerPath: String): GvasProperty {
-            return readGvasProperty(buf, typeName, size, path, nestedCallerPath)
+            return readGvasProperty(buf, typeName, size, customProperties, path, nestedCallerPath)
         }
 
         override fun copy(buf: ByteBuffer): GvasReader {

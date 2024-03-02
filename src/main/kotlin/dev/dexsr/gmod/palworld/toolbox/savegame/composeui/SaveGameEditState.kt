@@ -39,6 +39,9 @@ class SaveGameEditState(
 
     var editPlayer by mutableStateOf<String?>(null)
 
+    var headerEndPos: Long? = null
+    var decompressed: ByteArray? = null
+
     init {
         coroutineScope.launch(MainUIDispatcher) {
             decompressing = true
@@ -59,6 +62,9 @@ class SaveGameEditState(
             }
             checkingHeader = false
 
+            decompressed = decompress.data
+            headerEndPos = header.data!!.pos
+
             showEditor = true
         }
     }
@@ -66,6 +72,7 @@ class SaveGameEditState(
     fun userRequestEditPlayer(uid: String) {
         this.editPlayer = uid
     }
+
 }
 
 class SaveGameEditPlayerModel(

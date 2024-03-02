@@ -50,3 +50,4 @@ val PALWORLD_CUSTOM_PROPERTY_CODEC = mapOf<String, Pair<GVAS_PROPERTY_DECODER, G
 
 typealias GVAS_PROPERTY_DECODER = (GvasReader, String, Int, String) -> GvasProperty
 typealias GVAS_PROPERTY_ENCODER = (GvasWriter, String, GvasProperty) -> Int
+typealias GVAS_PROPERTY_CODEC = Pair<GVAS_PROPERTY_DECODER, GVAS_PROPERTY_ENCODER>

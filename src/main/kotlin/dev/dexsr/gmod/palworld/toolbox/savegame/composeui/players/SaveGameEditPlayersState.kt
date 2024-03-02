@@ -1,12 +1,15 @@
 package dev.dexsr.gmod.palworld.toolbox.savegame.composeui.players
 
 import androidx.compose.runtime.*
+import dev.dexsr.gmod.palworld.toolbox.base.breakLoop
+import dev.dexsr.gmod.palworld.toolbox.base.continueLoop
+import dev.dexsr.gmod.palworld.toolbox.base.looper
 import dev.dexsr.gmod.palworld.toolbox.base.strictResultingLoop
 import dev.dexsr.gmod.palworld.toolbox.savegame.composeui.SaveGameEditState
+import dev.dexsr.gmod.palworld.toolbox.savegame.parser.SaveGameParser
+import dev.dexsr.gmod.palworld.toolbox.savegame.parser.SaveGamePlayersParsedData
 import dev.dexsr.gmod.palworld.toolbox.util.fastForEach
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import org.jetbrains.skiko.MainUIDispatcher
 
 @Composable
@@ -32,30 +35,60 @@ class SaveGameEditPlayersState(
 
     private var _workers = mutableMapOf<Int, Job>()
     private var _buckets = mutableListOf<PageBucket>()
+    private val parser = SaveGameParser(coroutineScope)
 
     var pagingData by mutableStateOf<PlayersPagingData?>(null)
         private set
+
+    private var _data by mutableStateOf<SaveGamePlayersParsedData?>(null)
 
 
     fun onRemembered() {
         init()
     }
 
-    fun dispose() {}
+    fun dispose() {
+
+    }
+
+    fun playerName(uid: String) = _data?.players?.find { it.uid == uid }
 
     private fun init() {
         coroutineScope.launch(MainUIDispatcher) {
-            pagingData = PlayersPagingData(
-                playersCount = 20,
-                buckets = listOf(
-                    PageBucket(
-                        pages = listOf(PlayersPagedData(List(20) { it.toString().padStart(20, '0') })),
-                        pageFirstIndex = 0,
-                        pageSize = 20
-                    )
-                ),
-                intentLoadToOffset = {}
-            )
+            val data = strictResultingLoop<PlayersPagingData> {
+
+                runCatching {
+
+                    // TODO: put constrains on how many `players` can be
+                    withContext(Dispatchers.Default) {
+                        val result = parser.parsePlayers(editState.decompressed!!, editState.headerEndPos!!).await()
+
+                        if (result.err != null) {
+                            // ask to refresh
+                            println(result.err)
+                            looper continueLoop delay(Long.MAX_VALUE)
+                        }
+
+                        val data = checkNotNull(result.data)
+
+                        PlayersPagingData(
+                            playersCount = data.players.size,
+                            buckets = listOf(PageBucket(listOf(PlayersPagedData(data.players.map { it.uid })), 0, data.players.size)),
+                            // no impl
+                            intentLoadToOffset = {}
+                        ).also {
+                            _data = data
+                        }
+                    }
+
+                }.fold(
+                    onSuccess = { looper breakLoop it },
+                    // ask user to refresh
+                    onFailure = { looper continueLoop delay(Long.MAX_VALUE) }
+                )
+            }
+
+            pagingData = data
         }
     }
 

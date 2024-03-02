@@ -3,10 +3,15 @@ package dev.dexsr.gmod.palworld.toolbox.savegame.parser
 import dev.dexsr.gmod.palworld.toolbox.util.cast
 import dev.dexsr.gmod.palworld.trainer.java.jFile
 import dev.dexsr.gmod.palworld.trainer.ue.gvas.*
-import dev.dexsr.gmod.palworld.trainer.ue.gvas.rawdata.ByteArrayRawData
-import dev.dexsr.gmod.palworld.trainer.ue.gvas.rawdata.GvasCharacterData
+import dev.dexsr.gmod.palworld.trainer.ue.gvas.rawdata.*
 import kotlinx.coroutines.*
 import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.nio.CharBuffer
+import java.nio.charset.CodingErrorAction
+import java.nio.charset.MalformedInputException
+import java.nio.charset.UnmappableCharacterException
+import kotlin.time.Duration.Companion.nanoseconds
 
 class SaveGameParser(
     private val coroutineScope: CoroutineScope
@@ -24,7 +29,12 @@ class SaveGameParser(
         return SaveGameParseInstance(file, coroutineScope).apply { doParse() }.handle
     }
 
+    fun parsePlayers(input: ByteArray, offset: Long): SaveGamePlayersParseHandle {
+        return SaveGamePlayersParseInstance(coroutineScope).apply { doParseFromPropertiesStart(input, offset.toInt()) }.handle
+    }
 }
+
+class AbstractSaveGameParse
 
 interface SaveGameDecompressHandle {
 
@@ -207,11 +217,12 @@ private class SaveGameHeaderParseInstance private constructor(
                         } else ins.readBytes()
                     }
 
-                val parse = ParseGvasHeader(ByteBuffer.wrap(bytes))
+                val buf = ByteBuffer.wrap(bytes)
+                val parse = ParseGvasHeader(buf)
 
                 parse.valueOrNull
                     ?.let { data ->
-                        SaveGameHeaderParseResult(SaveGameHeaderParsedData(data))
+                        SaveGameHeaderParseResult(SaveGameHeaderParsedData(data, buf.position().toLong()))
                     }
                     ?: SaveGameHeaderParseResult(err = "Unable to parse header, msg: ${parse.errorMsg}")
             }.fold(
@@ -330,7 +341,8 @@ class SaveGameHeaderParseResult private constructor(
 }
 
 class SaveGameHeaderParsedData(
-    val data: GvasFileHeader
+    val data: GvasFileHeader,
+    val pos: Long
 )
 
 class SaveGameParsedData(
@@ -346,4 +358,189 @@ private fun SavFileTransform.userFriendlyErrMessage(): String? {
         invalidFile -> return checkNotNull(invalidFileMsg).ifBlank { "Input File was invalid, no further information provided" }
     }
     return null
+}
+
+class SaveGamePlayersParseResult private constructor(
+    val data: SaveGamePlayersParsedData?,
+    val err: String?
+) {
+
+
+    constructor(data: SaveGamePlayersParsedData) : this(data, null)
+    constructor(err: String) : this(null, err)
+}
+
+class SaveGamePlayersParsedData(
+    val players: ArrayList<Player>,
+    val properties: GvasFileProperties
+) {
+
+
+    class Player(
+        val name: String,
+        val uid: String,
+        val instanceId: String
+    )
+}
+
+interface SaveGamePlayersParseHandle {
+
+    fun cancel()
+
+    suspend fun await(): SaveGamePlayersParseResult
+}
+
+private class ActualSaveGamePlayersParseHandle() : SaveGamePlayersParseHandle {
+
+    val lifetime = SupervisorJob()
+
+    private val completion = CompletableDeferred<SaveGamePlayersParseResult>(lifetime)
+
+    override fun cancel() {
+        lifetime.cancel()
+    }
+
+    override suspend fun await(): SaveGamePlayersParseResult {
+        return completion.await()
+    }
+
+    fun complete(result: SaveGamePlayersParseResult) = completion.complete(result)
+
+    fun onCompletion(ex: Exception?) {
+        ex?.let {
+            completion.complete(
+                SaveGamePlayersParseResult(err = "Something Unexpected happened, type: ${ex::class.simpleName}")
+            )
+        }
+        if (!completion.isCompleted)
+            completion.complete(SaveGamePlayersParseResult(err = "Something Unexpected happened, parser finished abnormally"))
+    }
+}
+
+private class SaveGamePlayersParseInstance(
+    private val coroutineScope: CoroutineScope
+) {
+
+    val handle = ActualSaveGamePlayersParseHandle()
+
+    fun doParseFromPropertiesStart(input: ByteArray, inputOffset: Int) {
+        val nano = System.nanoTime()
+        coroutineScope.launch(Dispatchers.IO + handle.lifetime) {
+
+            runCatching {
+                val reader = DefaultGvasReader(
+                    ByteBuffer.wrap(input).position(inputOffset).order(ByteOrder.LITTLE_ENDIAN),
+                    customProperties = CODECS
+                )
+
+                val properties = ParseGvasProperties(reader)
+                    .let { result ->
+                        result.valueOrNull
+                            ?: return@runCatching SaveGamePlayersParseResult(
+                                err = "Unable to parse properties: ${result.errorMsg}"
+                            )
+                    }
+
+                val players = ArrayList<SaveGamePlayersParsedData.Player>()
+                    .apply {
+
+                        properties["worldSaveData"]
+                            ?.let { wsd ->
+                                val maps = wsd.value
+                                    .cast<GvasStructDict>().value
+                                    .cast<GvasStructMap>().v["CharacterSaveParameterMap"]?.value
+                                    .cast<GvasMapDict>().value
+                                for (map in maps) {
+                                    val playerStruct = map["value"]
+                                        .cast<GvasStructMap>().v["RawData"]?.value
+                                        .cast<ByteArrayRawData>().value
+                                        .cast<GvasArrayDict>().value
+                                        .cast<GvasTransformedArrayValue>().value
+                                        .cast<GvasCharacterData>().`object`["SaveParameter"]?.value
+                                        .cast<GvasStructDict>()
+                                    val playerParams = playerStruct.value.cast<GvasStructMap>()
+                                    if (
+                                        playerParams.v["IsPlayer"]
+                                            ?.cast<GvasProperty>()?.value
+                                            ?.cast<GvasBoolDict>()?.value == true &&
+                                        playerStruct.structType == "PalIndividualCharacterSaveParameter"
+                                    ) {
+                                        if (playerParams.v["OwnerPlayerUid"] != null) {
+                                            // Corrupt
+                                        } else if (playerParams.v["NickName"] != null) {
+                                            try {
+                                                val encoder = Charsets.UTF_8.newEncoder()
+                                                    .apply {
+                                                        onMalformedInput(CodingErrorAction.REPORT)
+                                                    }
+                                                encoder.encode(CharBuffer.wrap(playerParams.v["NickName"]!!.value.cast<GvasStrDict>().value.toCharArray()))
+                                            } catch (err: Exception) {
+                                                when (err) {
+                                                    is MalformedInputException -> {
+                                                        // this should not happen
+                                                        throw err
+                                                    }
+                                                    is UnmappableCharacterException -> {
+                                                        // contains non-valid UTF-8 encoded char
+                                                    }
+                                                    else -> throw err
+                                                }
+                                            }
+                                        }
+
+                                        val data = SaveGamePlayersParsedData.Player(
+                                            name = playerParams.v["NickName"]!!.value.cast<GvasStrDict>().value,
+                                            uid = map["key"]
+                                                .cast<GvasStructMap>().v["PlayerUId"]?.value
+                                                .cast<GvasStructDict>().value
+                                                .cast<GvasGUID>().v,
+                                            instanceId = map["key"]
+                                                .cast<GvasStructMap>().v["InstanceId"]?.value
+                                                .cast<GvasStructDict>().value
+                                                .cast<GvasGUID>().v
+                                        )
+
+                                        add(data)
+                                    }
+                                }
+                            }
+                    }
+
+                val data = SaveGamePlayersParsedData(
+                    players,
+                    properties
+                )
+
+                SaveGamePlayersParseResult(data)
+            }.fold(
+                onSuccess = { handle.complete(it) },
+                onFailure = { ex -> ex.printStackTrace() ; handle.onCompletion(ex as Exception) }
+            )
+        }.invokeOnCompletion { ex ->
+            println("completed in ${System.nanoTime().minus(nano).nanoseconds}")
+            handle.onCompletion(ex as? Exception)
+        }
+    }
+
+    private val CODECS = HashMap<String, GVAS_PROPERTY_CODEC>()
+        .apply {
+            putAll(PALWORLD_CUSTOM_PROPERTY_CODEC)
+            put(".worldSaveData.MapObjectSaveData", Skip::decode to Skip::encode)
+            put(".worldSaveData.MapObjectSaveData.MapObjectSaveData.WorldLocation", Skip::decode to Skip::encode)
+            put(".worldSaveData.MapObjectSaveData.MapObjectSaveData.WorldRotation", Skip::decode to Skip::encode)
+            put(".worldSaveData.MapObjectSaveData.MapObjectSaveData.Model.Value.EffectMap", Skip::decode to Skip::encode)
+            put(".worldSaveData.MapObjectSaveData.MapObjectSaveData.WorldScale3D", Skip::decode to Skip::encode)
+            put(".worldSaveData.FoliageGridSaveDataMap", Skip::decode to Skip::encode)
+            put(".worldSaveData.MapObjectSpawnerInStageSaveData", Skip::decode to Skip::encode)
+            put(".worldSaveData.DynamicItemSaveData", Skip::decode to Skip::encode)
+            put(".worldSaveData.CharacterContainerSaveData", Skip::decode to Skip::encode)
+            put(".worldSaveData.CharacterContainerSaveData.Value.Slots", Skip::decode to Skip::encode)
+            put(".worldSaveData.CharacterContainerSaveData.Value.RawData", Skip::decode to Skip::encode)
+            put(".worldSaveData.ItemContainerSaveData", Skip::decode to Skip::encode)
+            put(".worldSaveData.ItemContainerSaveData.Value.BelongInfo", Skip::decode to Skip::encode)
+            put(".worldSaveData.ItemContainerSaveData.Value.Slots", Skip::decode to Skip::encode)
+            put(".worldSaveData.ItemContainerSaveData.Value.RawData", Skip::decode to Skip::encode)
+            put(".worldSaveData.GroupSaveDataMap", Skip::decode to Skip::encode)
+            put(".worldSaveData.GroupSaveDataMap.Value.RawData", Skip::decode to Skip::encode)
+        }
 }

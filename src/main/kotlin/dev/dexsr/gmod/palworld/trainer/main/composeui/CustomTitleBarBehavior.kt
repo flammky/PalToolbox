@@ -266,8 +266,6 @@ internal class CustomWin32TitleBarBehavior(
     private fun revalidateWindowStateSnapshots() {
         var setShowRestore = false
 
-        Modifier.clickable(enabled = false, onClick = {})
-
         if (!promiseWindowWillBeRestored) {
             // check full-screen
             run {
