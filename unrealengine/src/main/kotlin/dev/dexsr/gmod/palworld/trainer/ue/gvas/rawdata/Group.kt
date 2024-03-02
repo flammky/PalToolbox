@@ -30,18 +30,28 @@ fun Group.decode(
             .cast<GvasStructMap>().v["GroupType"]!!
             .cast<GvasProperty>().value
             .cast<GvasEnumDict>().enumValue.value
-        val bytes = v["value"]!!
+        val arrayDict = v["value"]!!
             .cast<GvasStructMap>().v["RawData"]!!
             .cast<GvasProperty>().value
-            .cast<GvasArrayDict>().value
+            .cast<GvasArrayDict>()
+        val bytes = arrayDict.value
             .cast<GvasAnyArrayPropertyValue>().values
             .cast<GvasByteArrayValue>().value
         v["value"]!!
-            .cast<GvasStructMap>().v["RawData"] = GvasProperty(
-                typeName,
-                decodeBytes(reader, bytes, type)
-            )
+            .cast<GvasStructMap>().v["RawData"]
+            .cast<GvasProperty>().value = GvasArrayDict(
+            arrayType = arrayDict.arrayType,
+            id = arrayDict.id,
+            value = GvasTransformedArrayValue(decodeBytes(reader, bytes, type))
+        )
     }
+
+    property.value = CustomByteArrayRawData(
+        customType = path,
+        id = groupMap.id,
+        value = property.value
+    )
+
     return property
 }
 

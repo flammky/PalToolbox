@@ -33,6 +33,7 @@ class WorkSaveDataRaw(
 ) : WorkSaveDataProperty()
 
 class WorkSaveDataClass(
+    // embedded
     val workableData: WorkSaveDataWorkableData? = null,
     val transform: WorkSaveDataTransform
 ) : WorkSaveDataProperty()
@@ -54,6 +55,7 @@ class WorkSaveWorkableBase(
     val assignableOtomo: Boolean,
     val canTriggerWorkerEvent: Boolean,
     val canStealAssign: Boolean,
+    // embedded
     val workableData: WorkSaveBaseWorkableData?,
 ) : WorkSaveDataWorkableData()
 
@@ -109,8 +111,10 @@ class WorkSaveWorkableLevelObject(
 ) : WorkSaveDataWorkableData()
 
 class WorkSaveDataTransform(
+    // @Field("type")
     val transformType: Byte,
     val v2: Int,
+    // @Embedded
     val data: WorkSaveDataTransformData
 )
 
@@ -169,8 +173,19 @@ fun WorkSaveData.decode(
             .cast<GvasProperty>().value
             .cast<GvasEnumDict>().enumValue.value
 
-        element.cast<GvasStructMap>().v["RawData"]
-            .cast<GvasProperty>().value = decodeBytes(reader, workBytes, workType)
+        element
+            .cast<GvasStructMap>().v["RawData"]
+            .cast<GvasProperty>().value = GvasArrayDict(
+            arrayType = arrayDict.arrayType,
+            id = arrayDict.id,
+            value = GvasTransformedArrayValue(
+                value = decodeBytes(
+                    reader,
+                    workBytes,
+                    workType
+                )
+            )
+        )
 
         for (workAssignMap in element.cast<GvasStructMap>().v["WorkAssignMap"].cast<GvasProperty>().value.cast<GvasMapDict>().value) {
             val map = workAssignMap["value"]
@@ -184,11 +199,17 @@ fun WorkSaveData.decode(
                 .cast<GvasByteArrayValue>().value
 
             map["RawData"]
-                .cast<GvasProperty>().value = decodeWorkAssignBytes(reader, workAssignBytes)
+                .cast<GvasProperty>().value = GvasArrayDict(
+                arrayType = arrayDict.arrayType,
+                id = arrayDict.id,
+                value = GvasTransformedArrayValue(
+                    value = decodeWorkAssignBytes(reader, workAssignBytes)
+                )
+            )
         }
     }
 
-    value.value = ByteArrayRawData(
+    value.value = CustomByteArrayRawData(
         customType = path,
         id = arrayDict.id,
         value = value.value

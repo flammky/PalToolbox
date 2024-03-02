@@ -43,12 +43,10 @@ fun ParseGvasProperties(
         buf.order(ByteOrder.LITTLE_ENDIAN),
         customProperties
     ),
-    customProperties = customProperties
 )
 
 fun ParseGvasProperties(
     reader: GvasReader,
-    customProperties: Map<String, GVAS_PROPERTY_CODEC> = PALWORLD_CUSTOM_PROPERTY_CODEC
 ): GvasPropertiesParseResult {
     return runCatching {
         GvasFileProperties(reader.properties(""))
@@ -118,9 +116,8 @@ private fun readGvasProperty(
 
     customProperties[path]?.let { codec ->
         if (nestedCallerPath.isNotEmpty() && path == nestedCallerPath) return@let
-        return codec.first.invoke(DefaultGvasReader(buf), typeName, size, path)
+        return codec.first.invoke(DefaultGvasReader(buf, customProperties), typeName, size, path)
     }
-
     val value: GvasDict =  when (typeName) {
         "StructProperty" -> readGvasStruct(buf, customProperties, path)
         "IntProperty" -> readGvasIntProperty(buf)
@@ -248,7 +245,7 @@ private fun readGvasProperties(
         check(size <= Int.MAX_VALUE) {
             "property size was unexpectedly big ($size)"
         }
-        properties[name] = readGvasProperty(buf, typeName, size.toInt(), customProperties,"$path.${name}")
+        properties[name] = readGvasProperty(buf, typeName, size.toInt(), customProperties,"${path}.${name}")
     }
 
     return properties
@@ -342,7 +339,7 @@ private fun readGvasArrayPropertyValue(buf: ByteBuffer, arrayType: String, size:
             val id = readGvasUUID(buf)
             buf.get()
             val values = Array(count) { i ->
-                readGvasStructValue(buf, typeName, customProperties, "$${path}.${propName}")
+                readGvasStructValue(buf, typeName, customProperties, "${path}.${propName}")
             }
             GvasStructArrayPropertyValue(
                 propName,
@@ -409,11 +406,11 @@ private fun readGvasMapProperty(buf: ByteBuffer, customProperties: Map<String, G
     val keyPath = "$path.Key"
     val keyStructType =
         if (keyType == "StructProperty") getTypeOr(buf, keyPath, "Guid")
-        else "None"
+        else null
     val valuePath = "$path.Value"
     val valueStructType =
         if (valueType == "StructProperty") getTypeOr(buf, valuePath, "StructProperty")
-        else "None"
+        else null
     val values = List<GvasMap<String, Any>>(count) { i ->
         GvasMap<String, Any>()
             .apply {
@@ -465,7 +462,7 @@ fun DefaultGvasReader(
             get() = buf.remaining()
 
         override fun position(pos: Int) {
-            buf.position(position)
+            buf.position(pos)
         }
 
         override fun properties(path: String): GvasMap<String, GvasProperty> {
@@ -477,7 +474,7 @@ fun DefaultGvasReader(
         }
 
         override fun copy(buf: ByteBuffer): GvasReader {
-            return DefaultGvasReader(buf)
+            return DefaultGvasReader(buf, customProperties)
         }
 
         override fun uuid(): UUID {

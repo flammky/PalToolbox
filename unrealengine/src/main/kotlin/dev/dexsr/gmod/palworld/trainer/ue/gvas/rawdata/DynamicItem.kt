@@ -12,6 +12,7 @@ sealed class DynamicItemDict() : OpenGvasDict()
 
 class DynamicItemSaveData(
     val id: DynamicItemSaveDataId,
+    // @Embedded
     val data: DynamicItemItemDict
 ) : DynamicItemDict()
 class DynamicItemSaveDataId(
@@ -61,7 +62,7 @@ fun DynamicItem.decode(
     val dataBytes = arrayDict.value
         .cast<GvasAnyArrayPropertyValue>().values
         .cast<GvasByteArrayValue>().value
-    value.value = ByteArrayRawData(
+    value.value = CustomByteArrayRawData(
         customType = path,
         id = arrayDict.id,
         value = GvasArrayDict(

@@ -97,8 +97,8 @@ private fun GvasAnyArrayPropertyValue.toJsonElement(): JsonElement {
 @OptIn(ExperimentalEncodingApi::class)
 private fun GvasByteArrayValue.toJsonElement(): JsonElement {
     return buildJsonObject {
-        put("typeName", typeName)
-        put("value", buildJsonArray { value.forEach { add(it.toInt()) }})
+        /*put("typeName", typeName)*/
+        put("values", buildJsonArray { value.forEach { add(it.toInt()) }})
     }
 }
 
@@ -250,6 +250,7 @@ private fun Any.jsonPrimitiveOrNull() = when(this) {
 }
 
 private fun GvasStruct.toJsonElement(): JsonElement {
+
     return when (this) {
         is GvasDateTime -> JsonPrimitive(v)
         is GvasGUID -> JsonPrimitive(v)
@@ -314,6 +315,7 @@ private fun GvasGroupData.toJsonElement(): JsonElement {
             put("mapObjectInstanceIdsBaseCampPoints", buildJsonArray {
                 guild.mapObjectInstanceIdsBaseCampPoints.fastForEach { add(it) }
             })
+            put("guildName", guild.guildName)
         }
 
         independentGuildData?.let {
@@ -325,10 +327,15 @@ private fun GvasGroupData.toJsonElement(): JsonElement {
         guildPlayersData?.let {
             put("adminPlayerUuid", it.adminPlayerUuid)
             put("players", buildJsonArray { guildPlayersData.players.fastForEach { p ->
-                add(p.playerInfo.toJsonElement())
+                add(p.toJsonElement())
             } })
         }
     }
+}
+
+private fun GvasGroupGuildPlayer.toJsonElement() = buildJsonObject {
+    put("playerUid", playerUid)
+    put("playerInfo", playerInfo.toJsonElement())
 }
 
 private fun InstanceID.toJsonElement(): JsonElement {
@@ -358,6 +365,7 @@ private fun GvasCharacterData.toJsonElement(): JsonElement {
     }
 }
 
+
 private fun GvasDict?.toJsonElement(): JsonElement {
     return when (this) {
         null -> JsonNull
@@ -384,6 +392,7 @@ private fun GvasDict?.toJsonElement(): JsonElement {
                 is GvasItemContainerSlotData -> toJsonElement()
                 is DynamicItemSaveData -> toJsonElement()
                 is DynamicItemItemDict -> toJsonElement()
+                is CharacterContainerData -> toJsonElement()
                 is FoliageModelInstanceDict -> toJsonElement()
                 is FoliageModelDict -> toJsonElement()
                 is BaseCampDict -> toJsonElement()
@@ -402,6 +411,16 @@ private fun GvasDict?.toJsonElement(): JsonElement {
     }
 }
 
+private fun CharacterContainerDict.toJsonElement(): JsonElement = when(this) {
+    is CharacterContainerData -> toJsonElement()
+}
+
+private fun CharacterContainerData.toJsonElement() = buildJsonObject {
+    put("playerUid", playerUid)
+    put("instanceId", instanceId)
+    put("permissionTribeId", permissionTribeId)
+}
+
 private fun MapConcreteModelModuleDict.toJsonElement() = when(this) {
     is MapConcreteModelModuleData -> toJsonElement()
     is MapConcreteModelModuleRawData -> buildJsonObject {
@@ -412,11 +431,10 @@ private fun MapConcreteModelModuleDict.toJsonElement() = when(this) {
     is MapConcreteModelModuleItemDict -> toJsonElement()
 }
 
+// TODO: write
 private fun MapConcreteModelModuleData.toJsonElement() = buildJsonObject {
     item?.let {
-        item.toJsonElement().entries.forEach { (k, v) ->
-            put(k, v)
-        }
+        item.putToJsonBuilder(this)
     }
 }
 
@@ -430,7 +448,20 @@ private fun MapConcreteModelModuleItemDict.toJsonElement() = when(this) {
     is PlayerLockInfo -> toJsonElement()
 }
 
+private fun MapConcreteModelModuleItemDict.putToJsonBuilder(builder: JsonObjectBuilder) = when(this) {
+    is MapConcreteModelModuleItemContainer -> putToJsonBuilder(builder)
+    is MapConcreteModuleCharacterContainer -> putToJsonBuilder(builder)
+    is MapConcreteModulePasswordLock -> putToJsonBuilder(builder)
+    is MapConcreteModuleSwitch -> putToJsonBuilder(builder)
+    is MapConcreteModuleWorkee -> putToJsonBuilder(builder)
+    is ModuleSlotIndexes -> putToJsonBuilder(builder)
+    is PlayerLockInfo -> putToJsonBuilder(builder)
+}
+
 private fun MapConcreteModuleWorkee.toJsonElement() = buildJsonObject {
+    put("targetWorkId", targetWorkId)
+}
+private fun MapConcreteModuleWorkee.putToJsonBuilder(builder: JsonObjectBuilder) = builder.apply {
     put("targetWorkId", targetWorkId)
 }
 
@@ -438,7 +469,19 @@ private fun MapConcreteModuleSwitch.toJsonElement() = buildJsonObject {
     put("switchState", switchState)
 }
 
+private fun MapConcreteModuleSwitch.putToJsonBuilder(builder: JsonObjectBuilder) = builder.apply {
+    put("switchState", switchState)
+}
+
 private fun MapConcreteModulePasswordLock.toJsonElement() = buildJsonObject {
+    put("lockState", lockState)
+    put("password", password)
+    put("playerInfos", buildJsonArray {
+        playerInfos.fastForEach { add(it.toJsonElement()) }
+    })
+}
+
+private fun MapConcreteModulePasswordLock.putToJsonBuilder(builder: JsonObjectBuilder) = builder.apply {
     put("lockState", lockState)
     put("password", password)
     put("playerInfos", buildJsonArray {
@@ -452,7 +495,17 @@ private fun PlayerLockInfo.toJsonElement() = buildJsonObject {
     put("trySuccessCache", trySuccessCache)
 }
 
+private fun PlayerLockInfo.putToJsonBuilder(builder: JsonObjectBuilder) = builder.apply {
+    put("playerUid", playerUid)
+    put("tryFailedCount", tryFailedCount)
+    put("trySuccessCache", trySuccessCache)
+}
+
 private fun MapConcreteModuleCharacterContainer.toJsonElement() = buildJsonObject {
+    put("targetContainerId", targetContainerId)
+}
+
+private fun MapConcreteModuleCharacterContainer.putToJsonBuilder(builder: JsonObjectBuilder) = builder.apply {
     put("targetContainerId", targetContainerId)
 }
 
@@ -468,7 +521,26 @@ private fun MapConcreteModelModuleItemContainer.toJsonElement() = buildJsonObjec
     put("usageType", usageType)
 }
 
+private fun MapConcreteModelModuleItemContainer.putToJsonBuilder(builder: JsonObjectBuilder) = builder.apply {
+    put("targetContainerId", targetContainerId)
+    put("slotAttributeIndexes", buildJsonArray {
+        slotAttributeIndexes.fastForEach { add(it.toJsonElement()) }
+    })
+    put("allSlotAttribute", buildJsonArray {
+        allSlotAttribute.fastForEach { add(it) }
+    })
+    put("dropItemAtDisposed", dropItemAtDisposed)
+    put("usageType", usageType)
+}
+
 private fun ModuleSlotIndexes.toJsonElement() = buildJsonObject {
+    put("attribute", attribute)
+    put("indexes", buildJsonArray {
+        indexes.fastForEach { add(it.toInt()) }
+    })
+}
+
+private fun ModuleSlotIndexes.putToJsonBuilder(builder: JsonObjectBuilder) = builder.apply {
     put("attribute", attribute)
     put("indexes", buildJsonArray {
         indexes.fastForEach { add(it.toInt()) }
@@ -775,15 +847,15 @@ private fun WorkSaveDataRaw.toJsonElement() = buildJsonArray { values.fastForEac
 
 private fun WorkSaveDataClass.toJsonElement() = buildJsonObject {
     workableData?.let {
-        put("workableData", workableData.toJsonElement())
+        workableData.putToJsonBuilder(this)
     }
     put("transform", transform.toJsonElement())
 }
 
 private fun WorkSaveDataTransform.toJsonElement() = buildJsonObject {
-    put("transformType", transformType)
+    put("type", transformType)
     put("v2", v2)
-    put("data", data.toJsonElement())
+    data.putToJsonBuilder(this)
 }
 
 private fun WorkSaveDataTransformData.toJsonElement() = when(this) {
@@ -793,19 +865,42 @@ private fun WorkSaveDataTransformData.toJsonElement() = when(this) {
     is WorkSaveDataTransformType3 -> toJsonElement()
 }
 
+private fun WorkSaveDataTransformData.putToJsonBuilder(builder: JsonObjectBuilder) = when(this) {
+    is WorkSaveDataTransformRawData -> putToJsonBuilder(builder)
+    is WorkSaveDataTransformType1 -> putToJsonBuilder(builder)
+    is WorkSaveDataTransformType2 -> putToJsonBuilder(builder)
+    is WorkSaveDataTransformType3 -> putToJsonBuilder(builder)
+}
+
 private fun WorkSaveDataTransformRawData.toJsonElement() = buildJsonArray { rawData.forEach { add(it.toInt()) }}
+private fun WorkSaveDataTransformRawData.putToJsonBuilder(builder: JsonObjectBuilder) = builder.apply {
+    put("rawData", buildJsonArray { rawData.forEach { add(it.toInt()) }})
+}
 
 private fun WorkSaveDataTransformType1.toJsonElement() = buildJsonObject {
+    putToJsonBuilder(this)
+}
+
+private fun WorkSaveDataTransformType1.putToJsonBuilder(builder: JsonObjectBuilder) = builder.apply {
     put("rotation", rotation.toJsonElement())
     put("translation", translation.toJsonElement())
     put("scale3D", scale3D.toJsonElement())
 }
 
 private fun WorkSaveDataTransformType2.toJsonElement() = buildJsonObject {
+    putToJsonBuilder(this)
+}
+
+private fun WorkSaveDataTransformType2.putToJsonBuilder(builder: JsonObjectBuilder) = builder.apply {
     put("mapObjectInstanceId", mapObjectInstanceId)
 }
 
 private fun WorkSaveDataTransformType3.toJsonElement() = buildJsonObject {
+    put("guid", guid)
+    put("instanceId", instanceId)
+}
+
+private fun WorkSaveDataTransformType3.putToJsonBuilder(builder: JsonObjectBuilder) = builder.apply {
     put("guid", guid)
     put("instanceId", instanceId)
 }
@@ -819,12 +914,29 @@ private fun WorkSaveDataWorkableData.toJsonElement() = when(this) {
     is WorkSaveWorkableLevelObject -> toJsonElement()
 }
 
+private fun WorkSaveDataWorkableData.putToJsonBuilder(builder: JsonObjectBuilder) = when(this) {
+    is WorkSaveBaseWorkableDefense -> putToJsonBuilder(builder)
+    is WorkSaveBaseWorkableProgress -> putToJsonBuilder(builder)
+    is WorkSaveBaseWorkableReviveCharacter -> putToJsonBuilder(builder)
+    is WorkSaveWorkableAssign -> putToJsonBuilder(builder)
+    is WorkSaveWorkableBase -> putToJsonBuilder(builder)
+    is WorkSaveWorkableLevelObject -> putToJsonBuilder(builder)
+}
+
 private fun WorkSaveWorkableLevelObject.toJsonElement() = buildJsonObject {
+    putToJsonBuilder(this)
+}
+
+private fun WorkSaveWorkableLevelObject.putToJsonBuilder(builder: JsonObjectBuilder) = builder.apply {
     put("assign", assign.toJsonElement())
     put("targetMapObjectModelId", targetMapObjectModelId)
 }
 
 private fun WorkSaveBaseWorkableDefense.toJsonElement() = buildJsonObject {
+    putToJsonBuilder(this)
+}
+
+private fun WorkSaveBaseWorkableDefense.putToJsonBuilder(builder: JsonObjectBuilder) = builder.apply {
     put("defenseCombatType", defenseCombatType)
 }
 
@@ -835,7 +947,18 @@ private fun WorkSaveBaseWorkableProgress.toJsonElement() = buildJsonObject {
     put("autoWorkSelfAmountBySec", autoWorkSelfAmountBySec)
 }
 
+private fun WorkSaveBaseWorkableProgress.putToJsonBuilder(builder: JsonObjectBuilder) = builder.apply {
+    put("requiredWorkAmount", requiredWorkAmount)
+    put("workExp", workExp)
+    put("currentWorkAmount", currentWorkAmount)
+    put("autoWorkSelfAmountBySec", autoWorkSelfAmountBySec)
+}
+
 private fun WorkSaveBaseWorkableReviveCharacter.toJsonElement() = buildJsonObject {
+    put("targetIndividualId", targetIndividualId.toJsonElement())
+}
+
+private fun WorkSaveBaseWorkableReviveCharacter.putToJsonBuilder(builder: JsonObjectBuilder) = builder.apply {
     put("targetIndividualId", targetIndividualId.toJsonElement())
 }
 
@@ -845,6 +968,10 @@ private fun TargetIndividualId.toJsonElement() = buildJsonObject {
 }
 
 private fun WorkSaveWorkableAssign.toJsonElement() = buildJsonObject {
+    putToJsonBuilder(this)
+}
+
+private fun WorkSaveWorkableAssign.putToJsonBuilder(builder: JsonObjectBuilder) = builder.apply {
     put("handleId", handleId)
     put("locationIndex", locationIndex)
     put("assignType", assignType)
@@ -854,6 +981,10 @@ private fun WorkSaveWorkableAssign.toJsonElement() = buildJsonObject {
 }
 
 private fun WorkSaveWorkableBase.toJsonElement() = buildJsonObject {
+    putToJsonBuilder(this)
+}
+
+private fun WorkSaveWorkableBase.putToJsonBuilder(builder: JsonObjectBuilder) = builder.apply {
     put("id", id)
     put("workableBounds", workableBounds.toJsonElement())
     put("baseCampIdBelongTo", baseCampIdBelongTo)
@@ -871,7 +1002,7 @@ private fun WorkSaveWorkableBase.toJsonElement() = buildJsonObject {
     put("canTriggerWorkerEvent", canTriggerWorkerEvent)
     put("canStealAssign", canStealAssign)
     workableData?.let {
-        put("workableData", workableData.toJsonElement())
+        workableData.putToJsonBuilder(this)
     }
 }
 
@@ -880,6 +1011,14 @@ private fun WorkSaveBaseWorkableData.toJsonElement() = when(this) {
     is WorkSaveBaseWorkableProgress -> toJsonElement()
     is WorkSaveBaseWorkableReviveCharacter -> toJsonElement()
 }
+
+private fun WorkSaveBaseWorkableData.putToJsonBuilder(builder: JsonObjectBuilder) = when(this) {
+    is WorkSaveBaseWorkableDefense -> putToJsonBuilder(builder)
+    is WorkSaveBaseWorkableProgress -> putToJsonBuilder(builder)
+    is WorkSaveBaseWorkableReviveCharacter -> putToJsonBuilder(builder)
+}
+
+
 
 private fun WorkSaveBaseWorkableBounds.toJsonElement() = buildJsonObject {
     put("location", location.toJsonElement())
@@ -904,11 +1043,11 @@ private fun GvasGroupDict.toJsonElement() = when (this) {
 
 private fun CustomRawData.toJsonElement(): JsonElement {
     return when(this) {
-        is ByteArrayRawData -> toJsonElement()
+        is CustomByteArrayRawData -> toJsonElement()
     }
 }
 
-private fun ByteArrayRawData.toJsonElement() = buildJsonObject {
+private fun CustomByteArrayRawData.toJsonElement() = buildJsonObject {
     value.toJsonElement().castOrNull<JsonObject>()?.entries?.forEach { (k, v) ->
         put(k, v)
     }
@@ -939,7 +1078,7 @@ private fun GvasItemContainerSlotData.toJsonElement() = buildJsonObject {
 
 private fun DynamicItemSaveData.toJsonElement() = buildJsonObject {
     put("id", id.toJsonElement())
-    put("data", data.toJsonElement())
+    data.putToJsonBuilder(this)
 }
 
 private fun DynamicItemSaveDataId.toJsonElement() = buildJsonObject {
@@ -955,9 +1094,29 @@ private fun DynamicItemItemDict.toJsonElement() = when(this) {
     is WeaponDynamicItem -> toJsonElement()
 }
 
+private fun DynamicItemItemDict.putToJsonBuilder(builder: JsonObjectBuilder) = when(this) {
+    is ArmorDynamicItem -> putToJsonBuilder(builder)
+    is EggDynamicItem -> putToJsonBuilder(builder)
+    is RawDynamicItem -> putToJsonBuilder(builder)
+    is WeaponDynamicItem -> putToJsonBuilder(builder)
+}
+
+private fun ArmorDynamicItem.putToJsonBuilder(builder: JsonObjectBuilder) = builder.apply {
+    put("type", type)
+    put("durability", durability)
+}
+
 private fun ArmorDynamicItem.toJsonElement() = buildJsonObject {
     put("type", type)
     put("durability", durability)
+}
+
+private fun EggDynamicItem.putToJsonBuilder(builder: JsonObjectBuilder) = builder.apply {
+    put("type", type)
+    put("characterId", characterId)
+    put("object", `object`.toJsonMap())
+    put("unknownBytes", unknownBytes.toJsonIntArray())
+    put("unknownId", unknownId)
 }
 
 private fun EggDynamicItem.toJsonElement() = buildJsonObject {
@@ -973,7 +1132,19 @@ private fun RawDynamicItem.toJsonElement() = buildJsonObject {
     put("trailer", trailer.toJsonIntArray())
 }
 
+private fun RawDynamicItem.putToJsonBuilder(builder: JsonObjectBuilder) = builder.apply {
+    put("type", type)
+    put("trailer", trailer.toJsonIntArray())
+}
+
 private fun WeaponDynamicItem.toJsonElement() = buildJsonObject {
+    put("type", type)
+    put("durability", durability)
+    put("remainingBullets", remainingBullets)
+    put("passiveSkillList", passiveSkillList.toJsonStringArray())
+}
+
+private fun WeaponDynamicItem.putToJsonBuilder(builder: JsonObjectBuilder) = builder.apply {
     put("type", type)
     put("durability", durability)
     put("remainingBullets", remainingBullets)

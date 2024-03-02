@@ -141,7 +141,7 @@ fun MapObject.decode(
         }
     }
 
-    value.value = ByteArrayRawData(
+    value.value = CustomByteArrayRawData(
         customType = path,
         id = arrayDict.id,
         value = value.value

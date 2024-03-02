@@ -22,6 +22,7 @@ class MapModelData(
     val ownerInstanceId: String,
     val buildPlayerUid: String,
     val interactRestrictType: Byte,
+    // @Field
     val stageInstanceIdBelongTo: StageInstanceIdOwner,
     val createdAt: Long
 ) : MapModelDict()

@@ -77,14 +77,25 @@ fun BaseCampModule.decode(
     moduleMap.value.fastForEach { map ->
         val moduleType = map["key"]
             .cast<String>()
-        val moduleBytes = map["value"].cast<GvasStructMap>().v["RawData"]
+        val arrayDict = map["value"].cast<GvasStructMap>().v["RawData"]
             .cast<GvasProperty>().value
-            .cast<GvasArrayDict>().value
-            .cast<GvasAnyArrayPropertyValue>().values
+            .cast<GvasArrayDict>()
+        val moduleBytes =
+            arrayDict.value.cast<GvasAnyArrayPropertyValue>().values
             .cast<GvasByteArrayValue>().value
         map["value"].cast<GvasStructMap>().v["RawData"]
-            .cast<GvasProperty>().value = decodeBytes(reader, moduleBytes, moduleType)
+            .cast<GvasProperty>().value = GvasArrayDict(
+            arrayType = arrayDict.arrayType,
+            id = arrayDict.id,
+            value = GvasTransformedArrayValue(decodeBytes(reader, moduleBytes, moduleType))
+        )
     }
+
+    value.value = CustomByteArrayRawData(
+        path,
+        moduleMap.id,
+        value.value
+    )
 
     return value
 }

@@ -7,7 +7,7 @@ sealed class CustomRawData(
     val customType: String
 ) : OpenGvasDict()
 
-class ByteArrayRawData(
+class CustomByteArrayRawData(
     customType: String,
     val id: String?,
     val value: GvasDict?,

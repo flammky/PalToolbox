@@ -296,7 +296,7 @@ private class SaveGameParseInstance(
                         it["value"]
                             .cast<GvasStructMap>()
                             .v["RawData"]?.value
-                            .cast<ByteArrayRawData>().value
+                            .cast<CustomByteArrayRawData>().value
                             .cast<GvasArrayDict>().value
                             .cast<GvasTransformedArrayValue>().value
                             .cast<GvasCharacterData>().`object`.get("SaveParameter")?.value
@@ -453,7 +453,7 @@ private class SaveGamePlayersParseInstance(
                                 for (map in maps) {
                                     val playerStruct = map["value"]
                                         .cast<GvasStructMap>().v["RawData"]?.value
-                                        .cast<ByteArrayRawData>().value
+                                        .cast<CustomByteArrayRawData>().value
                                         .cast<GvasArrayDict>().value
                                         .cast<GvasTransformedArrayValue>().value
                                         .cast<GvasCharacterData>().`object`["SaveParameter"]?.value
@@ -517,7 +517,6 @@ private class SaveGamePlayersParseInstance(
                 onFailure = { ex -> ex.printStackTrace() ; handle.onCompletion(ex as Exception) }
             )
         }.invokeOnCompletion { ex ->
-            println("completed in ${System.nanoTime().minus(nano).nanoseconds}")
             handle.onCompletion(ex as? Exception)
         }
     }

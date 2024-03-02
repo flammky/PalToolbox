@@ -48,7 +48,7 @@ fun PlayersEditPanel(
 ) {
     val playersEditState = rememberSaveGameEditPlayersState(editState)
 
-    Box(
+    BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
             .background(remember { Color(29, 24, 34) })
@@ -77,7 +77,7 @@ fun PlayersEditPanel(
                             Modifier,
                             getName = remember(editState, id) {
                                 val snapshot = derivedStateOf { playersEditState.playerName(id) }
-                                ; // why ?
+                                ;
                                 {
                                     snapshot.value?.name ?: ""
                                 }
@@ -143,7 +143,8 @@ private fun PlayersEditPanelPlayersLazyListItem(
             text = getName(),
             color = Color(252, 252, 252),
             fontWeight = FontWeight.SemiBold,
-            style = MaterialTheme.typography.caption
+            style = MaterialTheme.typography.caption,
+            maxLines = 1
         )
 
         WidthSpacer(MD3Spec.padding.incrementsDp(1).dp)
@@ -159,7 +160,8 @@ private fun PlayersEditPanelPlayersLazyListItem(
                 text = "UID: ${getUid()}",
                 color = Color(0xFF221728),
                 fontWeight = FontWeight.SemiBold,
-                style = Material3Theme.typography.labelMedium
+                style = Material3Theme.typography.labelMedium,
+                maxLines = 1
             )
         }
     }

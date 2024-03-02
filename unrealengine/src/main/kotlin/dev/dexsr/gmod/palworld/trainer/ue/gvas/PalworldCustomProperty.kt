@@ -37,6 +37,7 @@ val PALWORLD_CUSTOM_PROPERTY_CODEC = mapOf<String, Pair<GVAS_PROPERTY_DECODER, G
     ".worldSaveData.CharacterSaveParameterMap.Value.RawData" to (Character::decode to Character::encode),
     ".worldSaveData.ItemContainerSaveData.Value.RawData" to (ItemContainer::decode to ItemContainer::encode),
     ".worldSaveData.ItemContainerSaveData.Value.Slots.Slots.RawData" to (ItemContainerSlot::decode to ItemContainerSlot::encode),
+    ".worldSaveData.CharacterContainerSaveData.Value.Slots.Slots.RawData" to (CharacterContainer::decode to CharacterContainer::encode),
     ".worldSaveData.DynamicItemSaveData.DynamicItemSaveData.RawData" to (DynamicItem::decode to DynamicItem :: encode),
     ".worldSaveData.FoliageGridSaveDataMap.Value.ModelMap.Value.RawData" to (FoliageModel::decode to FoliageModel::encode),
     ".worldSaveData.FoliageGridSaveDataMap.Value.ModelMap.Value.InstanceDataMap.Value.RawData" to (FoliageModelInstance::decode to FoliageModelInstance::encode),

@@ -5,31 +5,34 @@ import dev.dexsr.gmod.palworld.trainer.ue.util.cast
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
-object Character
+object CharacterContainer
 
-sealed class CharacterDict : OpenGvasDict()
+sealed class CharacterContainerDict : OpenGvasDict()
 
-class GvasCharacterData(
-    val `object`: GvasMap<String, GvasProperty>,
-    val unknownBytes: ByteArray,
-    val groupId: String
-): CharacterDict()
+class CharacterContainerData(
+    val playerUid: String,
+    val instanceId: String,
+    val permissionTribeId: Byte
+) : CharacterContainerDict()
 
-fun Character.decode(
+fun CharacterContainer.decode(
     reader: GvasReader,
     typeName: String,
     size: Int,
     path: String
-): GvasProperty {
-    check(typeName == "ArrayProperty") {
-        "CharacterKt.encode: Expected ArrayProperty, got$typeName"
+) : GvasProperty {
+
+    if (typeName != "ArrayProperty") {
+        error("Expected: ArrayProperty, got=$typeName")
     }
+
     val value = reader.property(typeName, size, path, nestedCallerPath = path)
     val arrayDict = value
         .value.cast<GvasArrayDict>()
     val dataBytes = arrayDict.value
         .cast<GvasAnyArrayPropertyValue>().values
         .cast<GvasByteArrayValue>().value
+
     value.value = CustomByteArrayRawData(
         customType = path,
         id = arrayDict.id,
@@ -39,29 +42,35 @@ fun Character.decode(
             value = GvasTransformedArrayValue(decodeBytes(reader, dataBytes))
         )
     )
+
     return value
 }
 
-fun Character.encode(
-    reader: GvasWriter,
+fun CharacterContainer.encode(
+    writer: GvasWriter,
     typeName: String,
-    map: GvasProperty
+    data: GvasProperty
 ): Int {
     TODO()
 }
 
-private fun Character.decodeBytes(
+private fun decodeBytes(
     parentReader: GvasReader,
     bytes: ByteArray
-): GvasCharacterData {
+): CharacterContainerData? {
+    if (bytes.isEmpty()) return null
+
     val reader = parentReader.copy(ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN))
-    val data = GvasCharacterData(
-        `object` = reader.properties(""),
-        unknownBytes = reader.readBytes(4),
-        groupId = reader.uuid().toString()
+
+    val data = CharacterContainerData(
+        playerUid = reader.uuid().toString(),
+        instanceId = reader.uuid().toString(),
+        permissionTribeId = reader.readByte()
     )
+
     check(reader.isEof()) {
-        "EOF not reached while decoding Character bytes"
+        "EOF not reached"
     }
+
     return data
 }
