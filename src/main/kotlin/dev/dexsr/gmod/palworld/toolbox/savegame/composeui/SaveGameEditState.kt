@@ -1,6 +1,7 @@
 package dev.dexsr.gmod.palworld.toolbox.savegame.composeui
 
 import androidx.compose.runtime.*
+import dev.dexsr.gmod.palworld.toolbox.savegame.parser.ManagedSaveGameParser
 import dev.dexsr.gmod.palworld.toolbox.savegame.parser.SaveGameParser
 import dev.dexsr.gmod.palworld.trainer.java.jFile
 import kotlinx.coroutines.CoroutineScope
@@ -13,6 +14,7 @@ class SaveGameEditState(
     private val coroutineScope: CoroutineScope
 )  {
     private val parser = SaveGameParser(coroutineScope)
+    private val managedParser = ManagedSaveGameParser(coroutineScope)
     private var decompressedData: ByteArray? = null
 
     val fileName = file.name
@@ -45,7 +47,7 @@ class SaveGameEditState(
     init {
         coroutineScope.launch(MainUIDispatcher) {
             decompressing = true
-            val decompress = parser.decompressFile(file).await()
+            val decompress = parser.decompressFileAsync(file).await()
             if (decompress.err != null) {
                 println(decompress.err)
                 decompressing = false
@@ -54,7 +56,7 @@ class SaveGameEditState(
             decompressing = false
 
             checkingHeader = true
-            val header = parser.parseFileHeader(decompress.data!!, decompressed = true).await()
+            val header = parser.parseFileHeaderAsync(decompress.data!!, decompressed = true).await()
             if (header.err != null) {
                 println(header.err)
                 checkingHeader = false

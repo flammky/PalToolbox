@@ -1,14 +1,12 @@
 package dev.dexsr.gmod.palworld.toolbox.savegame.composeui.players
 
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.TooltipArea
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material3.*
@@ -26,13 +24,13 @@ import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.OffsetMapping
-import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.text.input.TransformedText
-import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.input.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.dexsr.gmod.palworld.toolbox.composeui.ImmutableAny
+import dev.dexsr.gmod.palworld.toolbox.composeui.wrapComposeUiImmutable
 import dev.dexsr.gmod.palworld.toolbox.savegame.composeui.SaveGameEditState
+import dev.dexsr.gmod.palworld.toolbox.savegame.parser.SaveGamePlayersParsedData
 import dev.dexsr.gmod.palworld.toolbox.theme.md3.composeui.Material3Theme
 import dev.dexsr.gmod.palworld.trainer.composeui.HeightSpacer
 import dev.dexsr.gmod.palworld.trainer.composeui.WidthSpacer
@@ -76,38 +74,15 @@ fun PlayersEditPanel(
                         PlayersEditPanelPlayersLazyListItem(
                             Modifier,
                             getName = remember(editState, id) {
-                                val snapshot = derivedStateOf { playersEditState.playerName(id) }
+                                val snapshot = derivedStateOf { playersEditState.findPlayer(id) }
                                 ;
                                 {
-                                    snapshot.value?.name ?: ""
+                                    snapshot.value?.attribute?.nickName ?: ""
                                 }
                             },
                             getUid = { "$id" },
                             onClick = { editState.userRequestEditPlayer(id) }
                         )
-
-                        val id = pagingData.getContent(i)
-                        Box(
-                            modifier = Modifier
-                                .height(36.dp)
-                                .fillMaxWidth()
-                        ) {
-                            if (id == null) return@Box
-                            PlayersEditPanelPlayersLazyListItem(
-                                modifier = Modifier,
-                                getName = remember(editState, id) {
-                                    val snapshot = derivedStateOf { playersEditState.playerName(id) } // ; <- fixes it
-                                    // I thought it will infer it as () -> String
-                                    // typed on a variable work as well
-                                    val a = {
-                                        snapshot.value?.name ?: ""
-                                    }
-                                    a
-                                },
-                                getUid = { "$id" },
-                                onClick = { editState.userRequestEditPlayer(id) }
-                            )
-                        }
                     }
                 }
             }
@@ -115,9 +90,11 @@ fun PlayersEditPanel(
 
 
         editState.editPlayer?.let {
+            val player = remember(editState, it) {
+                derivedStateOf { playersEditState.findPlayer(it)?.wrapComposeUiImmutable() }
+            }.value ?: return@let
             PlayerEditor(
-                it,
-                remember(editState, it) { derivedStateOf { playersEditState.playerName(it) } }.value?.name ?: "",
+                player,
                 editState
             )
         }
@@ -171,12 +148,13 @@ private fun PlayersEditPanelPlayersLazyListItem(
 @OptIn(ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 @Composable
 private fun PlayerEditor(
-    uid: String,
-    name: String,
+    player: ImmutableAny<SaveGamePlayersParsedData.Player>,
     editState: SaveGameEditState,
     modifier: Modifier = Modifier,
 ) {
-    val pState = rememberSaveGamePlayerEditorState(uid, name)
+    val pState = rememberSaveGamePlayerEditorState(
+        player
+    )
 
     Box(
         modifier = modifier
@@ -197,7 +175,7 @@ private fun PlayerEditor(
 
         if (!pState.showEditor) return@Box
 
-        Column {
+        Column(modifier = Modifier.fillMaxHeight().verticalScroll(rememberScrollState())) {
 
             Row(
                 modifier = Modifier
@@ -269,7 +247,7 @@ private fun PlayerEditor(
             ) {
                 RevertibleTextField(
                     modifier = Modifier.padding(top = 2.dp),
-                    value = remember { derivedStateOf(neverEqualPolicy()) {
+                    value = remember(pState) { derivedStateOf(neverEqualPolicy()) {
                         TextFieldValue(pState.mutName ?: "", pState.mutNameCursor)
                     } }.value,
                     onValueChange = pState::nickNameFieldChange,
@@ -279,12 +257,122 @@ private fun PlayerEditor(
 
                 RevertibleUUIdTextField(
                     modifier = Modifier.padding(top = 2.dp),
-                    value = remember { derivedStateOf(neverEqualPolicy()) {
+                    value = remember(pState) { derivedStateOf(neverEqualPolicy()) {
                         TextFieldValue(pState.mutUid ?: "", pState.mutUidCursor)
                     } }.value,
                     onValueChange = pState::uidTextFieldChange,
                     onRevert = pState::revertUid,
                     labelText = "UID"
+                )
+
+                RevertibleNumberTextField(
+                    modifier = Modifier.padding(top = 2.dp),
+                    value = remember(pState) { derivedStateOf(neverEqualPolicy()) {
+                        TextFieldValue(pState.mutLevel ?: "", pState.mutLevelCursor)
+                    } }.value,
+                    onValueChange = pState::levelTextFieldChange,
+                    onRevert = pState::revertLevel,
+                    labelText = "Level"
+                )
+
+                RevertibleNumberTextField(
+                    modifier = Modifier.padding(top = 2.dp),
+                    value = remember(pState) { derivedStateOf(neverEqualPolicy()) {
+                        TextFieldValue(pState.mutHp ?: "", pState.mutHpCursor)
+                    } }.value,
+                    onValueChange = pState::hpTextFieldChange,
+                    onRevert = pState::revertHp,
+                    labelText = "HP"
+                )
+
+                RevertibleNumberTextField(
+                    modifier = Modifier.padding(top = 2.dp),
+                    value = remember(pState) { derivedStateOf(neverEqualPolicy()) {
+                        TextFieldValue(pState.mutMaxHp ?: "", pState.mutMaxHpCursor)
+                    } }.value,
+                    onValueChange = pState::maxHpTextFieldChange,
+                    onRevert = pState::revertMaxHp,
+                    labelText = "MaxHP"
+                )
+
+                RevertibleNumberTextField(
+                    modifier = Modifier.padding(top = 2.dp),
+                    value = remember(pState) { derivedStateOf(neverEqualPolicy()) {
+                        TextFieldValue(pState.mutFullStomach ?: "", pState.mutFullStomachCursor)
+                    } }.value,
+                    onValueChange = pState::fullStomachTextFieldChange,
+                    onRevert = pState::revertFullStomach,
+                    labelText = "FullStomach"
+                )
+
+                RevertibleNumberTextField(
+                    modifier = Modifier.padding(top = 2.dp),
+                    value = remember(pState) { derivedStateOf(neverEqualPolicy()) {
+                        TextFieldValue(pState.mutSupport ?: "", pState.mutSupportCursor)
+                    } }.value,
+                    onValueChange = pState::supportTextFieldChange,
+                    onRevert = pState::revertSupport,
+                    labelText = "Support"
+                )
+
+                RevertibleNumberTextField(
+                    modifier = Modifier.padding(top = 2.dp),
+                    value = remember(pState) { derivedStateOf(neverEqualPolicy()) {
+                        TextFieldValue(pState.mutCraftSpeed ?: "", pState.mutCraftSpeedCursor)
+                    } }.value,
+                    onValueChange = pState::craftSpeedTextFieldChange,
+                    onRevert = pState::revertCraftSpeed,
+                    labelText = "CraftSpeed"
+                )
+
+                RevertibleNumberTextField(
+                    modifier = Modifier.padding(top = 2.dp),
+                    value = remember(pState) { derivedStateOf(neverEqualPolicy()) {
+                        TextFieldValue(pState.mutShieldHp ?: "", pState.mutShieldHpCursor)
+                    } }.value,
+                    onValueChange = pState::shieldHpTextFieldChange,
+                    onRevert = pState::revertShieldHp,
+                    labelText = "ShieldHP"
+                )
+
+                RevertibleNumberTextField(
+                    modifier = Modifier.padding(top = 2.dp),
+                    value = remember(pState) { derivedStateOf(neverEqualPolicy()) {
+                        TextFieldValue(pState.mutShieldMaxHp ?: "", pState.mutShieldMaxHpCursor)
+                    } }.value,
+                    onValueChange = pState::shieldMaxHpTextFieldChange,
+                    onRevert = pState::revertShieldMaxHp,
+                    labelText = "ShieldMaxHP"
+                )
+
+                RevertibleNumberTextField(
+                    modifier = Modifier.padding(top = 2.dp),
+                    value = remember(pState) { derivedStateOf(neverEqualPolicy()) {
+                        TextFieldValue(pState.mutMaxSp ?: "", pState.mutMaxSpCursor)
+                    } }.value,
+                    onValueChange = pState::maxSpTextFieldChange,
+                    onRevert = pState::revertMaxSp,
+                    labelText = "MaxSP"
+                )
+
+                RevertibleNumberTextField(
+                    modifier = Modifier.padding(top = 2.dp),
+                    value = remember(pState) { derivedStateOf(neverEqualPolicy()) {
+                        TextFieldValue(pState.mutSanityValue ?: "", pState.mutSanityValueCursor)
+                    } }.value,
+                    onValueChange = pState::sanityValueTextFieldChange,
+                    onRevert = pState::revertSanityValue,
+                    labelText = "SanityValue"
+                )
+
+                RevertibleNumberTextField(
+                    modifier = Modifier.padding(top = 2.dp),
+                    value = remember(pState) { derivedStateOf(neverEqualPolicy()) {
+                        TextFieldValue(pState.mutUnusedStatusPoint?: "", pState.mutUnusedStatusPointCursor)
+                    } }.value,
+                    onValueChange = pState::unusedStatusPointTextFieldChange,
+                    onRevert = pState::revertUnusedStatusPoint,
+                    labelText = "UnusedStatusPoint"
                 )
             }
         }
@@ -299,7 +387,8 @@ private fun RevertibleTextField(
     labelText: String,
     onValueChange: (TextFieldValue) -> Unit,
     onRevert: () -> Unit,
-    visualTransformation: VisualTransformation = VisualTransformation.None
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    keyboardOptions: KeyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
 ) {
     val ins = remember { MutableInteractionSource() }
     val colors = TextFieldDefaults.colors(
@@ -316,6 +405,7 @@ private fun RevertibleTextField(
             color = Color(252, 252, 252),
             fontWeight = FontWeight.Medium,
         ),
+        keyboardOptions = keyboardOptions,
         cursorBrush = SolidColor(Color(252, 252, 252)),
         visualTransformation = visualTransformation,
         decorationBox = {
@@ -429,6 +519,18 @@ private fun RevertibleUUIdTextField(
             }
         )
     }
+)
+
+@Composable
+private fun RevertibleNumberTextField(
+    modifier: Modifier,
+    value: TextFieldValue,
+    labelText: String,
+    onValueChange: (TextFieldValue) -> Unit,
+    onRevert: () -> Unit,
+) = RevertibleTextField(
+    modifier, value, labelText, onValueChange, onRevert,
+    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
 )
 
 @OptIn(ExperimentalFoundationApi::class)

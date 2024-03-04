@@ -1,6 +1,7 @@
 package dev.dexsr.gmod.palworld.trainer.ue.gvas
 
 import dev.dexsr.gmod.palworld.trainer.ue.util.cast
+import dev.dexsr.gmod.palworld.trainer.ue.util.fastMap
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.charset.Charset
@@ -158,7 +159,7 @@ private fun readGvasStruct(
 private fun readGvasUUID(buf: ByteBuffer): UUID {
     val b = ByteArray(16)
         .apply { buf.get(this) }
-        .map { it.toInt() and 0xFF }
+        .fastMap { it.toInt() and 0xFF }
     val f = "%08x-%04x-%04x-%04x-%04x%08x".format(
         (b[3] shl 24) or (b[2] shl 16) or (b[1] shl 8) or b[0],
         (b[7] shl 8) or b[6],

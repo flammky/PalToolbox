@@ -3,7 +3,9 @@ package dev.dexsr.gmod.palworld.toolbox.savegame.composeui.players
 import androidx.compose.runtime.*
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
+import dev.dexsr.gmod.palworld.toolbox.composeui.ImmutableAny
 import dev.dexsr.gmod.palworld.toolbox.savegame.parser.SaveGameParser
+import dev.dexsr.gmod.palworld.toolbox.savegame.parser.SaveGamePlayersParsedData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
@@ -11,13 +13,12 @@ import org.jetbrains.skiko.MainUIDispatcher
 
 @Composable
 fun rememberSaveGamePlayerEditorState(
-    uid: String,
-    name: String
+    player: ImmutableAny<SaveGamePlayersParsedData.Player>
 ): SaveGamePlayerEditorState {
     val coroutineScope = rememberCoroutineScope()
 
-    val state = remember(uid, name) {
-        SaveGamePlayerEditorState(uid, name, coroutineScope,)
+    val state = remember(player) {
+        SaveGamePlayerEditorState(player.value, coroutineScope)
     }
 
     DisposableEffect(state) {
@@ -29,21 +30,64 @@ fun rememberSaveGamePlayerEditorState(
 }
 
 class SaveGamePlayerEditorState(
-    val uid: String,
-    val name: String,
+    val player: SaveGamePlayersParsedData.Player,
     val coroutineScope: CoroutineScope
 ) {
 
     private val lifetime = SupervisorJob()
     private val parser = SaveGameParser(CoroutineScope(lifetime))
 
-    var initialName by mutableStateOf<String?>(name)
+    var initialName by mutableStateOf<String?>(player.attribute.nickName)
     var mutName by mutableStateOf<String?>(initialName)
     var mutNameCursor by mutableStateOf(TextRange(0))
 
-    var initialUid by mutableStateOf<String?>(uid.filter(Char::isLetterOrDigit))
+    var initialUid by mutableStateOf<String?>(player.attribute.uid.filter(Char::isLetterOrDigit))
     var mutUid by mutableStateOf<String?>(initialUid)
     var mutUidCursor by mutableStateOf(TextRange(0))
+
+    var initialLevel by mutableStateOf<String?>(player.attribute.level.toString())
+    var mutLevel by mutableStateOf<String?>(initialLevel)
+    var mutLevelCursor by mutableStateOf(TextRange(0))
+
+    var initialHp by mutableStateOf<String?>(player.attribute.hp.toString())
+    var mutHp by mutableStateOf<String?>(initialHp)
+    var mutHpCursor by mutableStateOf(TextRange(0))
+
+    var initialMaxHp by mutableStateOf<String?>(player.attribute.maxHp.toString())
+    var mutMaxHp by mutableStateOf<String?>(initialMaxHp)
+    var mutMaxHpCursor by mutableStateOf(TextRange(0))
+
+    var initialFullStomach by mutableStateOf<String?>(player.attribute.fullStomach.toString())
+    var mutFullStomach by mutableStateOf<String?>(initialFullStomach)
+    var mutFullStomachCursor by mutableStateOf(TextRange(0))
+
+    var initialSupport by mutableStateOf<String?>(player.attribute.support.toString())
+    var mutSupport by mutableStateOf<String?>(initialSupport)
+    var mutSupportCursor by mutableStateOf(TextRange(0))
+
+    var initialCraftSpeed by mutableStateOf<String?>(player.attribute.craftSpeed.toString())
+    var mutCraftSpeed by mutableStateOf<String?>(initialCraftSpeed)
+    var mutCraftSpeedCursor by mutableStateOf(TextRange(0))
+
+    var initialShieldHp by mutableStateOf<String?>(player.attribute.shieldHp.toString())
+    var mutShieldHp by mutableStateOf<String?>(initialShieldHp)
+    var mutShieldHpCursor by mutableStateOf(TextRange(0))
+
+    var initialShieldMaxHp by mutableStateOf<String?>(player.attribute.shieldMaxHp.toString())
+    var mutShieldMaxHp by mutableStateOf<String?>(initialShieldMaxHp)
+    var mutShieldMaxHpCursor by mutableStateOf(TextRange(0))
+
+    var initialMaxSp by mutableStateOf<String?>(player.attribute.maxSp.toString())
+    var mutMaxSp by mutableStateOf<String?>(initialMaxSp)
+    var mutMaxSpCursor by mutableStateOf(TextRange(0))
+
+    var initialSanityValue by mutableStateOf<String?>(player.attribute.sanityValue.toString())
+    var mutSanityValue by mutableStateOf<String?>(initialSanityValue)
+    var mutSanityValueCursor by mutableStateOf(TextRange(0))
+
+    var initialUnusedStatusPoint by mutableStateOf<String?>(player.attribute.unusedStatusPoint.toString())
+    var mutUnusedStatusPoint by mutableStateOf<String?>(initialUnusedStatusPoint)
+    var mutUnusedStatusPointCursor by mutableStateOf(TextRange(0))
 
     var loading by mutableStateOf(false)
 
@@ -203,12 +247,199 @@ class SaveGamePlayerEditorState(
         mutUid = seg1.toString() + seg2.toString() + seg3.toString() + seg4.toString() + seg5.toString()*/
     }
 
+    fun levelTextFieldChange(textFieldValue: TextFieldValue) {
+        if (textFieldValue.text.length > 3) return
+        if (textFieldValue.text.isNotEmpty()) {
+            if (!textFieldValue.text.all(Char::isDigit)) return
+            val num = textFieldValue.text.toInt()
+            mutLevel = num.toString()
+            mutLevelCursor = textFieldValue.selection
+        } else {
+            mutLevel = ""
+            mutLevelCursor = textFieldValue.selection
+        }
+    }
+
+    fun hpTextFieldChange(textFieldValue: TextFieldValue) {
+        if (textFieldValue.text.length > 10) return
+        if (textFieldValue.text.isNotEmpty()) {
+            if (!textFieldValue.text.all(Char::isDigit)) return
+            val num = textFieldValue.text.toIntOrNull() ?: return
+            mutHp = num.toString()
+            mutHpCursor = textFieldValue.selection
+        } else {
+            mutHp = ""
+            mutHpCursor = textFieldValue.selection
+        }
+    }
+
+    fun maxHpTextFieldChange(textFieldValue: TextFieldValue) {
+        if (textFieldValue.text.length > 10) return
+        if (textFieldValue.text.isNotEmpty()) {
+            if (!textFieldValue.text.all(Char::isDigit)) return
+            val num = textFieldValue.text.toIntOrNull() ?: return
+            mutMaxHp = num.toString()
+            mutMaxHpCursor = textFieldValue.selection
+        } else {
+            mutMaxHp = ""
+            mutMaxHpCursor = textFieldValue.selection
+        }
+    }
+
+    fun fullStomachTextFieldChange(textFieldValue: TextFieldValue) {
+        if (textFieldValue.text.length > 9) return
+        if (textFieldValue.text.isNotEmpty()) {
+            if (!textFieldValue.text.all { it.isDigit() || it == '.' }) return
+            val num = textFieldValue.text.toFloatOrNull() ?: return
+            mutFullStomach = num.toString()
+            mutFullStomachCursor = textFieldValue.selection
+        } else {
+            mutFullStomach = ""
+            mutFullStomachCursor = textFieldValue.selection
+        }
+    }
+
+    fun supportTextFieldChange(textFieldValue: TextFieldValue) {
+        if (textFieldValue.text.length > 10) return
+        if (textFieldValue.text.isNotEmpty()) {
+            if (!textFieldValue.text.all(Char::isDigit)) return return
+            val num = textFieldValue.text.toIntOrNull() ?: return
+            mutSupport = num.toString()
+            mutSupportCursor = textFieldValue.selection
+        } else {
+            mutSupport = ""
+            mutSupportCursor = textFieldValue.selection
+        }
+    }
+
+    fun craftSpeedTextFieldChange(textFieldValue: TextFieldValue) {
+        if (textFieldValue.text.length > 10) return
+        if (textFieldValue.text.isNotEmpty()) {
+            if (!textFieldValue.text.all(Char::isDigit)) return return
+            val num = textFieldValue.text.toIntOrNull() ?: return
+            mutCraftSpeed = num.toString()
+            mutCraftSpeedCursor = textFieldValue.selection
+        } else {
+            mutCraftSpeed = ""
+            mutCraftSpeedCursor = textFieldValue.selection
+        }
+    }
+
+    fun shieldHpTextFieldChange(textFieldValue: TextFieldValue) {
+        if (textFieldValue.text.length > 10) return
+        if (textFieldValue.text.isNotEmpty()) {
+            if (!textFieldValue.text.all(Char::isDigit)) return return
+            val num = textFieldValue.text.toIntOrNull() ?: return
+            mutShieldHp = num.toString()
+            mutShieldHpCursor = textFieldValue.selection
+        } else {
+            mutShieldHp = ""
+            mutShieldHpCursor = textFieldValue.selection
+        }
+    }
+
+    fun shieldMaxHpTextFieldChange(textFieldValue: TextFieldValue) {
+        if (textFieldValue.text.length > 10) return
+        if (textFieldValue.text.isNotEmpty()) {
+            if (!textFieldValue.text.all(Char::isDigit)) return return
+            val num = textFieldValue.text.toIntOrNull() ?: return
+            mutShieldMaxHp = num.toString()
+            mutShieldMaxHpCursor = textFieldValue.selection
+        } else {
+            mutShieldMaxHp = ""
+            mutShieldMaxHpCursor = textFieldValue.selection
+        }
+    }
+
+    fun maxSpTextFieldChange(textFieldValue: TextFieldValue) {
+        if (textFieldValue.text.length > 10) return
+        if (textFieldValue.text.isNotEmpty()) {
+            if (!textFieldValue.text.all(Char::isDigit)) return return
+            val num = textFieldValue.text.toIntOrNull() ?: return
+            mutMaxSp = num.toString()
+            mutMaxSpCursor = textFieldValue.selection
+        } else {
+            mutMaxSp = ""
+            mutMaxSpCursor = textFieldValue.selection
+        }
+    }
+
+    fun sanityValueTextFieldChange(textFieldValue: TextFieldValue) {
+        if (textFieldValue.text.length > 8) return
+        if (textFieldValue.text.isNotEmpty()) {
+            if (!textFieldValue.text.all { it.isDigit() || it == '.' }) return
+            val num = textFieldValue.text.toFloatOrNull() ?: return
+            mutSanityValue = num.toString()
+            mutSanityValueCursor = textFieldValue.selection
+        } else {
+            mutSanityValue = ""
+            mutSanityValueCursor = textFieldValue.selection
+        }
+    }
+
+    fun unusedStatusPointTextFieldChange(textFieldValue: TextFieldValue) {
+        if (textFieldValue.text.length > 10) return
+        if (textFieldValue.text.isNotEmpty()) {
+            if (!textFieldValue.text.all(Char::isDigit)) return return
+            val num = textFieldValue.text.toIntOrNull() ?: return
+            mutUnusedStatusPoint = num.toString()
+            mutUnusedStatusPointCursor = textFieldValue.selection
+        } else {
+            mutUnusedStatusPoint = ""
+            mutUnusedStatusPointCursor = textFieldValue.selection
+        }
+    }
+
     fun revertNickName() {
         mutName = initialName
     }
 
     fun revertUid() {
         mutUid = initialUid
+    }
+
+    fun revertLevel() {
+        mutLevel = initialLevel
+    }
+
+    fun revertHp() {
+        mutHp = initialHp
+    }
+
+    fun revertMaxHp() {
+        mutMaxHp = initialMaxHp
+    }
+
+    fun revertFullStomach() {
+        mutFullStomach = initialFullStomach
+    }
+
+    fun revertSupport() {
+        mutSupport = initialSupport
+    }
+
+    fun revertCraftSpeed() {
+        mutCraftSpeed = initialCraftSpeed
+    }
+
+    fun revertShieldHp() {
+        mutShieldHp = initialShieldHp
+    }
+
+    fun revertShieldMaxHp() {
+        mutShieldMaxHp = initialShieldMaxHp
+    }
+
+    fun revertMaxSp() {
+        mutMaxSp = initialMaxSp
+    }
+
+    fun revertSanityValue() {
+        mutSanityValue = initialSanityValue
+    }
+
+    fun revertUnusedStatusPoint() {
+        mutUnusedStatusPoint = initialUnusedStatusPoint
     }
 
     private fun init() {

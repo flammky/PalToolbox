@@ -51,7 +51,7 @@ class SaveGameEditPlayersState(
 
     }
 
-    fun playerName(uid: String) = _data?.players?.find { it.uid == uid }
+    fun findPlayer(uid: String) = _data?.players?.find { it.attribute.uid == uid }
 
     private fun init() {
         coroutineScope.launch(MainUIDispatcher) {
@@ -61,7 +61,7 @@ class SaveGameEditPlayersState(
 
                     // TODO: put constrains on how many `players` can be
                     withContext(Dispatchers.Default) {
-                        val result = parser.parsePlayers(editState.decompressed!!, editState.headerEndPos!!).await()
+                        val result = parser.parsePlayersAsync(editState.decompressed!!, editState.headerEndPos!!).await()
 
                         if (result.err != null) {
                             // ask to refresh
@@ -73,7 +73,7 @@ class SaveGameEditPlayersState(
 
                         PlayersPagingData(
                             playersCount = data.players.size,
-                            buckets = listOf(PageBucket(listOf(PlayersPagedData(data.players.map { it.uid })), 0, data.players.size)),
+                            buckets = listOf(PageBucket(listOf(PlayersPagedData(data.players.map { it.attribute.uid })), 0, data.players.size)),
                             // no impl
                             intentLoadToOffset = {}
                         ).also {

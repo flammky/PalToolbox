@@ -11,25 +11,33 @@ import java.nio.CharBuffer
 import java.nio.charset.CodingErrorAction
 import java.nio.charset.MalformedInputException
 import java.nio.charset.UnmappableCharacterException
-import kotlin.time.Duration.Companion.nanoseconds
+
+class ManagedSaveGameParser(
+    private val coroutineScope: CoroutineScope
+) {
+
+    private var _jFile: jFile? = null
+    private var _bytes: ByteArray? = null
+
+}
 
 class SaveGameParser(
     private val coroutineScope: CoroutineScope
 ) {
 
-    fun decompressFile(file: jFile): SaveGameDecompressHandle {
+    fun decompressFileAsync(file: jFile): SaveGameDecompressHandle {
         return SaveGameDecompressInstance(file, coroutineScope).apply { doCompress() }.handle
     }
 
-    fun parseFileHeader(input: ByteArray, decompressed: Boolean): SaveGameHeaderParseHandle {
+    fun parseFileHeaderAsync(input: ByteArray, decompressed: Boolean): SaveGameHeaderParseHandle {
         return SaveGameHeaderParseInstance(input, coroutineScope, decompressed).apply { doParse() }.handle
     }
 
-    fun parseFile(file: jFile): SaveGameParseHandle {
+    fun parseFileAsync(file: jFile): SaveGameParseHandle {
         return SaveGameParseInstance(file, coroutineScope).apply { doParse() }.handle
     }
 
-    fun parsePlayers(input: ByteArray, offset: Long): SaveGamePlayersParseHandle {
+    fun parsePlayersAsync(input: ByteArray, offset: Long): SaveGamePlayersParseHandle {
         return SaveGamePlayersParseInstance(coroutineScope).apply { doParseFromPropertiesStart(input, offset.toInt()) }.handle
     }
 }
@@ -371,15 +379,30 @@ class SaveGamePlayersParseResult private constructor(
 }
 
 class SaveGamePlayersParsedData(
+    // we can use HashMap but should we expect this to be big ?
     val players: ArrayList<Player>,
     val properties: GvasFileProperties
 ) {
 
 
     class Player(
-        val name: String,
+        val attribute: PlayerAttribute
+    )
+
+    class PlayerAttribute(
+        val nickName: String,
         val uid: String,
-        val instanceId: String
+        val level: Int,
+        val hp: Long,
+        val maxHp: Long,
+        val fullStomach: Float,
+        val support: Int,
+        val craftSpeed: Int,
+        val shieldHp: Int,
+        val shieldMaxHp: Int,
+        val maxSp: Long,
+        val sanityValue: Float,
+        val unusedStatusPoint: Int
     )
 }
 
@@ -424,7 +447,6 @@ private class SaveGamePlayersParseInstance(
     val handle = ActualSaveGamePlayersParseHandle()
 
     fun doParseFromPropertiesStart(input: ByteArray, inputOffset: Int) {
-        val nano = System.nanoTime()
         coroutineScope.launch(Dispatchers.IO + handle.lifetime) {
 
             runCatching {
@@ -488,17 +510,48 @@ private class SaveGamePlayersParseInstance(
                                             }
                                         }
 
-                                        val data = SaveGamePlayersParsedData.Player(
-                                            name = playerParams.v["NickName"]!!.value.cast<GvasStrDict>().value,
-                                            uid = map["key"]
+                                        val data = run {
+                                            val playerStructMap = playerStruct.value
+                                                .cast<GvasStructMap>().v
+                                            val name = playerParams.v["NickName"]!!.value
+                                                .cast<GvasStrDict>().value
+                                            val uid = map["key"]
                                                 .cast<GvasStructMap>().v["PlayerUId"]?.value
                                                 .cast<GvasStructDict>().value
-                                                .cast<GvasGUID>().v,
-                                            instanceId = map["key"]
-                                                .cast<GvasStructMap>().v["InstanceId"]?.value
-                                                .cast<GvasStructDict>().value
                                                 .cast<GvasGUID>().v
-                                        )
+                                            SaveGamePlayersParsedData.Player(
+                                                attribute = SaveGamePlayersParsedData.PlayerAttribute(
+                                                    nickName = name,
+                                                    uid = uid,
+                                                    level = playerStructMap["Level"]?.value
+                                                        .cast<GvasIntDict>().value,
+                                                    hp = playerStructMap["HP"]?.value
+                                                        .cast<GvasStructDict>().value
+                                                        .cast<GvasStructMap>().v["Value"]?.value
+                                                        .cast<GvasInt64Dict>().value,
+                                                    maxHp = playerStructMap["MaxHP"]?.value
+                                                        .cast<GvasStructDict>().value
+                                                        .cast<GvasStructMap>().v["Value"]?.value
+                                                        .cast<GvasInt64Dict>().value,
+                                                    fullStomach = playerStructMap["FullStomach"]?.value
+                                                        .cast<GvasFloatDict>().value,
+                                                    support = playerStructMap["Support"]?.value
+                                                        .cast<GvasIntDict>().value,
+                                                    craftSpeed = playerStructMap["CraftSpeed"]?.value
+                                                        .cast<GvasIntDict>().value,
+                                                    shieldHp = 0,
+                                                    shieldMaxHp = 0,
+                                                    maxSp = playerStructMap["MaxSP"]?.value
+                                                        .cast<GvasStructDict>().value
+                                                        .cast<GvasStructMap>().v["Value"]?.value
+                                                        .cast<GvasInt64Dict>().value,
+                                                    sanityValue = playerStructMap["SanityValue"]?.value
+                                                        .cast<GvasFloatDict>().value,
+                                                    unusedStatusPoint = playerStructMap["UnusedStatusPoint"]?.value
+                                                        .cast<GvasIntDict>().value
+                                                )
+                                            )
+                                        }
 
                                         add(data)
                                     }
