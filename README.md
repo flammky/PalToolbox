@@ -6,7 +6,7 @@ will be updated on every GUI Update
 
 > UI will be heavily written using [Jetbrains KMP](https://www.jetbrains.com/kotlin-multiplatform/) and will be deployed on Windows, and the Web, and eventually other OS.
 
-![Screenshot](https://github.com/flammky/PalToolbox/assets/94031495/788152fe-f18b-4754-951f-cc7e751caf13)
+![Screenshot](https://github.com/flammky/PalToolbox/assets/94031495/c03649d3-ca87-4157-a575-49c6ae3bc579)
 
 ## Implemented Features
 // TODO
