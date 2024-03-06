@@ -3,7 +3,6 @@ package dev.dexsr.gmod.palworld.toolbox.savegame.composeui.players
 import androidx.compose.runtime.*
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
-import dev.dexsr.gmod.palworld.toolbox.composeui.ImmutableAny
 import dev.dexsr.gmod.palworld.toolbox.savegame.parser.SaveGameParser
 import dev.dexsr.gmod.palworld.toolbox.savegame.parser.SaveGamePlayersParsedData
 import kotlinx.coroutines.CoroutineScope
@@ -12,31 +11,34 @@ import kotlinx.coroutines.launch
 import org.jetbrains.skiko.MainUIDispatcher
 
 @Composable
-fun rememberSaveGamePlayerEditorState(
-    player: ImmutableAny<SaveGamePlayersParsedData.Player>
-): SaveGamePlayerEditorState {
-    val coroutineScope = rememberCoroutineScope()
+fun rememberAttributeEditPanelState(
+    editorState: SaveGamePlayerEditorState
+): AttributeEditPanelState {
 
-    val state = remember(player) {
-        SaveGamePlayerEditorState(player.value, coroutineScope)
+    val coroutineScope = rememberCoroutineScope()
+    val state = remember(editorState) {
+        AttributeEditPanelState(editorState.player, coroutineScope)
     }
 
     DisposableEffect(state) {
-        state.onRemembered()
-        onDispose { state.onDispose() }
+
+        onDispose {  }
     }
 
     return state
 }
 
 @Stable
-class SaveGamePlayerEditorState(
+class AttributeEditPanelState(
     val player: SaveGamePlayersParsedData.Player,
     val coroutineScope: CoroutineScope
 ) {
 
     private val lifetime = SupervisorJob()
     private val parser = SaveGameParser(CoroutineScope(lifetime))
+
+    var expanded by mutableStateOf(false)
+        private set
 
     var initialName by mutableStateOf<String?>(player.attribute.nickName)
     var mutName by mutableStateOf<String?>(initialName)
@@ -90,6 +92,10 @@ class SaveGamePlayerEditorState(
 
     var showEditor by mutableStateOf(false)
 
+    fun userToggleExpand() {
+        expanded = !expanded
+    }
+
     fun onRemembered() {
         init()
     }
@@ -105,7 +111,7 @@ class SaveGamePlayerEditorState(
             return
         }
         var n = 0
-        mutName =  StringBuilder()
+        mutName = StringBuilder()
             .apply {
                 textFieldValue.text.forEach { c ->
                     if (!c.isLetterOrDigit()) return@forEach
@@ -124,7 +130,7 @@ class SaveGamePlayerEditorState(
             return
         }
         var n = 0
-        mutUid =  StringBuilder()
+        mutUid = StringBuilder()
             .apply {
                 textFieldValue.text.forEach { c ->
                     if (!c.isLetterOrDigit()) return@forEach

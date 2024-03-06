@@ -393,13 +393,12 @@ class SaveGamePlayersParsedData(
         val nickName: String,
         val uid: String,
         val level: Int,
+        val exp: Int,
         val hp: Long,
         val maxHp: Long,
         val fullStomach: Float,
         val support: Int,
         val craftSpeed: Int,
-        val shieldHp: Int,
-        val shieldMaxHp: Int,
         val maxSp: Long,
         val sanityValue: Float,
         val unusedStatusPoint: Int
@@ -525,6 +524,8 @@ private class SaveGamePlayersParseInstance(
                                                     uid = uid,
                                                     level = playerStructMap["Level"]?.value
                                                         .cast<GvasIntDict>().value,
+                                                    exp = playerStructMap["Exp"]?.value
+                                                        .cast<GvasIntDict>().value,
                                                     hp = playerStructMap["HP"]?.value
                                                         .cast<GvasStructDict>().value
                                                         .cast<GvasStructMap>().v["Value"]?.value
@@ -539,8 +540,6 @@ private class SaveGamePlayersParseInstance(
                                                         .cast<GvasIntDict>().value,
                                                     craftSpeed = playerStructMap["CraftSpeed"]?.value
                                                         .cast<GvasIntDict>().value,
-                                                    shieldHp = 0,
-                                                    shieldMaxHp = 0,
                                                     maxSp = playerStructMap["MaxSP"]?.value
                                                         .cast<GvasStructDict>().value
                                                         .cast<GvasStructMap>().v["Value"]?.value
