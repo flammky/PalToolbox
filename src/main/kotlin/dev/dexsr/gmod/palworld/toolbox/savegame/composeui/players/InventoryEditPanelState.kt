@@ -1,7 +1,14 @@
 package dev.dexsr.gmod.palworld.toolbox.savegame.composeui.players
 
 import androidx.compose.runtime.*
-import androidx.compose.ui.util.fastForEachIndexed
+import dev.dexsr.gmod.palworld.toolbox.savegame.SaveGamePlayerInventoryEdit
+import dev.dexsr.gmod.palworld.toolbox.savegame.SaveGamePlayerInventoryEditListener
+import dev.dexsr.gmod.palworld.toolbox.util.fastForEach
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import org.jetbrains.skiko.MainUIDispatcher
 
 @Composable
 fun rememberInventoryEditPanelState(
@@ -9,12 +16,12 @@ fun rememberInventoryEditPanelState(
 ): InventoryEditPanelState {
 
     val state = remember(pState) {
-        InventoryEditPanelState()
+        InventoryEditPanelState(pState)
     }
 
     DisposableEffect(state) {
-
-        onDispose {  }
+        state.stateEnter()
+        onDispose { state.stateExit() }
     }
 
     return state
@@ -22,61 +29,86 @@ fun rememberInventoryEditPanelState(
 
 @Stable
 class InventoryEditPanelState(
-
+    private val playerEditorState: SaveGamePlayerEditorState,
 ) {
+
+    var editor: SaveGamePlayerInventoryEdit? = null
+        private set
 
     var currentSlotIndex by mutableStateOf<Int>(0)
 
     var expanded by mutableStateOf(false)
+        private set
 
-    val commonSlot = CommonSlot
+    var sourceNotFoundErr by mutableStateOf<SaveGamePlayerInventoryEdit.Error?>(null)
+        private set
 
-    val dropSlot = DropSlot
+    var commonErr by mutableStateOf<SaveGamePlayerInventoryEdit.Error?>(null)
+        private set
 
-    val essentialSlot = EssentialSlot
+    var noContent by mutableStateOf(false)
+        private set
 
-    val foodEquipSlot = FoodEquipSlot
+    var showEditor by mutableStateOf(false)
+        private set
 
-    val equipArmorSlot = EquipArmorSlot
+    private var _coroutineScope: CoroutineScope? = null
 
-    val weaponLoadOutSlot = WeaponLoadOutSlot
+    private var wasExpanded = false
 
-    private val _slots = listOf(
-        commonSlot,
-        dropSlot,
-        essentialSlot,
-        foodEquipSlot,
-        equipArmorSlot,
-        weaponLoadOutSlot
-    )
-
-    private val _slotsByZIndex by mutableStateOf<List<Slot>>(
-        emptyList(),
+    private val _slotUidMap = mutableStateOf(
+        linkedMapOf<Slot, String>(),
         neverEqualPolicy()
     )
+
+    private val coroutineScope
+        get() = requireNotNull(_coroutineScope) {
+            "State wasn't initialized"
+        }
+
+    private val _slots = listOf(
+        CommonSlot,
+        DropSlot,
+        EssentialSlot,
+        FoodEquipSlot,
+        EquipArmorSlot,
+        WeaponLoadOutSlot
+    )
+
+    private var _slotsByZIndex by mutableStateOf<List<Slot>>(
+        listOf(CommonSlot, DropSlot, EssentialSlot, EquipArmorSlot, FoodEquipSlot, WeaponLoadOutSlot).asReversed(),
+        neverEqualPolicy()
+    )
+
+    fun stateEnter() {
+        _coroutineScope = CoroutineScope(SupervisorJob() + MainUIDispatcher)
+    }
+
+    fun stateExit() {
+        coroutineScope.cancel()
+    }
 
     fun slots() = _slots
 
     fun selectSlot(slot: Slot) {
-        when(slot) {
-            is CommonSlot -> {
-                if (slot == commonSlot) currentSlotIndex = 0
-            }
-            is DropSlot -> {
-                if (slot == dropSlot) currentSlotIndex = 1
-            }
-            is EssentialSlot -> {
-                if (slot == essentialSlot) currentSlotIndex = 2
-            }
-            is EquipArmorSlot -> {
-                if (slot == equipArmorSlot) currentSlotIndex = 3
-            }
-            is FoodEquipSlot -> {
-                if (slot == foodEquipSlot) currentSlotIndex = 4
-            }
-            is WeaponLoadOutSlot -> {
-                if (slot == weaponLoadOutSlot) currentSlotIndex = 5
-            }
+        val index = when(slot) {
+            is CommonSlot -> 0
+            is DropSlot -> 1
+            is EssentialSlot -> 2
+            is EquipArmorSlot -> 3
+            is FoodEquipSlot -> 4
+            is WeaponLoadOutSlot -> 5
+        }
+        val change = index != currentSlotIndex
+        if (!change) return
+        currentSlotIndex = index
+        slotAccessOrder(slot)
+    }
+
+    private fun slotAccessOrder(slot: Slot) {
+        _slotsByZIndex = buildList {
+            _slotsByZIndex.fastForEach { e -> if (e != slot) add(e) }
+            add(slot)
         }
     }
 
@@ -101,6 +133,12 @@ class InventoryEditPanelState(
 
     fun userToggleExpand() {
         expanded = !expanded
+        if (expanded) {
+            if (!wasExpanded) {
+                wasExpanded = true
+                lazyInit()
+            }
+        }
     }
 
     fun isSlotSelected(slot: Slot) = when(slot) {
@@ -113,6 +151,59 @@ class InventoryEditPanelState(
     }
 
     fun slotZIndex(slot: Slot) = _slotsByZIndex.indexOf(slot).toFloat()
+
+    fun slotUid(slot: Slot) = _slotUidMap.value[slot]
+
+    fun refresh() {
+
+    }
+
+    private fun lazyInit() {
+        coroutineScope.launch {
+            val editor = playerEditorState.editState.saveGameEditor ?: return@launch
+            val inventoryEditor = editor.getOrOpenPlayerInventory(playerEditorState.player.attribute.uid)
+            inventoryEditor.addListener(
+                SaveGamePlayerInventoryEditListener(
+                    onProgress = { event ->
+                        when(event) {
+                            SaveGamePlayerInventoryEdit.Progress.ResolvingFile -> {
+                                // resolving file
+                            }
+                            else -> {
+
+                            }
+                        }
+                    },
+                    onError = { event ->
+                        when (event) {
+                            is SaveGamePlayerInventoryEdit.Error.PlayerFileFNF,
+                            is SaveGamePlayerInventoryEdit.Error.PlayersFolderFNF -> {
+                                commonErr = null
+                                sourceNotFoundErr = event
+                            }
+                            else -> {
+                                sourceNotFoundErr = null
+                                commonErr = event
+                            }
+                        }
+                    },
+                )
+            )
+
+            inventoryEditor.prepare()
+            inventoryEditor.parseInventoryUIDMap()
+            _slotUidMap.value = linkedMapOf<Slot, String>()
+                .apply {
+                    inventoryEditor.inventoriesUidMap?.entries?.forEach { (slot, uid) ->
+                        slotFromStr(slot)?.let { put(it, uid) }
+                    }
+                }
+            this@InventoryEditPanelState.editor = inventoryEditor
+            showEditor = true
+        }
+    }
+
+    // todo: define on domain instead
 
     @Stable
     sealed class Slot()
@@ -134,4 +225,14 @@ class InventoryEditPanelState(
 
     @Stable
     data object WeaponLoadOutSlot : Slot()
+
+    private fun slotFromStr(str: String) = when(str) {
+        "CommonContainerId" -> CommonSlot
+        "DropSlotContainerId" -> DropSlot
+        "EssentialContainerId" -> EssentialSlot
+        "WeaponLoadOutContainerId" -> WeaponLoadOutSlot
+        "PlayerEquipArmorContainerId" -> EquipArmorSlot
+        "FoodEquipContainerId" -> FoodEquipSlot
+        else -> null
+    }
 }

@@ -1,7 +1,9 @@
 package dev.dexsr.gmod.palworld.toolbox.savegame.composeui.players
 
-import androidx.compose.runtime.*
-import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.remember
 import dev.dexsr.gmod.palworld.toolbox.ui.MainUIDispatcher
 import dev.dexsr.gmod.palworld.toolbox.ui.UIFoundation
 import kotlinx.coroutines.CoroutineScope
@@ -10,12 +12,12 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
 @Composable
-fun rememberPlayerInventoryCommonSlotEditState(
+fun rememberPlayerInventoryEssentialSlotEditState(
     inventoryState: InventoryEditPanelState
-): PlayerInventoryCommonSlotEditState {
+): PlayerInventoryEssentialSlotEditState {
 
     val state = remember(inventoryState) {
-        PlayerInventoryCommonSlotEditState(inventoryState)
+        PlayerInventoryEssentialSlotEditState(inventoryState)
     }
 
     DisposableEffect(state) {
@@ -27,7 +29,7 @@ fun rememberPlayerInventoryCommonSlotEditState(
 }
 
 @Stable
-class PlayerInventoryCommonSlotEditState(
+class PlayerInventoryEssentialSlotEditState(
     private val inventoryState: InventoryEditPanelState
 ) {
 
@@ -35,7 +37,7 @@ class PlayerInventoryCommonSlotEditState(
     private val coroutineScope get() = requireNotNull(_coroutineScope)
 
     val uid
-        get() = inventoryState.slotUid(InventoryEditPanelState.CommonSlot)
+        get() = inventoryState.slotUid(InventoryEditPanelState.EssentialSlot)
 
     fun stateEnter() {
         _coroutineScope = CoroutineScope(SupervisorJob() + UIFoundation.MainUIDispatcher)
@@ -50,35 +52,6 @@ class PlayerInventoryCommonSlotEditState(
         coroutineScope.launch {
             val editor = inventoryState.editor ?: return@launch
             editor.prepare()
-
-            editor
-        }
-    }
-
-    @Immutable
-    class Entry(
-        val index: Int,
-        val itemId: String,
-        val stackCount: Int
-    )
-
-    @Stable
-    class MutEntry(
-        val entry: Entry
-    ) {
-        val index = entry.index
-
-        var itemId by mutableStateOf(TextFieldValue(entry.itemId))
-            private set
-
-        var stackCount by mutableStateOf(TextFieldValue(entry.stackCount.toString()))
-            private set
-
-        fun itemIdChange(itemId: TextFieldValue) {
-            // put hard limit
-            // as of this writing the max known length is only 73
-            val maxLen = 512
-            if (itemId.text.length > maxLen) return
         }
     }
 }

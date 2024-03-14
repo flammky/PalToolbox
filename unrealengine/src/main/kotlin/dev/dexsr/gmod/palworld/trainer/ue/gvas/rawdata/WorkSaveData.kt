@@ -164,17 +164,17 @@ fun WorkSaveData.decode(
         .value
         .cast<GvasArrayDict>()
     for (element in arrayDict.value.cast<GvasStructArrayPropertyValue>().values) {
-        val workBytes = element.cast<GvasStructMap>().v["RawData"]
+        val workBytes = element.cast<GvasMapStruct>().v["RawData"]
             .cast<GvasProperty>().value
             .cast<GvasArrayDict>().value
             .cast<GvasAnyArrayPropertyValue>().values
             .cast<GvasByteArrayValue>().value
-        val workType = element.cast<GvasStructMap>().v["WorkableType"]
+        val workType = element.cast<GvasMapStruct>().v["WorkableType"]
             .cast<GvasProperty>().value
             .cast<GvasEnumDict>().enumValue.value
 
         element
-            .cast<GvasStructMap>().v["RawData"]
+            .cast<GvasMapStruct>().v["RawData"]
             .cast<GvasProperty>().value = GvasArrayDict(
             arrayType = arrayDict.arrayType,
             id = arrayDict.id,
@@ -187,9 +187,9 @@ fun WorkSaveData.decode(
             )
         )
 
-        for (workAssignMap in element.cast<GvasStructMap>().v["WorkAssignMap"].cast<GvasProperty>().value.cast<GvasMapDict>().value) {
+        for (workAssignMap in element.cast<GvasMapStruct>().v["WorkAssignMap"].cast<GvasProperty>().value.cast<GvasMapDict>().value) {
             val map = workAssignMap["value"]
-                .cast<GvasStructMap>()
+                .cast<GvasMapStruct>()
                 .v
 
             val workAssignBytes = map["RawData"]

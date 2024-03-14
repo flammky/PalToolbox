@@ -3,8 +3,8 @@ package dev.dexsr.gmod.palworld.toolbox.savegame.composeui.players
 import androidx.compose.runtime.*
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
-import dev.dexsr.gmod.palworld.toolbox.savegame.parser.SaveGameParser
-import dev.dexsr.gmod.palworld.toolbox.savegame.parser.SaveGamePlayersParsedData
+import dev.dexsr.gmod.palworld.toolbox.savegame.SaveGameParser
+import dev.dexsr.gmod.palworld.toolbox.savegame.SaveGamePlayersParsedData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
@@ -126,19 +126,28 @@ class AttributeEditPanelState(
     fun uidTextFieldChange(
         textFieldValue: TextFieldValue
     ) {
-        if (textFieldValue.text.length > 32 && (mutUid?.length ?: 0) > 31) {
-            return
-        }
+        println(textFieldValue.text)
+        if (textFieldValue.text.length > 36) return
         var n = 0
-        mutUid = StringBuilder()
+        var take = 0
+        val filter = StringBuilder()
             .apply {
                 textFieldValue.text.forEach { c ->
-                    if (!c.isLetterOrDigit()) return@forEach
+                    if (!c.isLetterOrDigit()) {
+                        if (n != 9-1 && n != 14-1 && n != 19-1 && n != 24-1) return
+                        if (c != '-') return
+                        n++ ; return@forEach
+                    }
+                    n++
                     append(c)
-                    if (++n == 32) return@apply
+                    if (++take == 32) return@apply
                 }
             }
             .toString()
+        if (textFieldValue.text.length != 36 && textFieldValue.text.length > 32 && (mutUid?.length ?: 0) > 31) {
+            return
+        }
+        mutUid = filter
         this.mutUidCursor = textFieldValue.selection
 
         /*var seg1Take = 0

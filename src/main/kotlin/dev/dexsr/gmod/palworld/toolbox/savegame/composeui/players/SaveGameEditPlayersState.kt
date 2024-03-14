@@ -6,8 +6,8 @@ import dev.dexsr.gmod.palworld.toolbox.base.continueLoop
 import dev.dexsr.gmod.palworld.toolbox.base.looper
 import dev.dexsr.gmod.palworld.toolbox.base.strictResultingLoop
 import dev.dexsr.gmod.palworld.toolbox.savegame.composeui.SaveGameEditState
-import dev.dexsr.gmod.palworld.toolbox.savegame.parser.SaveGameParser
-import dev.dexsr.gmod.palworld.toolbox.savegame.parser.SaveGamePlayersParsedData
+import dev.dexsr.gmod.palworld.toolbox.savegame.SaveGameParser
+import dev.dexsr.gmod.palworld.toolbox.savegame.SaveGamePlayersParsedData
 import dev.dexsr.gmod.palworld.toolbox.util.fastForEach
 import kotlinx.coroutines.*
 import org.jetbrains.skiko.MainUIDispatcher
@@ -41,6 +41,7 @@ class SaveGameEditPlayersState(
         private set
 
     private var _data by mutableStateOf<SaveGamePlayersParsedData?>(null)
+    private var players by mutableStateOf<List<SaveGamePlayersParsedData.Player>>(emptyList(), neverEqualPolicy())
 
 
     fun onRemembered() {
@@ -51,7 +52,7 @@ class SaveGameEditPlayersState(
 
     }
 
-    fun findPlayer(uid: String) = _data?.players?.find { it.attribute.uid == uid }
+    fun findPlayer(uid: String) = players.find { it.attribute.uid == uid }
 
     private fun init() {
         coroutineScope.launch(MainUIDispatcher) {
@@ -59,26 +60,28 @@ class SaveGameEditPlayersState(
 
                 runCatching {
 
-                    // TODO: put constrains on how many `players` can be
                     withContext(Dispatchers.Default) {
-                        val result = parser.parsePlayersAsync(editState.decompressed!!, editState.headerEndPos!!).await()
 
-                        if (result.err != null) {
-                            // ask to refresh
-                            println(result.err)
-                            looper continueLoop delay(Long.MAX_VALUE)
-                        }
-
-                        val data = checkNotNull(result.data)
-
-                        PlayersPagingData(
-                            playersCount = data.players.size,
-                            buckets = listOf(PageBucket(listOf(PlayersPagedData(data.players.map { it.attribute.uid })), 0, data.players.size)),
-                            // no impl
-                            intentLoadToOffset = {}
-                        ).also {
-                            _data = data
-                        }
+                        runCatching {
+                            val edit = editState.saveGameEditor!!
+                            val worldEdit = edit.getOrOpenWorldEditAsync().await()
+                                .apply { parsePlayers() }
+                            checkNotNull(worldEdit.players)
+                        }.fold(
+                            onSuccess =  { players ->
+                                PlayersPagingData(
+                                    playersCount = players.size,
+                                    buckets = listOf(PageBucket(listOf(PlayersPagedData(players.map { it.attribute.uid })), 0, players.size)),
+                                    // no impl
+                                    intentLoadToOffset = {}
+                                ).also {
+                                    this@SaveGameEditPlayersState.players = players
+                                }
+                            },
+                            onFailure = {
+                                looper continueLoop delay(Long.MAX_VALUE)
+                            }
+                        )
                     }
 
                 }.fold(
@@ -115,7 +118,7 @@ class SaveGameEditPlayersState(
     // represent a continuous list of Paging page,
     // example: page size is 10, elements in 21..30 is not requested but 35 does
     //  bucket1 = [[1, ..10], [11, ..20]]
-    //  bucket2 = [[31, ..35]
+    //  bucket2 = [[31, ..40]
     //
     @Immutable
     class PageBucket(

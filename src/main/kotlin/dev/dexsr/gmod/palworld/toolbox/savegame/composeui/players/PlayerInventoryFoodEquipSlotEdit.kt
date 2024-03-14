@@ -10,16 +10,14 @@ import androidx.compose.ui.graphics.Color
 import dev.dexsr.gmod.palworld.toolbox.theme.md3.composeui.Material3Theme
 
 @Composable
-fun PlayerInventoryCommonSlotEdit(
+fun PlayerInventoryFoodEquipSlotEdit(
     modifier: Modifier,
     inventoryState: InventoryEditPanelState
 ) {
 
-    val state = rememberPlayerInventoryCommonSlotEditState(inventoryState)
+    val state = rememberPlayerInventoryFoodEquipSlotEditState(inventoryState)
 
     Box(modifier.background(remember { Color(29, 24, 34) })) {
-
-
         state.uid?.let { uid ->
             Text(
                 text = uid,

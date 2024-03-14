@@ -137,7 +137,7 @@ private fun GvasQuat.toJsonElement() = buildJsonObject {
     put("w", w)
 }
 
-private fun GvasStructMap.toJsonElement() = buildJsonObject {
+private fun GvasMapStruct.toJsonElement() = buildJsonObject {
     v.entries.forEach { (k, v) ->
         put(
             k,
@@ -256,7 +256,7 @@ private fun GvasStruct.toJsonElement(): JsonElement {
         is GvasGUID -> JsonPrimitive(v)
         is GvasLinearColor -> toJsonElement()
         is GvasQuat -> toJsonElement()
-        is GvasStructMap -> toJsonElement()
+        is GvasMapStruct -> toJsonElement()
         is GvasVector -> toJsonElement()
         is GvasTransform -> toJsonElement()
     }

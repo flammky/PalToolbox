@@ -1,36 +1,26 @@
 package dev.dexsr.gmod.palworld.toolbox.savegame.composeui.players
 
 import androidx.compose.foundation.*
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.neverEqualPolicy
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.input.pointer.PointerIcon
-import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.*
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import dev.dexsr.gmod.palworld.toolbox.composeui.ImmutableAny
 import dev.dexsr.gmod.palworld.toolbox.composeui.wrapComposeUiImmutable
 import dev.dexsr.gmod.palworld.toolbox.savegame.composeui.SaveGameEditState
-import dev.dexsr.gmod.palworld.toolbox.savegame.parser.SaveGamePlayersParsedData
+import dev.dexsr.gmod.palworld.toolbox.savegame.SaveGamePlayersParsedData
 import dev.dexsr.gmod.palworld.toolbox.theme.md3.composeui.Material3Theme
 import dev.dexsr.gmod.palworld.trainer.composeui.HeightSpacer
 import dev.dexsr.gmod.palworld.trainer.composeui.WidthSpacer
@@ -153,7 +143,8 @@ private fun PlayerEditor(
     modifier: Modifier = Modifier,
 ) {
     val pState = rememberSaveGamePlayerEditorState(
-        player
+        player,
+        editState
     )
 
     Box(

@@ -4,8 +4,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import dev.dexsr.gmod.palworld.toolbox.composeui.ImmutableAny
-import dev.dexsr.gmod.palworld.toolbox.savegame.parser.SaveGameParser
-import dev.dexsr.gmod.palworld.toolbox.savegame.parser.SaveGamePlayersParsedData
+import dev.dexsr.gmod.palworld.toolbox.savegame.composeui.SaveGameEditState
+import dev.dexsr.gmod.palworld.toolbox.savegame.SaveGameParser
+import dev.dexsr.gmod.palworld.toolbox.savegame.SaveGamePlayersParsedData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
@@ -13,12 +14,13 @@ import org.jetbrains.skiko.MainUIDispatcher
 
 @Composable
 fun rememberSaveGamePlayerEditorState(
-    player: ImmutableAny<SaveGamePlayersParsedData.Player>
+    player: ImmutableAny<SaveGamePlayersParsedData.Player>,
+    editState: SaveGameEditState
 ): SaveGamePlayerEditorState {
     val coroutineScope = rememberCoroutineScope()
 
-    val state = remember(player) {
-        SaveGamePlayerEditorState(player.value, coroutineScope)
+    val state = remember(player, editState) {
+        SaveGamePlayerEditorState(player.value, coroutineScope, editState)
     }
 
     DisposableEffect(state) {
@@ -32,7 +34,8 @@ fun rememberSaveGamePlayerEditorState(
 @Stable
 class SaveGamePlayerEditorState(
     val player: SaveGamePlayersParsedData.Player,
-    val coroutineScope: CoroutineScope
+    val coroutineScope: CoroutineScope,
+    val editState: SaveGameEditState
 ) {
 
     private val lifetime = SupervisorJob()

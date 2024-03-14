@@ -183,7 +183,7 @@ private fun readGvasStructValue(buf: ByteBuffer, structType: String, customPrope
         "Guid" -> GvasGUID(readGvasUUID(buf).toString())
         "Quat" -> readGvasQuat(buf)
         "LinearColor" -> readGvasLinearColor(buf)
-        else -> GvasStructMap(readGvasProperties(buf, customProperties, path))
+        else -> GvasMapStruct(readGvasProperties(buf, customProperties, path))
     }
 }
 

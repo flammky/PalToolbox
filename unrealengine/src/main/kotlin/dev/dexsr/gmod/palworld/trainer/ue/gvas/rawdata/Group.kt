@@ -27,18 +27,18 @@ fun Group.decode(
         ?: error("cannot cast typeName=MapProperty to GvasMapDict")
     groupMap.value.fastForEach { v ->
         val type = v["value"]!!
-            .cast<GvasStructMap>().v["GroupType"]!!
+            .cast<GvasMapStruct>().v["GroupType"]!!
             .cast<GvasProperty>().value
             .cast<GvasEnumDict>().enumValue.value
         val arrayDict = v["value"]!!
-            .cast<GvasStructMap>().v["RawData"]!!
+            .cast<GvasMapStruct>().v["RawData"]!!
             .cast<GvasProperty>().value
             .cast<GvasArrayDict>()
         val bytes = arrayDict.value
             .cast<GvasAnyArrayPropertyValue>().values
             .cast<GvasByteArrayValue>().value
         v["value"]!!
-            .cast<GvasStructMap>().v["RawData"]
+            .cast<GvasMapStruct>().v["RawData"]
             .cast<GvasProperty>().value = GvasArrayDict(
             arrayType = arrayDict.arrayType,
             id = arrayDict.id,
@@ -63,7 +63,7 @@ fun Group.encode(
     TODO()
 }
 
-private fun Any.castToStructMap(): GvasStructMap = cast()
+private fun Any.castToStructMap(): GvasMapStruct = cast()
 
 private fun Group.decodeBytes(parentReader: GvasReader, bytes: ByteArray, groupType: String): GvasGroupData {
     val reader = parentReader.copy(ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN))

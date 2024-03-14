@@ -30,7 +30,7 @@ class GvasDateTime(
     val v: Long
 ) : GvasStruct()
 
-class GvasStructMap(
+class GvasMapStruct(
     val v: GvasMap<String, GvasProperty>
 ) : GvasStruct()
 

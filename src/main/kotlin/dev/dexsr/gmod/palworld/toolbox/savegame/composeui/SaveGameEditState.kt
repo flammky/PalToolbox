@@ -1,10 +1,17 @@
 package dev.dexsr.gmod.palworld.toolbox.savegame.composeui
 
 import androidx.compose.runtime.*
-import dev.dexsr.gmod.palworld.toolbox.savegame.parser.ManagedSaveGameParser
-import dev.dexsr.gmod.palworld.toolbox.savegame.parser.SaveGameParser
+import dev.dexsr.gmod.palworld.toolbox.base.breakLoop
+import dev.dexsr.gmod.palworld.toolbox.base.continueLoop
+import dev.dexsr.gmod.palworld.toolbox.base.looper
+import dev.dexsr.gmod.palworld.toolbox.base.strictResultingLoop
+import dev.dexsr.gmod.palworld.toolbox.savegame.SaveGameEdit
+import dev.dexsr.gmod.palworld.toolbox.savegame.SaveGameEditorService
+import dev.dexsr.gmod.palworld.toolbox.savegame.SaveGameParser
+import dev.dexsr.gmod.palworld.toolbox.savegame.SaveGameWorldEditListener
 import dev.dexsr.gmod.palworld.trainer.java.jFile
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jetbrains.skiko.MainUIDispatcher
 
@@ -14,7 +21,7 @@ class SaveGameEditState(
     private val coroutineScope: CoroutineScope
 )  {
     private val parser = SaveGameParser(coroutineScope)
-    private val managedParser = ManagedSaveGameParser(coroutineScope)
+    private val editorService = SaveGameEditorService.get()
     private var decompressedData: ByteArray? = null
 
     val fileName = file.name
@@ -40,33 +47,34 @@ class SaveGameEditState(
     var showEditor by mutableStateOf(false)
 
     var editPlayer by mutableStateOf<String?>(null)
-
-    var headerEndPos: Long? = null
-    var decompressed: ByteArray? = null
+    var saveGameEditor: SaveGameEdit? = null
 
     init {
         coroutineScope.launch(MainUIDispatcher) {
-            decompressing = true
-            val decompress = parser.decompressFileAsync(file).await()
-            if (decompress.err != null) {
-                println(decompress.err)
-                decompressing = false
-                return@launch
+            val open = editorService.openAsync(file).await().getOrThrow()
+
+            val worldEdit = open.getOrOpenWorldEditAsync().await()
+                .apply {
+                    addListener(
+                        SaveGameWorldEditListener(
+                            onDecompressing = { decompressing = true },
+                            onDecompressed = { decompressing = false },
+                            onCheckingHeader = { checkingHeader = true },
+                            onCheckedHeader = { checkingHeader = false },
+                        )
+                    )
+                }
+
+            strictResultingLoop {
+                runCatching {
+                    worldEdit.headerCheck()
+                }.fold(
+                    onSuccess = { looper breakLoop Unit },
+                    onFailure = { it.printStackTrace() ; looper continueLoop delay(Long.MAX_VALUE) }
+                )
             }
-            decompressing = false
 
-            checkingHeader = true
-            val header = parser.parseFileHeaderAsync(decompress.data!!, decompressed = true).await()
-            if (header.err != null) {
-                println(header.err)
-                checkingHeader = false
-                return@launch
-            }
-            checkingHeader = false
-
-            decompressed = decompress.data
-            headerEndPos = header.data!!.pos
-
+            saveGameEditor = open
             showEditor = true
         }
     }

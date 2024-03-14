@@ -9,10 +9,7 @@ import androidx.compose.runtime.Stable
 typealias ComposeUiStableAny<T> = StableAny<T>
 typealias ComposeUiImmutableAny<T> = ImmutableAny<T>
 
-// should T: Any ?
-
 // remove this ?
-
 @Stable
 open class StableAny<T>(val value: T)
 

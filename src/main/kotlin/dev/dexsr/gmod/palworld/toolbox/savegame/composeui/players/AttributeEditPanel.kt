@@ -1,5 +1,6 @@
 package dev.dexsr.gmod.palworld.toolbox.savegame.composeui.players
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.Icon
@@ -13,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.dexsr.gmod.palworld.toolbox.theme.md3.composeui.Material3Theme
 import dev.dexsr.gmod.palworld.trainer.composeui.HeightSpacer
@@ -72,130 +74,148 @@ fun AttributeEditPanel(
 
         // TODO: we can do custom Layout placement instead of detaching
         if (state.expanded) {
-            HeightSpacer(MD3Spec.padding.incrementsDp(2).dp)
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+            Row(
+                modifier = Modifier.height(IntrinsicSize.Max)
             ) {
-                RevertibleTextField(
-                    modifier = Modifier.padding(top = 2.dp),
-                    value = remember(state) { derivedStateOf(neverEqualPolicy()) {
-                        TextFieldValue(state.mutName ?: "", state.mutNameCursor)
-                    } }.value,
-                    onValueChange = state::nickNameFieldChange,
-                    onRevert = state::revertNickName,
-                    labelText = "Nickname"
+                WidthSpacer((14 - (12 / 2f)).dp)
+                Box(
+                    modifier = Modifier
+                        .clickable(onClick = state::userToggleExpand)
+                        .fillMaxHeight()
+                        .padding(horizontal = 2.dp)
+                        .width(8.dp)
+                        .background(Color(0x40FFFFFF))
                 )
+                WidthSpacer((14 - (12 / 2f)).dp)
 
-                RevertibleUUIdTextField(
-                    modifier = Modifier.padding(top = 2.dp),
-                    value = remember(state) { derivedStateOf(neverEqualPolicy()) {
-                        TextFieldValue(state.mutUid ?: "", state.mutUidCursor)
-                    } }.value,
-                    onValueChange = state::uidTextFieldChange,
-                    onRevert = state::revertUid,
-                    labelText = "UID"
-                )
+                WidthSpacer(8.dp)
+                Column {
+                    HeightSpacer(MD3Spec.padding.incrementsDp(1).plus(2).dp)
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        RevertibleTextField(
+                            modifier = Modifier.padding(top = 2.dp),
+                            value = remember(state) { derivedStateOf(neverEqualPolicy()) {
+                                TextFieldValue(state.mutName ?: "", state.mutNameCursor)
+                            } }.value,
+                            onValueChange = state::nickNameFieldChange,
+                            onRevert = state::revertNickName,
+                            labelText = "Nickname"
+                        )
 
-                RevertibleNumberTextField(
-                    modifier = Modifier.padding(top = 2.dp),
-                    value = remember(state) { derivedStateOf(neverEqualPolicy()) {
-                        TextFieldValue(state.mutLevel ?: "", state.mutLevelCursor)
-                    } }.value,
-                    onValueChange = state::levelTextFieldChange,
-                    onRevert = state::revertLevel,
-                    labelText = "Level"
-                )
+                        RevertibleUUIdTextField(
+                            modifier = Modifier.padding(top = 2.dp),
+                            value = remember(state) { derivedStateOf(neverEqualPolicy()) {
+                                TextFieldValue(state.mutUid ?: "", state.mutUidCursor)
+                            } }.value,
+                            onValueChange = state::uidTextFieldChange,
+                            onRevert = state::revertUid,
+                            labelText = "UID"
+                        )
 
-                RevertibleNumberTextField(
-                    modifier = Modifier.padding(top = 2.dp),
-                    value = remember(state) { derivedStateOf(neverEqualPolicy()) {
-                        TextFieldValue(state.mutExp ?: "", state.mutExpCursor)
-                    } }.value,
-                    onValueChange = state::expTextFieldChange,
-                    onRevert = state::revertExp,
-                    labelText = "Exp"
-                )
+                        RevertibleNumberTextField(
+                            modifier = Modifier.padding(top = 2.dp),
+                            value = remember(state) { derivedStateOf(neverEqualPolicy()) {
+                                TextFieldValue(state.mutLevel ?: "", state.mutLevelCursor)
+                            } }.value,
+                            onValueChange = state::levelTextFieldChange,
+                            onRevert = state::revertLevel,
+                            labelText = "Level"
+                        )
 
-                RevertibleNumberTextField(
-                    modifier = Modifier.padding(top = 2.dp),
-                    value = remember(state) { derivedStateOf(neverEqualPolicy()) {
-                        TextFieldValue(state.mutHp ?: "", state.mutHpCursor)
-                    } }.value,
-                    onValueChange = state::hpTextFieldChange,
-                    onRevert = state::revertHp,
-                    labelText = "HP"
-                )
+                        RevertibleNumberTextField(
+                            modifier = Modifier.padding(top = 2.dp),
+                            value = remember(state) { derivedStateOf(neverEqualPolicy()) {
+                                TextFieldValue(state.mutExp ?: "", state.mutExpCursor)
+                            } }.value,
+                            onValueChange = state::expTextFieldChange,
+                            onRevert = state::revertExp,
+                            labelText = "Exp"
+                        )
 
-                RevertibleNumberTextField(
-                    modifier = Modifier.padding(top = 2.dp),
-                    value = remember(state) { derivedStateOf(neverEqualPolicy()) {
-                        TextFieldValue(state.mutMaxHp ?: "", state.mutMaxHpCursor)
-                    } }.value,
-                    onValueChange = state::maxHpTextFieldChange,
-                    onRevert = state::revertMaxHp,
-                    labelText = "MaxHP"
-                )
+                        RevertibleNumberTextField(
+                            modifier = Modifier.padding(top = 2.dp),
+                            value = remember(state) { derivedStateOf(neverEqualPolicy()) {
+                                TextFieldValue(state.mutHp ?: "", state.mutHpCursor)
+                            } }.value,
+                            onValueChange = state::hpTextFieldChange,
+                            onRevert = state::revertHp,
+                            labelText = "HP"
+                        )
 
-                RevertibleNumberTextField(
-                    modifier = Modifier.padding(top = 2.dp),
-                    value = remember(state) { derivedStateOf(neverEqualPolicy()) {
-                        TextFieldValue(state.mutFullStomach ?: "", state.mutFullStomachCursor)
-                    } }.value,
-                    onValueChange = state::fullStomachTextFieldChange,
-                    onRevert = state::revertFullStomach,
-                    labelText = "FullStomach"
-                )
+                        RevertibleNumberTextField(
+                            modifier = Modifier.padding(top = 2.dp),
+                            value = remember(state) { derivedStateOf(neverEqualPolicy()) {
+                                TextFieldValue(state.mutMaxHp ?: "", state.mutMaxHpCursor)
+                            } }.value,
+                            onValueChange = state::maxHpTextFieldChange,
+                            onRevert = state::revertMaxHp,
+                            labelText = "MaxHP"
+                        )
 
-                RevertibleNumberTextField(
-                    modifier = Modifier.padding(top = 2.dp),
-                    value = remember(state) { derivedStateOf(neverEqualPolicy()) {
-                        TextFieldValue(state.mutSupport ?: "", state.mutSupportCursor)
-                    } }.value,
-                    onValueChange = state::supportTextFieldChange,
-                    onRevert = state::revertSupport,
-                    labelText = "Support"
-                )
+                        RevertibleNumberTextField(
+                            modifier = Modifier.padding(top = 2.dp),
+                            value = remember(state) { derivedStateOf(neverEqualPolicy()) {
+                                TextFieldValue(state.mutFullStomach ?: "", state.mutFullStomachCursor)
+                            } }.value,
+                            onValueChange = state::fullStomachTextFieldChange,
+                            onRevert = state::revertFullStomach,
+                            labelText = "FullStomach"
+                        )
 
-                RevertibleNumberTextField(
-                    modifier = Modifier.padding(top = 2.dp),
-                    value = remember(state) { derivedStateOf(neverEqualPolicy()) {
-                        TextFieldValue(state.mutCraftSpeed ?: "", state.mutCraftSpeedCursor)
-                    } }.value,
-                    onValueChange = state::craftSpeedTextFieldChange,
-                    onRevert = state::revertCraftSpeed,
-                    labelText = "CraftSpeed"
-                )
+                        RevertibleNumberTextField(
+                            modifier = Modifier.padding(top = 2.dp),
+                            value = remember(state) { derivedStateOf(neverEqualPolicy()) {
+                                TextFieldValue(state.mutSupport ?: "", state.mutSupportCursor)
+                            } }.value,
+                            onValueChange = state::supportTextFieldChange,
+                            onRevert = state::revertSupport,
+                            labelText = "Support"
+                        )
 
-                RevertibleNumberTextField(
-                    modifier = Modifier.padding(top = 2.dp),
-                    value = remember(state) { derivedStateOf(neverEqualPolicy()) {
-                        TextFieldValue(state.mutMaxSp ?: "", state.mutMaxSpCursor)
-                    } }.value,
-                    onValueChange = state::maxSpTextFieldChange,
-                    onRevert = state::revertMaxSp,
-                    labelText = "MaxSP"
-                )
+                        RevertibleNumberTextField(
+                            modifier = Modifier.padding(top = 2.dp),
+                            value = remember(state) { derivedStateOf(neverEqualPolicy()) {
+                                TextFieldValue(state.mutCraftSpeed ?: "", state.mutCraftSpeedCursor)
+                            } }.value,
+                            onValueChange = state::craftSpeedTextFieldChange,
+                            onRevert = state::revertCraftSpeed,
+                            labelText = "CraftSpeed"
+                        )
 
-                RevertibleNumberTextField(
-                    modifier = Modifier.padding(top = 2.dp),
-                    value = remember(state) { derivedStateOf(neverEqualPolicy()) {
-                        TextFieldValue(state.mutSanityValue ?: "", state.mutSanityValueCursor)
-                    } }.value,
-                    onValueChange = state::sanityValueTextFieldChange,
-                    onRevert = state::revertSanityValue,
-                    labelText = "SanityValue"
-                )
+                        RevertibleNumberTextField(
+                            modifier = Modifier.padding(top = 2.dp),
+                            value = remember(state) { derivedStateOf(neverEqualPolicy()) {
+                                TextFieldValue(state.mutMaxSp ?: "", state.mutMaxSpCursor)
+                            } }.value,
+                            onValueChange = state::maxSpTextFieldChange,
+                            onRevert = state::revertMaxSp,
+                            labelText = "MaxSP"
+                        )
 
-                RevertibleNumberTextField(
-                    modifier = Modifier.padding(top = 2.dp),
-                    value = remember(state) { derivedStateOf(neverEqualPolicy()) {
-                        TextFieldValue(state.mutUnusedStatusPoint?: "", state.mutUnusedStatusPointCursor)
-                    } }.value,
-                    onValueChange = state::unusedStatusPointTextFieldChange,
-                    onRevert = state::revertUnusedStatusPoint,
-                    labelText = "UnusedStatusPoint"
-                )
+                        RevertibleNumberTextField(
+                            modifier = Modifier.padding(top = 2.dp),
+                            value = remember(state) { derivedStateOf(neverEqualPolicy()) {
+                                TextFieldValue(state.mutSanityValue ?: "", state.mutSanityValueCursor)
+                            } }.value,
+                            onValueChange = state::sanityValueTextFieldChange,
+                            onRevert = state::revertSanityValue,
+                            labelText = "SanityValue"
+                        )
+
+                        RevertibleNumberTextField(
+                            modifier = Modifier.padding(top = 2.dp),
+                            value = remember(state) { derivedStateOf(neverEqualPolicy()) {
+                                TextFieldValue(state.mutUnusedStatusPoint?: "", state.mutUnusedStatusPointCursor)
+                            } }.value,
+                            onValueChange = state::unusedStatusPointTextFieldChange,
+                            onRevert = state::revertUnusedStatusPoint,
+                            labelText = "UnusedStatusPoint"
+                        )
+                    }
+                }
             }
         }
     }

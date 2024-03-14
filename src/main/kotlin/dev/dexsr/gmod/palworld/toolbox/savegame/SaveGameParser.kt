@@ -1,4 +1,4 @@
-package dev.dexsr.gmod.palworld.toolbox.savegame.parser
+package dev.dexsr.gmod.palworld.toolbox.savegame
 
 import dev.dexsr.gmod.palworld.toolbox.util.cast
 import dev.dexsr.gmod.palworld.trainer.java.jFile
@@ -11,15 +11,6 @@ import java.nio.CharBuffer
 import java.nio.charset.CodingErrorAction
 import java.nio.charset.MalformedInputException
 import java.nio.charset.UnmappableCharacterException
-
-class ManagedSaveGameParser(
-    private val coroutineScope: CoroutineScope
-) {
-
-    private var _jFile: jFile? = null
-    private var _bytes: ByteArray? = null
-
-}
 
 class SaveGameParser(
     private val coroutineScope: CoroutineScope
@@ -41,8 +32,6 @@ class SaveGameParser(
         return SaveGamePlayersParseInstance(coroutineScope).apply { doParseFromPropertiesStart(input, offset.toInt()) }.handle
     }
 }
-
-class AbstractSaveGameParse
 
 interface SaveGameDecompressHandle {
 
@@ -298,18 +287,18 @@ private class SaveGameParseInstance(
                 var name: String?
                 gvasFile.properties["worldSaveData"]?.value
                     .cast<GvasStructDict>().value
-                    .cast<GvasStructMap>().v["CharacterSaveParameterMap"]?.value
+                    .cast<GvasMapStruct>().v["CharacterSaveParameterMap"]?.value
                     .cast<GvasMapDict>().value
                     .first().let {
                         it["value"]
-                            .cast<GvasStructMap>()
+                            .cast<GvasMapStruct>()
                             .v["RawData"]?.value
                             .cast<CustomByteArrayRawData>().value
                             .cast<GvasArrayDict>().value
                             .cast<GvasTransformedArrayValue>().value
                             .cast<GvasCharacterData>().`object`.get("SaveParameter")?.value
                             .cast<GvasStructDict>().value
-                            .cast<GvasStructMap>().v.get("NickName")?.value
+                            .cast<GvasMapStruct>().v.get("NickName")?.value
                             .cast<GvasStrDict>().value.also { name = it }
                     }
                 name ?: error("unable to parse name")
@@ -469,17 +458,17 @@ private class SaveGamePlayersParseInstance(
                             ?.let { wsd ->
                                 val maps = wsd.value
                                     .cast<GvasStructDict>().value
-                                    .cast<GvasStructMap>().v["CharacterSaveParameterMap"]?.value
+                                    .cast<GvasMapStruct>().v["CharacterSaveParameterMap"]?.value
                                     .cast<GvasMapDict>().value
                                 for (map in maps) {
                                     val playerStruct = map["value"]
-                                        .cast<GvasStructMap>().v["RawData"]?.value
+                                        .cast<GvasMapStruct>().v["RawData"]?.value
                                         .cast<CustomByteArrayRawData>().value
                                         .cast<GvasArrayDict>().value
                                         .cast<GvasTransformedArrayValue>().value
                                         .cast<GvasCharacterData>().`object`["SaveParameter"]?.value
                                         .cast<GvasStructDict>()
-                                    val playerParams = playerStruct.value.cast<GvasStructMap>()
+                                    val playerParams = playerStruct.value.cast<GvasMapStruct>()
                                     if (
                                         playerParams.v["IsPlayer"]
                                             ?.cast<GvasProperty>()?.value
@@ -511,11 +500,11 @@ private class SaveGamePlayersParseInstance(
 
                                         val data = run {
                                             val playerStructMap = playerStruct.value
-                                                .cast<GvasStructMap>().v
+                                                .cast<GvasMapStruct>().v
                                             val name = playerParams.v["NickName"]!!.value
                                                 .cast<GvasStrDict>().value
                                             val uid = map["key"]
-                                                .cast<GvasStructMap>().v["PlayerUId"]?.value
+                                                .cast<GvasMapStruct>().v["PlayerUId"]?.value
                                                 .cast<GvasStructDict>().value
                                                 .cast<GvasGUID>().v
                                             SaveGamePlayersParsedData.Player(
@@ -528,11 +517,11 @@ private class SaveGamePlayersParseInstance(
                                                         .cast<GvasIntDict>().value,
                                                     hp = playerStructMap["HP"]?.value
                                                         .cast<GvasStructDict>().value
-                                                        .cast<GvasStructMap>().v["Value"]?.value
+                                                        .cast<GvasMapStruct>().v["Value"]?.value
                                                         .cast<GvasInt64Dict>().value,
                                                     maxHp = playerStructMap["MaxHP"]?.value
                                                         .cast<GvasStructDict>().value
-                                                        .cast<GvasStructMap>().v["Value"]?.value
+                                                        .cast<GvasMapStruct>().v["Value"]?.value
                                                         .cast<GvasInt64Dict>().value,
                                                     fullStomach = playerStructMap["FullStomach"]?.value
                                                         .cast<GvasFloatDict>().value,
@@ -542,7 +531,7 @@ private class SaveGamePlayersParseInstance(
                                                         .cast<GvasIntDict>().value,
                                                     maxSp = playerStructMap["MaxSP"]?.value
                                                         .cast<GvasStructDict>().value
-                                                        .cast<GvasStructMap>().v["Value"]?.value
+                                                        .cast<GvasMapStruct>().v["Value"]?.value
                                                         .cast<GvasInt64Dict>().value,
                                                     sanityValue = playerStructMap["SanityValue"]?.value
                                                         .cast<GvasFloatDict>().value,

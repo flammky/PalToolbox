@@ -31,10 +31,10 @@ fun MapObject.decode(
         )
          */
         val rawDataProp = mapObject
-            .cast<GvasStructMap>().v["Model"]
+            .cast<GvasMapStruct>().v["Model"]
             .cast<GvasProperty>().value
             .cast<GvasStructDict>().value
-            .cast<GvasStructMap>().v["RawData"]
+            .cast<GvasMapStruct>().v["RawData"]
             .cast<GvasProperty>()
         rawDataProp.value = GvasArrayDict(
             arrayType = arrayDict.arrayType,
@@ -50,14 +50,14 @@ fun MapObject.decode(
         )
 
         val connectorProp = mapObject
-            .cast<GvasStructMap>().v["Model"]
+            .cast<GvasMapStruct>().v["Model"]
             .cast<GvasProperty>().value
             .cast<GvasStructDict>().value
-            .cast<GvasStructMap>().v["Connector"]
+            .cast<GvasMapStruct>().v["Connector"]
             .cast<GvasProperty>()
         val connectorRawDataProp = connectorProp.value
             .cast<GvasStructDict>().value
-            .cast<GvasStructMap>().v["RawData"]
+            .cast<GvasMapStruct>().v["RawData"]
             .cast<GvasProperty>()
         connectorRawDataProp.value = GvasArrayDict(
             arrayType = arrayDict.arrayType,
@@ -73,14 +73,14 @@ fun MapObject.decode(
         )
 
         val buildProcessProp = mapObject
-            .cast<GvasStructMap>().v["Model"]
+            .cast<GvasMapStruct>().v["Model"]
             .cast<GvasProperty>().value
             .cast<GvasStructDict>().value
-            .cast<GvasStructMap>().v["BuildProcess"]
+            .cast<GvasMapStruct>().v["BuildProcess"]
             .cast<GvasProperty>()
         val buildProcessRawDataProp = buildProcessProp.value
             .cast<GvasStructDict>().value
-            .cast<GvasStructMap>().v["RawData"]
+            .cast<GvasMapStruct>().v["RawData"]
             .cast<GvasProperty>()
         buildProcessRawDataProp.value = GvasArrayDict(
             arrayType = arrayDict.arrayType,
@@ -96,15 +96,15 @@ fun MapObject.decode(
         )
 
         val concreteModelId = mapObject
-            .cast<GvasStructMap>().v["MapObjectId"]
+            .cast<GvasMapStruct>().v["MapObjectId"]
             .cast<GvasProperty>().value
             .cast<GvasNameDict>().value
         val concreteModelProp  = mapObject
-            .cast<GvasStructMap>().v["ConcreteModel"]
+            .cast<GvasMapStruct>().v["ConcreteModel"]
             .cast<GvasProperty>()
         val concreteModelRawDataProp = concreteModelProp.value
             .cast<GvasStructDict>().value
-            .cast<GvasStructMap>().v["RawData"]
+            .cast<GvasMapStruct>().v["RawData"]
             .cast<GvasProperty>()
         concreteModelRawDataProp.value = GvasArrayDict(
             arrayType = arrayDict.arrayType,
@@ -120,10 +120,10 @@ fun MapObject.decode(
             )
         )
 
-        for (module in concreteModelProp.value.cast<GvasStructDict>().value.cast<GvasStructMap>().v["ModuleMap"].cast<GvasProperty>().value.cast<GvasMapDict>().value) {
+        for (module in concreteModelProp.value.cast<GvasStructDict>().value.cast<GvasMapStruct>().v["ModuleMap"].cast<GvasProperty>().value.cast<GvasMapDict>().value) {
             val moduleType = module["key"]
                 .cast<String>()
-            val moduleRawDataProp = module["value"].cast<GvasStructMap>().v["RawData"].cast<GvasProperty>()
+            val moduleRawDataProp = module["value"].cast<GvasMapStruct>().v["RawData"].cast<GvasProperty>()
             val moduleBytes = moduleRawDataProp.value.cast<GvasArrayDict>().value
                 .cast<GvasAnyArrayPropertyValue>().values
                 .cast<GvasByteArrayValue>().value
