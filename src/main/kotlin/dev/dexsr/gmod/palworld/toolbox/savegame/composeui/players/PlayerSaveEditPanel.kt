@@ -103,7 +103,17 @@ fun PlayerSaveEditPanel(
                         }
                     }
                 ) {
-                    HeightSpacer(200.dp)
+                    Box(
+                        modifier = Modifier.height(200.dp).width(400.dp)
+                    ) {
+
+                        Text(
+                            modifier = Modifier.align(Alignment.Center),
+                            text = "WIP",
+                            color = Color(252, 252, 252).copy(alpha = 0.78f),
+                            style = Material3Theme.typography.headlineLarge
+                        )
+                    }
                 }
             }
         }

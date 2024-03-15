@@ -41,17 +41,17 @@ fun PlayerInventoryCommonSlotEditTablePreview(
     ) {
         entries.fastForEach { e ->
             Row {
-                PlayerInventoryCommonSlotEntryIndexCell(
+                PlayerInventoryDefaultSlotEntryIndexCell(
                     Modifier.padding(horizontal = 8.dp).align(Alignment.CenterVertically),
                     e.index.toString()
                 )
-                PlayerInventoryCommonSlotEntryItemIdCell(
+                PlayerInventoryDefaultSlotEntryItemIdCell(
                     Modifier.weight(1f, fill = false),
                     e.itemId,
                     e::itemIdChange,
                     e::itemIdRevert
                 )
-                PlayerInventoryCommonSlotEntryStackCountCell(
+                PlayerInventoryDefaultSlotEntryStackCountCell(
                     Modifier.width(150.dp),
                     e.stackCount,
                     e::stackCountChange,
@@ -63,7 +63,7 @@ fun PlayerInventoryCommonSlotEditTablePreview(
 }
 
 @Composable
-private fun PlayerInventoryCommonSlotEntryIndexCell(
+private fun PlayerInventoryDefaultSlotEntryIndexCell(
     modifier: Modifier,
     index: String
 ) {
@@ -82,7 +82,7 @@ private fun PlayerInventoryCommonSlotEntryIndexCell(
 }
 
 @Composable
-private fun PlayerInventoryCommonSlotEntryItemIdCell(
+private fun PlayerInventoryDefaultSlotEntryItemIdCell(
     modifier: Modifier,
     itemId: TextFieldValue,
     onValueChange: (TextFieldValue) -> Unit,
@@ -108,7 +108,7 @@ private fun PlayerInventoryCommonSlotEntryItemIdCell(
 }
 
 @Composable
-private fun PlayerInventoryCommonSlotEntryStackCountCell(
+private fun PlayerInventoryDefaultSlotEntryStackCountCell(
     modifier: Modifier,
     stackCount: TextFieldValue,
     onValueChange: (TextFieldValue) -> Unit,

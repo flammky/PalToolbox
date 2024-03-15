@@ -9,14 +9,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.SubcomposeLayout
-import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.fastForEachIndexed
 import dev.dexsr.gmod.palworld.toolbox.theme.md3.composeui.Material3Theme
-import dev.dexsr.gmod.palworld.toolbox.util.fastForEach
 import dev.dexsr.gmod.palworld.trainer.composeui.HeightSpacer
 import dev.dexsr.gmod.palworld.trainer.composeui.WidthSpacer
 import dev.dexsr.gmod.palworld.trainer.composeui.wrapStableList
@@ -48,17 +44,17 @@ fun PlayerInventoryCommonSlotEdit(
                 ) { i ->
                     val e = entries[i]
                     Row {
-                        PlayerInventoryCommonSlotEntryIndexCell(
+                        PlayerInventoryDefaultSlotEntryIndexCell(
                             Modifier.padding(horizontal = 8.dp).align(Alignment.CenterVertically),
                             e.index.toString()
                         )
-                        PlayerInventoryCommonSlotEntryItemIdCell(
+                        PlayerInventoryDefaultSlotEntryItemIdCell(
                             Modifier.weight(1f, fill = false),
                             e.itemId,
                             e::itemIdChange,
                             e::itemIdRevert
                         )
-                        PlayerInventoryCommonSlotEntryStackCountCell(
+                        PlayerInventoryDefaultSlotEntryStackCountCell(
                             Modifier,
                             e.stackCount,
                             e::stackCountChange,
@@ -92,7 +88,7 @@ fun PlayerInventoryCommonSlotEdit(
 }
 
 @Composable
-private fun PlayerInventoryCommonSlotEntryIndexCell(
+private fun PlayerInventoryDefaultSlotEntryIndexCell(
     modifier: Modifier,
     index: String
 ) {
@@ -111,7 +107,7 @@ private fun PlayerInventoryCommonSlotEntryIndexCell(
 }
 
 @Composable
-private fun PlayerInventoryCommonSlotEntryItemIdCell(
+private fun PlayerInventoryDefaultSlotEntryItemIdCell(
     modifier: Modifier,
     itemId: TextFieldValue,
     onValueChange: (TextFieldValue) -> Unit,
@@ -133,7 +129,7 @@ private fun PlayerInventoryCommonSlotEntryItemIdCell(
 }
 
 @Composable
-private fun PlayerInventoryCommonSlotEntryStackCountCell(
+private fun PlayerInventoryDefaultSlotEntryStackCountCell(
     modifier: Modifier,
     stackCount: TextFieldValue,
     onValueChange: (TextFieldValue) -> Unit,
@@ -159,7 +155,7 @@ class SlotTableLayout(
 }
 
 // TODO: move
-private val ITEM_ID_SELECTIONS by lazy {
+val ITEM_ID_SELECTIONS by lazy {
     val str = """
             {
               "None": "None",

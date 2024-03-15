@@ -108,19 +108,19 @@ class SaveGamePlayerInventoryEdit(
         }
         val uid = map[name]
         _inventoriesEntry[uid] ?: run {
-            doParseCommonInventoryEntry()
+            doParseInventoryEntry(name)
             _inventoriesEntry[uid]
         }
     }
 
-    private suspend fun doParseCommonInventoryEntry() {
+    private suspend fun doParseInventoryEntry(name: String) {
         if (!resolvedFile) return
         val uidMap = _inventoriesUidMap ?: run {
             parseInventoryUIDMap()
             _inventoriesUidMap ?: return
         }
         // TODO: Error.ContainerIdInfoNotPresent
-        val common = uidMap["CommonContainerId"] ?: return
+        val common = uidMap[name] ?: return
         worldEdit.parsePlayerInventoryDataAsync(listOf(common)).await().also {
             it[common]?.let { entry -> _inventoriesEntry[common] = entry }
         }
