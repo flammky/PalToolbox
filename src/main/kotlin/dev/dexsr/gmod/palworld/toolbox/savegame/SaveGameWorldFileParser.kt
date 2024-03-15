@@ -1,6 +1,9 @@
 package dev.dexsr.gmod.palworld.toolbox.savegame
 
+import dev.dexsr.gmod.palworld.toolbox.savegame.inventory.PlayerInventoryData
+import dev.dexsr.gmod.palworld.toolbox.savegame.inventory.PlayerInventoryEntry
 import dev.dexsr.gmod.palworld.toolbox.util.cast
+import dev.dexsr.gmod.palworld.toolbox.util.fastForEach
 import dev.dexsr.gmod.palworld.trainer.java.jFile
 import dev.dexsr.gmod.palworld.trainer.ue.gvas.*
 import dev.dexsr.gmod.palworld.trainer.ue.gvas.rawdata.*
@@ -12,7 +15,7 @@ import java.nio.charset.CodingErrorAction
 import java.nio.charset.MalformedInputException
 import java.nio.charset.UnmappableCharacterException
 
-class SaveGameParser(
+class SaveGameWorldFileParser(
     private val coroutineScope: CoroutineScope
 ) {
 
@@ -30,6 +33,10 @@ class SaveGameParser(
 
     fun parsePlayersAsync(input: ByteArray, offset: Long): SaveGamePlayersParseHandle {
         return SaveGamePlayersParseInstance(coroutineScope).apply { doParseFromPropertiesStart(input, offset.toInt()) }.handle
+    }
+
+    fun parsePlayersInventoryAsync(input: GvasFileProperties): SaveGameParsePlayersInventoriesHandle {
+        return SaveGameParsePlayersInventoriesHandler(coroutineScope).apply { doParse(input) }.handle
     }
 }
 
@@ -576,11 +583,145 @@ private class SaveGamePlayersParseInstance(
             put(".worldSaveData.CharacterContainerSaveData", Skip::decode to Skip::encode)
             put(".worldSaveData.CharacterContainerSaveData.Value.Slots", Skip::decode to Skip::encode)
             put(".worldSaveData.CharacterContainerSaveData.Value.RawData", Skip::decode to Skip::encode)
-            put(".worldSaveData.ItemContainerSaveData", Skip::decode to Skip::encode)
+            /*put(".worldSaveData.ItemContainerSaveData", Skip::decode to Skip::encode)
             put(".worldSaveData.ItemContainerSaveData.Value.BelongInfo", Skip::decode to Skip::encode)
-            put(".worldSaveData.ItemContainerSaveData.Value.Slots", Skip::decode to Skip::encode)
+            put(".worldSaveData.ItemContainerSaveData.Value.Slots", Skip::decode to Skip::encode)*/
             put(".worldSaveData.ItemContainerSaveData.Value.RawData", Skip::decode to Skip::encode)
             put(".worldSaveData.GroupSaveDataMap", Skip::decode to Skip::encode)
             put(".worldSaveData.GroupSaveDataMap.Value.RawData", Skip::decode to Skip::encode)
         }
+}
+
+private class SaveGameParsePlayersInventoriesHandler(
+    private val coroutineScope: CoroutineScope
+) {
+    val handle = ActualSaveGameParsePlayersInventoriesHandle()
+
+    fun doParse(
+        input: GvasFileProperties
+    ) {
+        val properties = input
+        coroutineScope.launch(Dispatchers.IO + handle.lifetime) {
+
+            runCatching {
+
+                val worldSaveData = properties["worldSaveData"]
+                    .cast<GvasProperty>().value
+                    .cast<GvasStructDict>().value
+                    .cast<GvasMapStruct>().v
+
+                val itemContainerSaveData = worldSaveData["ItemContainerSaveData"]
+                    .cast<GvasProperty>().value
+                    .cast<GvasMapDict>().value
+
+                val inventories = mutableMapOf<String, List<PlayerInventoryEntry>>()
+
+                for (map in itemContainerSaveData) {
+                    val key = map["key"]
+                        .cast<GvasMapStruct>().v["ID"]
+                        .cast<GvasProperty>().value
+                        .cast<GvasStructDict>().value
+                        .cast<GvasGUID>().v
+
+                    val value = map["value"]
+                        .cast<GvasMapStruct>().v
+
+                    val slots = value["Slots"]
+                        .cast<GvasProperty>().value
+                        .cast<GvasArrayDict>().value
+                        .cast<GvasStructArrayPropertyValue>().values
+
+
+                    val slotEntries = mutableListOf<PlayerInventoryEntry>()
+
+                    slots.fastForEach { struct ->
+                        val slot = struct.cast<GvasMapStruct>().v
+
+                        val slotIndex = slot["SlotIndex"]
+                            .cast<GvasProperty>().value
+                            .cast<GvasIntDict>().value
+
+                        val itemId = run {
+                            slot["ItemId"]
+                                .cast<GvasProperty>().value
+                                .cast<GvasStructDict>().value
+                                .cast<GvasMapStruct>().v["StaticId"]
+                                .cast<GvasProperty>().value
+                                .cast<GvasNameDict>().value
+                        }
+
+                        val stackCount = run {
+                            slot["StackCount"]
+                                .cast<GvasProperty>().value
+                                .cast<GvasIntDict>().value
+                        }
+
+                        slotEntries.add(PlayerInventoryEntry(slotIndex, itemId, stackCount))
+                    }
+
+
+                    inventories[key] = slotEntries
+                }
+
+                SaveGameParsePlayersInventoriesResult(
+                    SaveGameParsePlayersInventoriesData(inventories)
+                )
+            }.fold(
+                onSuccess = { data -> handle.complete(data) },
+                onFailure = { ex -> ex.printStackTrace() ; handle.onCompletion(ex as Exception) }
+            )
+        }.invokeOnCompletion { ex ->
+            handle.onCompletion(ex as? Exception)
+        }
+    }
+}
+
+interface SaveGameParsePlayersInventoriesHandle {
+
+    fun cancel()
+
+    suspend fun await(): SaveGameParsePlayersInventoriesResult
+}
+
+private class ActualSaveGameParsePlayersInventoriesHandle : SaveGameParsePlayersInventoriesHandle {
+
+    val lifetime = SupervisorJob()
+
+    private val completion = CompletableDeferred<SaveGameParsePlayersInventoriesResult>(lifetime)
+
+    override fun cancel() {
+        lifetime.cancel()
+    }
+
+    override suspend fun await(): SaveGameParsePlayersInventoriesResult {
+        return completion.await()
+    }
+
+    fun complete(result: SaveGameParsePlayersInventoriesResult) = completion.complete(result)
+
+    fun onCompletion(ex: Exception?) {
+        ex?.let {
+            completion.complete(
+                SaveGameParsePlayersInventoriesResult(err = "Something Unexpected happened, type: ${ex::class.simpleName}")
+            )
+        }
+        if (!completion.isCompleted)
+            completion.complete(SaveGameParsePlayersInventoriesResult(err = "Something Unexpected happened, parser finished abnormally"))
+    }
+}
+
+class SaveGameParsePlayersInventoriesResult private constructor(
+    val data: SaveGameParsePlayersInventoriesData?,
+    val err: String?
+) {
+
+
+    constructor(data: SaveGameParsePlayersInventoriesData) : this(data, null)
+    constructor(err: String) : this(null, err)
+}
+
+class SaveGameParsePlayersInventoriesData(
+    val inventories: Map<String, List<PlayerInventoryEntry>>
+) {
+
 }

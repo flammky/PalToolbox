@@ -7,7 +7,7 @@ import dev.dexsr.gmod.palworld.toolbox.base.looper
 import dev.dexsr.gmod.palworld.toolbox.base.strictResultingLoop
 import dev.dexsr.gmod.palworld.toolbox.savegame.SaveGameEdit
 import dev.dexsr.gmod.palworld.toolbox.savegame.SaveGameEditorService
-import dev.dexsr.gmod.palworld.toolbox.savegame.SaveGameParser
+import dev.dexsr.gmod.palworld.toolbox.savegame.SaveGameWorldFileParser
 import dev.dexsr.gmod.palworld.toolbox.savegame.SaveGameWorldEditListener
 import dev.dexsr.gmod.palworld.trainer.java.jFile
 import kotlinx.coroutines.CoroutineScope
@@ -20,7 +20,7 @@ class SaveGameEditState(
     private val file: jFile,
     private val coroutineScope: CoroutineScope
 )  {
-    private val parser = SaveGameParser(coroutineScope)
+    private val parser = SaveGameWorldFileParser(coroutineScope)
     private val editorService = SaveGameEditorService.get()
     private var decompressedData: ByteArray? = null
 

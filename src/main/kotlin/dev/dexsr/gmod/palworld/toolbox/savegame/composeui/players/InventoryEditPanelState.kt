@@ -76,7 +76,7 @@ class InventoryEditPanelState(
     )
 
     private var _slotsByZIndex by mutableStateOf<List<Slot>>(
-        listOf(CommonSlot, DropSlot, EssentialSlot, EquipArmorSlot, FoodEquipSlot, WeaponLoadOutSlot).asReversed(),
+        _slots.take(1),
         neverEqualPolicy()
     )
 
@@ -89,6 +89,8 @@ class InventoryEditPanelState(
     }
 
     fun slots() = _slots
+
+    fun slotsToRender() = _slotsByZIndex
 
     fun selectSlot(slot: Slot) {
         val index = when(slot) {
@@ -107,7 +109,9 @@ class InventoryEditPanelState(
 
     private fun slotAccessOrder(slot: Slot) {
         _slotsByZIndex = buildList {
-            _slotsByZIndex.fastForEach { e -> if (e != slot) add(e) }
+            _slotsByZIndex.fastForEach { e ->
+                if (e != slot) add(e)
+            }
             add(slot)
         }
     }
@@ -161,7 +165,9 @@ class InventoryEditPanelState(
     private fun lazyInit() {
         coroutineScope.launch {
             val editor = playerEditorState.editState.saveGameEditor ?: return@launch
-            val inventoryEditor = editor.getOrOpenPlayerInventory(playerEditorState.player.attribute.uid)
+            val inventoryEditor = editor
+                .getOrOpenWorldEditAsync().await()
+                .getOrOpenPlayerInventoryAsync(playerEditorState.player.attribute.uid).await()
             inventoryEditor.addListener(
                 SaveGamePlayerInventoryEditListener(
                     onProgress = { event ->

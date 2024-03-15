@@ -1,7 +1,7 @@
 package dev.dexsr.gmod.palworld.toolbox.savegame.player
 
-import dev.dexsr.gmod.palworld.toolbox.savegame.SaveGamePlayersParseResult
 import dev.dexsr.gmod.palworld.toolbox.util.cast
+import dev.dexsr.gmod.palworld.toolbox.util.checkCast
 import dev.dexsr.gmod.palworld.trainer.java.jFile
 import dev.dexsr.gmod.palworld.trainer.ue.gvas.*
 import kotlinx.coroutines.*

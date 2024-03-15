@@ -243,6 +243,11 @@ private fun PlayerEditor(
                 Modifier,
                 pState
             )
+
+            HeightSpacer(12.dp)
+            PlayerSaveEditPanel(
+                Modifier
+            )
         }
     }
 }

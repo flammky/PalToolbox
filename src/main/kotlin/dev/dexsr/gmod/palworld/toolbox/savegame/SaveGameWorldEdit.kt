@@ -2,11 +2,11 @@ package dev.dexsr.gmod.palworld.toolbox.savegame
 
 import dev.dexsr.gmod.palworld.toolbox.core.Core
 import dev.dexsr.gmod.palworld.toolbox.core.MainDispatcher
+import dev.dexsr.gmod.palworld.toolbox.savegame.inventory.PlayerInventoryEntry
 import dev.dexsr.gmod.palworld.trainer.java.jFile
+import dev.dexsr.gmod.palworld.trainer.ue.gvas.GvasFileProperties
 import dev.dexsr.gmod.palworld.trainer.utilskt.fastForEach
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -15,10 +15,11 @@ class SaveGameWorldEdit {
     private val coroutineScope = CoroutineScope(SupervisorJob() + Core.MainDispatcher)
     private var _jFile: jFile? = null
     private val mtx = Mutex()
-    private val parser = SaveGameParser(coroutineScope)
+    private val parser = SaveGameWorldFileParser(coroutineScope)
     private val listeners = mutableListOf<SaveGameWorldEditListener>()
     private var decompressed: ByteArray? = null
     private var pos: Long = -1
+    private var _properties: GvasFileProperties? = null
 
     private val inventories = mutableMapOf<String, SaveGamePlayerInventoryEdit>()
 
@@ -71,9 +72,54 @@ class SaveGameWorldEdit {
                 await().also {
                     it.err?.let { error(it) }
                     this@SaveGameWorldEdit.players = it.data!!.players
+                    this@SaveGameWorldEdit._properties = it.data.properties
                 }
             }
         }.join()
+    }
+
+    suspend fun getOrOpenPlayerInventoryAsync(uid: String) = coroutineScope.async {
+        inventories.getOrPut(uid) {
+            SaveGamePlayerInventoryEdit(this@SaveGameWorldEdit)
+                .apply { openWithParentSource(requireSaveGameSource(), uid) }
+        }
+    }
+
+    internal fun parsePlayerInventoryDataAsync(
+        inventories: List<String>
+    ) = coroutineScope.async {
+        val data = doGetOrParseInventoriesData()
+
+        mutableMapOf<String, List<PlayerInventoryEntry>>()
+            .apply {
+                inventories.forEach { uid ->
+                    data.inventories[uid]?.let { put(uid, it) }
+                }
+            }
+    }
+
+    private var getOrParseInventoriesData: Deferred<SaveGameParsePlayersInventoriesData>? = null
+    private suspend fun doGetOrParseInventoriesData(): SaveGameParsePlayersInventoriesData {
+        getOrParseInventoriesData?.let {
+            if (it.isActive) {
+                return it.await()
+            } else if (it.isCompleted) {
+                return it.getCompleted()
+            }
+        }
+        val task = coroutineScope.async {
+            val result = parser.parsePlayersInventoryAsync(requireNotNull(_properties)).await()
+            if (result.err != null) {
+                throw CancellationException(result.err)
+            }
+            checkNotNull(result.data)
+        }
+        getOrParseInventoriesData = task
+        return task.await()
+    }
+
+    private fun requireSaveGameSource(): jFile = requireNotNull(_jFile) {
+        "SaveGameEdit wasn't opened with jFile as source"
     }
 }
 

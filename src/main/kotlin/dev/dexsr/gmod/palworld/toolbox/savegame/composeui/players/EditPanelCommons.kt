@@ -1,13 +1,13 @@
 package dev.dexsr.gmod.palworld.toolbox.savegame.composeui.players
 
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.TooltipArea
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.DropdownMenuState
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.PointerIcon
@@ -26,9 +27,15 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.*
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.PopupProperties
+import dev.dexsr.gmod.palworld.toolbox.savegame.composeui.libint.md3.DropdownMenu
 import dev.dexsr.gmod.palworld.toolbox.theme.md3.composeui.Material3Theme
+import dev.dexsr.gmod.palworld.trainer.composeui.HeightSpacer
+import dev.dexsr.gmod.palworld.trainer.composeui.StableList
+import dev.dexsr.gmod.palworld.trainer.composeui.WidthSpacer
 
 @Composable
 fun RevertibleTextField(
@@ -38,7 +45,10 @@ fun RevertibleTextField(
     onValueChange: (TextFieldValue) -> Unit,
     onRevert: () -> Unit,
     visualTransformation: VisualTransformation = VisualTransformation.None,
-    keyboardOptions: KeyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+    keyboardOptions: KeyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+    // TODO replace with composable
+    selections: StableList<String>? = null,
+    onSelectionsSelected: ((String) -> Unit)? = null
 ) {
     val ins = remember { MutableInteractionSource() }
     val colors = TextFieldDefaults.colors(
@@ -47,6 +57,7 @@ fun RevertibleTextField(
     )
     BasicTextField(
         modifier = modifier.defaultMinSize(150.dp, 24.dp).sizeIn(maxHeight = 30.dp),
+        singleLine = true,
         maxLines = 1,
         value = value,
         onValueChange = onValueChange,
@@ -88,17 +99,92 @@ fun RevertibleTextField(
                     )
                 },
                 trailingIcon = {
-                    SingleLineSimpleTooltip(
-                        text = "Revert",
-                        modifier = Modifier.clickable(onClick = onRevert)
+                    Row(
+                        modifier = Modifier.padding(horizontal = if (selections != null) 4.dp else 0.dp)
                     ) {
-                        Box(modifier = Modifier.size(24.dp)) {
-                            Icon(
-                                painter = painterResource("drawable/undo_simplefill_32px.png"),
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp).align(Alignment.Center),
-                                tint = Color.White
-                            )
+                        SingleLineSimpleTooltip(
+                            text = "Revert",
+                            modifier = Modifier.clickable(onClick = onRevert)
+                        ) {
+                            Box(modifier = Modifier.size(24.dp)) {
+                                Icon(
+                                    painter = painterResource("drawable/undo_simplefill_32px.png"),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp).align(Alignment.Center),
+                                    tint = Color.White
+                                )
+                            }
+                        }
+
+                        if (selections != null) {
+                            val state = remember {
+                                DropdownMenuState()
+                            }
+                            SingleLineSimpleTooltip(
+                                text = "Options",
+                                modifier = Modifier.clickable(onClick = {
+                                    state.status = DropdownMenuState.Status.Open(Offset.Zero)
+                                })
+                            ) {
+                                Box(modifier = Modifier.size(24.dp)) {
+                                    Icon(
+                                        painter = painterResource("drawable/simple_arrow_head_down_thin_32px.png"),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp).align(Alignment.Center),
+                                        tint = Color.White
+                                    )
+                                }
+                            }
+                            val scrollState = rememberLazyListState()
+                            DropdownMenu(
+                                modifier = Modifier
+                                    .height(300.dp)
+                                    .background(remember { Color(0xFF211F26) })
+                                    .padding(horizontal = 4.dp),
+                                expanded = state.status is DropdownMenuState.Status.Open,
+                                onDismissRequest = {
+                                    state.status = DropdownMenuState.Status.Closed
+                                },
+                                offset = DpOffset.Zero,
+                                scrollState = rememberScrollState(),
+                                properties = PopupProperties(focusable = true)
+                            ) {
+                                Row {
+                                    LazyColumn(
+                                        modifier = Modifier.height((300-16).dp).width(600.dp),
+                                        scrollState
+                                    ) {
+                                        val size = selections.size
+                                        items(size, key = { i -> selections[i] }) { i ->
+                                            val e = selections[i]
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .clickable {  }
+                                                    .padding(horizontal = 4.dp, vertical = 4.dp)
+                                            ) {
+                                                Text(
+                                                    text = e,
+                                                    style = Material3Theme.typography.labelSmall,
+                                                    color = Color(252, 252, 252)
+                                                )
+                                            }
+                                            if (i < size-1) HeightSpacer(4.dp)
+                                        }
+                                    }
+                                    WidthSpacer(4.dp)
+                                    VerticalScrollbar(
+                                        modifier = Modifier.height((300-16).dp),
+                                        adapter = rememberScrollbarAdapter(scrollState),
+                                        style = remember {
+                                            defaultScrollbarStyle().copy(
+                                                unhoverColor = Color.White.copy(alpha = 0.12f),
+                                                hoverColor = Color.White.copy(alpha = 0.50f)
+                                            )
+                                        }
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -181,6 +267,22 @@ fun RevertibleNumberTextField(
 ) = RevertibleTextField(
     modifier, value, labelText, onValueChange, onRevert,
     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+)
+
+@Composable
+fun RevertibleNumberTextField(
+    modifier: Modifier,
+    value: TextFieldValue,
+    labelText: String,
+    onValueChange: (TextFieldValue) -> Unit,
+    onRevert: () -> Unit,
+    selections: StableList<String>?,
+    onSelectionsSelected: ((String) -> Unit)?
+) = RevertibleTextField(
+    modifier, value, labelText, onValueChange, onRevert,
+    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+    selections = selections,
+    onSelectionsSelected = onSelectionsSelected
 )
 
 @OptIn(ExperimentalFoundationApi::class)

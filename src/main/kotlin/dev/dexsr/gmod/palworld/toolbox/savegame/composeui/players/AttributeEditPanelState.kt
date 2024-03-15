@@ -3,7 +3,7 @@ package dev.dexsr.gmod.palworld.toolbox.savegame.composeui.players
 import androidx.compose.runtime.*
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
-import dev.dexsr.gmod.palworld.toolbox.savegame.SaveGameParser
+import dev.dexsr.gmod.palworld.toolbox.savegame.SaveGameWorldFileParser
 import dev.dexsr.gmod.palworld.toolbox.savegame.SaveGamePlayersParsedData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -35,7 +35,7 @@ class AttributeEditPanelState(
 ) {
 
     private val lifetime = SupervisorJob()
-    private val parser = SaveGameParser(CoroutineScope(lifetime))
+    private val parser = SaveGameWorldFileParser(CoroutineScope(lifetime))
 
     var expanded by mutableStateOf(false)
         private set
@@ -263,7 +263,7 @@ class AttributeEditPanelState(
         if (textFieldValue.text.length > 3) return
         if (textFieldValue.text.isNotEmpty()) {
             if (!textFieldValue.text.all(Char::isDigit)) return
-            val num = textFieldValue.text.toInt()
+            val num = textFieldValue.text.toIntOrNull() ?: return
             mutLevel = num.toString()
             mutLevelCursor = textFieldValue.selection
         } else {

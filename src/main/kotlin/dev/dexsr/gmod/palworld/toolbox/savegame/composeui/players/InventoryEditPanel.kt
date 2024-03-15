@@ -1,22 +1,25 @@
 package dev.dexsr.gmod.palworld.toolbox.savegame.composeui.players
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.relocation.BringIntoViewResponder
+import androidx.compose.foundation.relocation.bringIntoViewResponder
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
 import androidx.compose.material.Text
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.key
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.Placeable
+import androidx.compose.ui.layout.SubcomposeLayout
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -24,7 +27,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.zIndex
+import androidx.compose.ui.util.fastMap
 import dev.dexsr.gmod.palworld.toolbox.savegame.SaveGamePlayerInventoryEdit
 import dev.dexsr.gmod.palworld.toolbox.theme.md3.composeui.Material3Theme
 import dev.dexsr.gmod.palworld.toolbox.util.fastForEach
@@ -32,6 +35,7 @@ import dev.dexsr.gmod.palworld.trainer.composeui.HeightSpacer
 import dev.dexsr.gmod.palworld.trainer.composeui.WidthSpacer
 import dev.dexsr.gmod.palworld.trainer.composeui.text.nonFontScaled
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun InventoryEditPanel(
     modifier: Modifier,
@@ -80,19 +84,41 @@ fun InventoryEditPanel(
         if (state.expanded) run {
             if (state.noContent)
                 return@run
-            Row(modifier = Modifier.height(IntrinsicSize.Max)) {
-                WidthSpacer((14 - (12 / 2f)).dp)
+            // don't use intrinsics
+            val heightBarHeightState = remember {
+                mutableStateOf(0.dp)
+            }
+            Row {
+                WidthSpacer((14 - ((6 + (4*2)) / 2f)).dp)
                 Box(
                     modifier = Modifier
+                        // wait for public API on scroll focus
+                        .focusProperties {
+                            canFocus = false
+                        }
+                        .height(heightBarHeightState.value)
                         .clickable(onClick = state::userToggleExpand)
-                        .fillMaxHeight()
-                        .padding(horizontal = 2.dp)
-                        .width(8.dp)
+                        .padding(horizontal = 4.dp)
+                        .width(6.dp)
                         .background(Color(0x40FFFFFF))
                 )
-                WidthSpacer((14 - (12 / 2f)).dp)
+                WidthSpacer((14 - ((6 + (4*2)) / 2f)).dp)
                 WidthSpacer(8.dp)
-                Column {
+                Column(
+                    modifier = Modifier.layout { measurable, constraints ->
+
+                        val measure = measurable.measure(constraints.copy(
+                            minWidth = 0,
+                            minHeight = 0
+                        ))
+
+                        heightBarHeightState.value = measure.height.toDp()
+
+                        layout(measure.width, measure.height) {
+                            measure.place(0, 0)
+                        }
+                    }
+                ) {
                     HeightSpacer(8.dp)
                     if (state.sourceNotFoundErr != null) {
                         PlayerInventorySourceNotFound(Modifier, state)
@@ -116,12 +142,31 @@ fun InventoryEditPanel(
 
                         HeightSpacer(8.dp)
 
-                        Box(modifier = Modifier.width(IntrinsicSize.Max).height(IntrinsicSize.Max)) {
-                            state.slots().fastForEach { slot ->
-                                key(slot) {
-                                    val zIndex = state.slotZIndex(slot)
-                                    PlayerInventorySlotEditPanel(modifier = Modifier.zIndex(zIndex).fillMaxSize(), slot, state)
+                        SubcomposeLayout(Modifier) { constraints ->
+
+                            var placeables: List<Placeable>? = null
+                            var placeablesSlot: InventoryEditPanelState.Slot? = null
+                            var z = -1f
+                            val contentConstraints = constraints.copy(
+                                minWidth = 0,
+                                minHeight = 0
+                            )
+                            state.slotsToRender().fastForEach { slot ->
+                                val content = subcompose(slot) {
+                                    PlayerInventorySlotEditPanel(Modifier, slot, state)
                                 }
+                                val measure = content.fastMap { it.measure(contentConstraints) }
+                                val zIndex = state.slotZIndex(slot)
+                                if (zIndex > z) {
+                                    z = zIndex
+                                    placeables = measure
+                                }
+                            }
+                            layout(
+                                placeables?.maxByOrNull { it.width }?.width ?: 0,
+                                placeables?.maxByOrNull { it.height }?.height ?: 0,
+                            ) {
+                                placeables?.fastForEach { it.place(0, 0) }
                             }
                         }
                     }
@@ -169,6 +214,10 @@ private fun PlayerInventorySlotEditPanel(
     slot: InventoryEditPanelState.Slot,
     inventoryEditPanelState: InventoryEditPanelState
 ) {
+    DisposableEffect(Unit) {
+        println("SlotEnter=$slot")
+        onDispose { println("SlotExit=$slot") }
+    }
     when(slot) {
         is InventoryEditPanelState.CommonSlot -> PlayerInventoryCommonSlotEdit(modifier, inventoryEditPanelState)
         is InventoryEditPanelState.DropSlot -> PlayerInventoryDropSlotEdit(modifier, inventoryEditPanelState)

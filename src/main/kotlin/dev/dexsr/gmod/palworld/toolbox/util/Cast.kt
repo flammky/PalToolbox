@@ -15,6 +15,19 @@ internal inline fun <reified R> Any?.cast(): R {
 }
 
 @OptIn(ExperimentalContracts::class)
+internal inline fun <reified R> Any?.checkCast(
+    noinline lazyMsg: () -> Any
+): R {
+    contract {
+        returns() implies (this@checkCast is R)
+    }
+    if (this is R) {
+        return this
+    }
+    error(lazyMsg)
+}
+
+@OptIn(ExperimentalContracts::class)
 internal inline fun <reified R> Any?.castOrNull(): R? {
     contract {
         returns() implies (this@castOrNull is R?)

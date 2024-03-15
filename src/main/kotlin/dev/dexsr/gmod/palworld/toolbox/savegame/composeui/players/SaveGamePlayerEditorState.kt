@@ -5,7 +5,7 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import dev.dexsr.gmod.palworld.toolbox.composeui.ImmutableAny
 import dev.dexsr.gmod.palworld.toolbox.savegame.composeui.SaveGameEditState
-import dev.dexsr.gmod.palworld.toolbox.savegame.SaveGameParser
+import dev.dexsr.gmod.palworld.toolbox.savegame.SaveGameWorldFileParser
 import dev.dexsr.gmod.palworld.toolbox.savegame.SaveGamePlayersParsedData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -39,7 +39,7 @@ class SaveGamePlayerEditorState(
 ) {
 
     private val lifetime = SupervisorJob()
-    private val parser = SaveGameParser(CoroutineScope(lifetime))
+    private val parser = SaveGameWorldFileParser(CoroutineScope(lifetime))
 
     var initialName by mutableStateOf<String?>(player.attribute.nickName)
     var mutName by mutableStateOf<String?>(initialName)

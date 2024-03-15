@@ -5,13 +5,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.Icon
 import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.neverEqualPolicy
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.Dp
@@ -74,22 +73,40 @@ fun AttributeEditPanel(
 
         // TODO: we can do custom Layout placement instead of detaching
         if (state.expanded) {
-            Row(
-                modifier = Modifier.height(IntrinsicSize.Max)
-            ) {
-                WidthSpacer((14 - (12 / 2f)).dp)
+            val heightBarHeightState = remember {
+                mutableStateOf(0.dp)
+            }
+            Row {
+                WidthSpacer((14 - ((6 + (4*2)) / 2f)).dp)
                 Box(
                     modifier = Modifier
+                        // wait for public API on scroll focus
+                        .focusProperties {
+                            canFocus = false
+                        }
+                        .height(heightBarHeightState.value)
                         .clickable(onClick = state::userToggleExpand)
-                        .fillMaxHeight()
-                        .padding(horizontal = 2.dp)
-                        .width(8.dp)
+                        .padding(horizontal = 4.dp)
+                        .width(6.dp)
                         .background(Color(0x40FFFFFF))
                 )
-                WidthSpacer((14 - (12 / 2f)).dp)
-
+                WidthSpacer((14 - ((6 + (4*2)) / 2f)).dp)
                 WidthSpacer(8.dp)
-                Column {
+                Column(
+                    modifier = Modifier.layout { measurable, constraints ->
+
+                        val measure = measurable.measure(constraints.copy(
+                            minWidth = 0,
+                            minHeight = 0
+                        ))
+
+                        heightBarHeightState.value = measure.height.toDp()
+
+                        layout(measure.width, measure.height) {
+                            measure.place(0, 0)
+                        }
+                    }
+                ) {
                     HeightSpacer(MD3Spec.padding.incrementsDp(1).plus(2).dp)
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),

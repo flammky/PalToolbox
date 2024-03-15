@@ -12,7 +12,6 @@ import kotlinx.coroutines.sync.withLock
 class SaveGameEdit() {
 
     private val coroutineScope = CoroutineScope(SupervisorJob() + Core.MainDispatcher)
-    private val inventories = mutableMapOf<String, SaveGamePlayerInventoryEdit>()
     private var world: SaveGameWorldEdit? = null
     private var _jFile: jFile? = null
     private val mtx = Mutex()
@@ -33,12 +32,6 @@ class SaveGameEdit() {
                 .apply { open(requireSaveGameSource()) }
         }
     }
-
-    suspend fun getOrOpenPlayerInventory(uid: String) = coroutineScope.async {
-        inventories.getOrPut(uid) {
-            SaveGamePlayerInventoryEdit().apply { openWithParentSource(requireSaveGameSource(), uid) }
-        }
-    }.await()
 
     sealed class DecompressState {
 

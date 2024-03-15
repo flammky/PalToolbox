@@ -27,7 +27,6 @@ dependencies {
     implementation("net.java.dev.jna:jna-platform:5.14.0")
     implementation("com.squareup.okio:okio:3.8.0")
     implementation(kotlin("reflect"))
-
 }
 
 compose.desktop {
@@ -42,6 +41,10 @@ compose.desktop {
             windows {
                 iconFile.set(project.file("src/main/resources/drawable/P_11.ico"))
             }
+        }
+
+        buildTypes.release.proguard {
+            configurationFiles.from(project.file("proguard-rules.pro"))
         }
     }
     dependencies {

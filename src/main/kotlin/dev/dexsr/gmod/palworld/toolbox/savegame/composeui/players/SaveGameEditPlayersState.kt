@@ -6,7 +6,7 @@ import dev.dexsr.gmod.palworld.toolbox.base.continueLoop
 import dev.dexsr.gmod.palworld.toolbox.base.looper
 import dev.dexsr.gmod.palworld.toolbox.base.strictResultingLoop
 import dev.dexsr.gmod.palworld.toolbox.savegame.composeui.SaveGameEditState
-import dev.dexsr.gmod.palworld.toolbox.savegame.SaveGameParser
+import dev.dexsr.gmod.palworld.toolbox.savegame.SaveGameWorldFileParser
 import dev.dexsr.gmod.palworld.toolbox.savegame.SaveGamePlayersParsedData
 import dev.dexsr.gmod.palworld.toolbox.util.fastForEach
 import kotlinx.coroutines.*
@@ -35,7 +35,7 @@ class SaveGameEditPlayersState(
 
     private var _workers = mutableMapOf<Int, Job>()
     private var _buckets = mutableListOf<PageBucket>()
-    private val parser = SaveGameParser(coroutineScope)
+    private val parser = SaveGameWorldFileParser(coroutineScope)
 
     var pagingData by mutableStateOf<PlayersPagingData?>(null)
         private set

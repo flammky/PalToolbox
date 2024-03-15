@@ -2,19 +2,20 @@ package dev.dexsr.gmod.palworld.toolbox.savegame
 
 import dev.dexsr.gmod.palworld.toolbox.core.Core
 import dev.dexsr.gmod.palworld.toolbox.core.MainDispatcher
+import dev.dexsr.gmod.palworld.toolbox.savegame.inventory.PlayerInventoryEntry
 import dev.dexsr.gmod.palworld.toolbox.savegame.player.PlayerFileHeaderParsedData
 import dev.dexsr.gmod.palworld.toolbox.savegame.player.SaveGamePlayerFileParser
 import dev.dexsr.gmod.palworld.toolbox.util.fastForEach
 import dev.dexsr.gmod.palworld.trainer.java.jFile
 import dev.dexsr.gmod.palworld.trainer.ue.gvas.GvasFileProperties
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-class SaveGamePlayerInventoryEdit() {
+class SaveGamePlayerInventoryEdit(
+    // TODO internal
+    private val worldEdit: SaveGameWorldEdit
+) {
 
     private var _jFile: jFile? = null
     private var _parentJFile: jFile? = null
@@ -35,8 +36,9 @@ class SaveGamePlayerInventoryEdit() {
     private var _header: PlayerFileHeaderParsedData? = null
     private var _inventoriesUidMap: LinkedHashMap<String, String>? = null
     private var _lazyProperties: GvasFileProperties? = null
+    private val _inventoriesEntry = mutableMapOf<String, List<PlayerInventoryEntry>>()
 
-    private val parser = SaveGameParser(coroutineScope)
+    private val worldFile = SaveGameWorldFileParser(coroutineScope)
     private val playerFileParser = SaveGamePlayerFileParser(coroutineScope)
 
     val inventoriesUidMap
@@ -82,25 +84,46 @@ class SaveGamePlayerInventoryEdit() {
     }
 
     suspend fun parseInventoryUIDMap() {
-        if (!resolvedFile) return
-        _inventoriesUidMap ?: run {
-            val decompressedSource = _decompressedSource ?: run {
-                decompressSource()
-                _decompressedSource ?: return
+        coroutineScope.launch {
+            if (!resolvedFile) return@launch
+            _inventoriesUidMap ?: run {
+                val decompressedSource = _decompressedSource ?: run {
+                    decompressSource()
+                    _decompressedSource ?: return@launch
+                }
+                val header = _header ?: run {
+                    doParseHeader(decompressedSource)
+                    _header ?: return@launch
+                }
+                doParseInventoryUIDMap(decompressedSource, header.pos.toInt())
+                _inventoriesUidMap.also { println(it) } ?: return@launch
             }
-            val header = _header ?: run {
-                doParseHeader(decompressedSource)
-                _header ?: return
-            }
-            doParseInventoryUIDMap(decompressedSource, header.pos.toInt())
-            val map = _inventoriesUidMap ?: return
+        }.join()
+    }
+
+    fun getOrParseInventoryEntryAsync(name: String) = coroutineScope.async {
+        val map = _inventoriesUidMap ?: run {
+            parseInventoryUIDMap()
+            _inventoriesUidMap ?: return@async null
+        }
+        val uid = map[name]
+        _inventoriesEntry[uid] ?: run {
+            doParseCommonInventoryEntry()
+            _inventoriesEntry[uid]
         }
     }
 
-    private suspend fun doParseInventoryCommonSlot(
-        uid: String
-    ) {
-
+    private suspend fun doParseCommonInventoryEntry() {
+        if (!resolvedFile) return
+        val uidMap = _inventoriesUidMap ?: run {
+            parseInventoryUIDMap()
+            _inventoriesUidMap ?: return
+        }
+        // TODO: Error.ContainerIdInfoNotPresent
+        val common = uidMap["CommonContainerId"] ?: return
+        worldEdit.parsePlayerInventoryDataAsync(listOf(common)).await().also {
+            it[common]?.let { entry -> _inventoriesEntry[common] = entry }
+        }
     }
 
     private suspend fun decompressSource() {

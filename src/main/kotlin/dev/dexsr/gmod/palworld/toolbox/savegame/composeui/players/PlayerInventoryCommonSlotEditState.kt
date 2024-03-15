@@ -37,6 +37,11 @@ class PlayerInventoryCommonSlotEditState(
     val uid
         get() = inventoryState.slotUid(InventoryEditPanelState.CommonSlot)
 
+    val mutableEntries = mutableStateOf<List<MutEntry>?>(
+        null,
+        neverEqualPolicy()
+    )
+
     fun stateEnter() {
         _coroutineScope = CoroutineScope(SupervisorJob() + UIFoundation.MainUIDispatcher)
         init()
@@ -49,9 +54,15 @@ class PlayerInventoryCommonSlotEditState(
     private fun init() {
         coroutineScope.launch {
             val editor = inventoryState.editor ?: return@launch
-            editor.prepare()
-
-            editor
+            editor.parseInventoryUIDMap()
+            val entries = editor.getOrParseInventoryEntryAsync("CommonContainerId").await()
+            mutableEntries.value = entries?.map { entry ->
+                Entry(
+                    entry.index,
+                    entry.itemId,
+                    entry.stackCount
+                ).mut()
+            }
         }
     }
 
@@ -62,23 +73,52 @@ class PlayerInventoryCommonSlotEditState(
         val stackCount: Int
     )
 
+    private fun Entry.mut() = MutEntry(this)
+
     @Stable
     class MutEntry(
-        val entry: Entry
+        private val entry: Entry
     ) {
+
+        // define stable key ?
+
         val index = entry.index
 
-        var itemId by mutableStateOf(TextFieldValue(entry.itemId))
+        var itemId by mutableStateOf(TextFieldValue(entry.itemId), neverEqualPolicy())
             private set
 
-        var stackCount by mutableStateOf(TextFieldValue(entry.stackCount.toString()))
+        var stackCount by mutableStateOf(TextFieldValue(entry.stackCount.toString()), neverEqualPolicy())
             private set
 
-        fun itemIdChange(itemId: TextFieldValue) {
-            // put hard limit
+        fun itemIdChange(value: TextFieldValue) {
+            // put hardcoded limit
             // as of this writing the max known length is only 73
             val maxLen = 512
-            if (itemId.text.length > maxLen) return
+            if (value.text.length > maxLen) return
+            itemId = value
+        }
+
+        fun itemIdRevert() {
+            itemId = TextFieldValue(entry.itemId)
+        }
+
+        fun stackCountChange(value: TextFieldValue) {
+            val max = Int.MAX_VALUE
+            if (value.text.length > max.toString().length) return
+            if (value.text.isNotEmpty()) {
+                if (!value.text.all(Char::isDigit)) return
+                val num = value.text.toIntOrNull() ?: return
+                stackCount = TextFieldValue(
+                    value.text,
+                    value.selection
+                )
+            } else {
+                stackCount = TextFieldValue()
+            }
+        }
+
+        fun stackCountRevert() {
+            stackCount = TextFieldValue(entry.stackCount.toString())
         }
     }
 }
