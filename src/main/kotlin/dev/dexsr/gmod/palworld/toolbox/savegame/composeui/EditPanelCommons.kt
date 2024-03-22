@@ -1,4 +1,4 @@
-package dev.dexsr.gmod.palworld.toolbox.savegame.composeui.players
+package dev.dexsr.gmod.palworld.toolbox.savegame.composeui
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.interaction.MutableInteractionSource

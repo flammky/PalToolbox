@@ -101,7 +101,7 @@ private fun PlayersEditPanelPlayersLazyListItem(
     Row(
         modifier.fillMaxSize()
             .clickable(onClick = onClick)
-            .padding(horizontal = 4.dp),
+            .padding(vertical = 2.dp, horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
 

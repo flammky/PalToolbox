@@ -62,6 +62,7 @@ fun ParseGvasProperties(
                 } else {
                     "Unexpected exception: $ex"
                 }
+                ex.printStackTrace()
                 onError(msg)
             }
         }
@@ -590,12 +591,21 @@ fun DefaultGvasReader(
         }
 
         private fun serializeInt(componentBitCount: Int): Int {
-            val b = readBytes((componentBitCount + 7) / 8)
+            val numBytes = (componentBitCount + 7) / 8
+            val byteArray = readBytes(numBytes)
+
             if (componentBitCount % 8 != 0) {
-                b[b.size - 1] = (b.last() and ((1 shl (componentBitCount % 8)) - 1).toByte())
+                byteArray[numBytes - 1] = (byteArray[numBytes - 1].toInt() and ((1 shl (componentBitCount % 8)) - 1)).toByte()
             }
-            val padded = if (b.size < 4) byteArrayOf(*b, 0x0) else b
-            return ByteBuffer.wrap(padded).order(ByteOrder.LITTLE_ENDIAN).getInt()
+
+            val byteBuffer = ByteBuffer.wrap(byteArray).order(ByteOrder.LITTLE_ENDIAN)
+            return when (numBytes) {
+                1 -> byteBuffer.get().toInt() and 0xFF
+                2 -> byteBuffer.short.toInt() and 0xFFFF
+                3 -> (byteBuffer.short.toInt() and 0xFFFF) or (byteBuffer.get().toInt() and 0xFF shl 16)
+                4 -> byteBuffer.int
+                else -> byteBuffer.int
+            }
         }
 
 

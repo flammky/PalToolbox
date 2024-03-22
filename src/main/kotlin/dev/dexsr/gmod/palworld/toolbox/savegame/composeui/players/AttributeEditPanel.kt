@@ -13,8 +13,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import dev.dexsr.gmod.palworld.toolbox.savegame.composeui.RevertibleNumberTextField
+import dev.dexsr.gmod.palworld.toolbox.savegame.composeui.RevertibleTextField
+import dev.dexsr.gmod.palworld.toolbox.savegame.composeui.RevertibleUUIdTextField
 import dev.dexsr.gmod.palworld.toolbox.theme.md3.composeui.Material3Theme
 import dev.dexsr.gmod.palworld.trainer.composeui.HeightSpacer
 import dev.dexsr.gmod.palworld.trainer.composeui.WidthSpacer

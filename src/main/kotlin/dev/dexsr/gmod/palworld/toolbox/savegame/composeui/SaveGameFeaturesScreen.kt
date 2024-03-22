@@ -26,6 +26,7 @@ import androidx.compose.ui.window.AwtWindow
 import dev.dexsr.gmod.palworld.toolbox.composeui.WorkInProgressScreen
 import dev.dexsr.gmod.palworld.toolbox.savegame.composeui.libint.DragData
 import dev.dexsr.gmod.palworld.toolbox.savegame.composeui.libint.onExternalDrag
+import dev.dexsr.gmod.palworld.toolbox.savegame.composeui.pals.PalsEditPanel
 import dev.dexsr.gmod.palworld.toolbox.savegame.composeui.players.PlayersEditPanel
 import dev.dexsr.gmod.palworld.trainer.composeui.HeightSpacer
 import dev.dexsr.gmod.palworld.trainer.composeui.LocalWindow
@@ -462,7 +463,12 @@ private fun SaveGameEditContent(
                 val select = remember {
                     SaveGameEditContent(
                         id = "pals",
-                        content =  { WorkInProgressScreen(Modifier.background(remember { Color(29, 24, 34) })) }
+                        content =  {
+                            PalsEditPanel(
+                                Modifier,
+                                saveGameEditState
+                            )
+                        }
                     )
                 }
                 val selected = dest.value.lastOrNull()?.id == "pals"

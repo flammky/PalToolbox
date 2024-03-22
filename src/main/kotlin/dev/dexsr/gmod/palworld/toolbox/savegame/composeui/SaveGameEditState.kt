@@ -82,7 +82,6 @@ class SaveGameEditState(
     fun userRequestEditPlayer(uid: String) {
         this.editPlayer = uid
     }
-
 }
 
 class SaveGameEditPlayerModel(

@@ -24,3 +24,18 @@ fun WorkInProgressScreen(
         fontWeight = FontWeight.SemiBold
     )
 }
+
+@Composable
+fun PlannedScreen(
+    modifier: Modifier
+) = Box(modifier.fillMaxSize()) {
+
+    Text(
+        modifier = Modifier.align(Alignment.Center),
+        text = "PLANNED FEATURE",
+        color = Color(250, 250, 250).copy(alpha = 0.78f),
+        maxLines = 1,
+        style = MaterialTheme.typography.h5,
+        fontWeight = FontWeight.SemiBold
+    )
+}
