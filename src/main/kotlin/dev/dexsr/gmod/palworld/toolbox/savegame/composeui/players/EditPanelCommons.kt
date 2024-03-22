@@ -233,16 +233,18 @@ fun RevertibleUUIdTextField(
             AnnotatedString(stb.toString()),
             offsetMapping = object : OffsetMapping {
                 override fun originalToTransformed(offset: Int): Int {
+                    println("originalToTransformed=$offset")
                     return when {
-                        offset <= 8 -> offset
-                        offset <= 12 -> offset + 1
-                        offset <= 16 -> offset + 2
-                        offset <= 20 -> offset + 3
+                        offset < 8 -> offset
+                        offset < 12 -> offset + 1
+                        offset < 16 -> offset + 2
+                        offset < 20 -> offset + 3
                         else -> offset + 4
                     }
                 }
 
                 override fun transformedToOriginal(offset: Int): Int {
+                    println("transformedToOriginal=$offset")
                     return when {
                         offset <= 8 -> offset
                         offset <= 13 -> offset - 1

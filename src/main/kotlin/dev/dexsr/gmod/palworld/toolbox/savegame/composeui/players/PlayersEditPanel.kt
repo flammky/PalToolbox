@@ -246,8 +246,19 @@ private fun PlayerEditor(
 
             HeightSpacer(12.dp)
             PlayerSaveEditPanel(
-                Modifier
+                Modifier,
+                state = rememberPlayerSaveEditPanelState()
+                    .apply {
+                        remember(this) {
+                            Mock()
+                                .apply {
+                                    mockInit()
+                                }
+                        }
+                    }
             )
+
+            HeightSpacer(16.dp)
         }
     }
 }
