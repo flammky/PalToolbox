@@ -14,6 +14,7 @@ import androidx.compose.ui.layout.layout
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import dev.dexsr.gmod.palworld.toolbox.composeui.noMinConstraints
 import dev.dexsr.gmod.palworld.toolbox.savegame.composeui.RevertibleNumberTextField
 import dev.dexsr.gmod.palworld.toolbox.savegame.composeui.RevertibleTextField
 import dev.dexsr.gmod.palworld.toolbox.savegame.composeui.RevertibleUUIdTextField
@@ -73,12 +74,23 @@ fun AttributeEditPanel(
             }
         }
 
-        // TODO: we can do custom Layout placement instead of detaching
-        if (state.expanded) {
+        if (state.opened) {
             val heightBarHeightState = remember {
                 mutableStateOf(0.dp)
             }
-            Row {
+            Row(
+                modifier = Modifier.layout { measurable, constraints ->
+                    val measure = measurable.measure(constraints.noMinConstraints())
+
+                    if (!state.expanded) {
+                        return@layout layout(0, 0) {}
+                    }
+
+                    layout(measure.width, measure.height) {
+                        measure.place(0, 0)
+                    }
+                }
+            ) {
                 WidthSpacer((14 - ((6 + (4*2)) / 2f)).dp)
                 Box(
                     modifier = Modifier
@@ -109,7 +121,7 @@ fun AttributeEditPanel(
                         }
                     }
                 ) {
-                    HeightSpacer(MD3Spec.padding.incrementsDp(1).plus(2).dp)
+                    HeightSpacer(MD3Spec.padding.incrementsDp(1).dp)
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)

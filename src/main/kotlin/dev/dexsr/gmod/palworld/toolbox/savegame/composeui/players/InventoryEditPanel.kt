@@ -28,6 +28,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastMap
+import dev.dexsr.gmod.palworld.toolbox.composeui.noMinConstraints
 import dev.dexsr.gmod.palworld.toolbox.savegame.SaveGamePlayerInventoryEdit
 import dev.dexsr.gmod.palworld.toolbox.theme.md3.composeui.Material3Theme
 import dev.dexsr.gmod.palworld.toolbox.util.fastForEach
@@ -81,14 +82,26 @@ fun InventoryEditPanel(
 
 
 
-        if (state.expanded) run {
+        if (state.wasExpanded) run {
             if (state.noContent)
                 return@run
             // don't use intrinsics
             val heightBarHeightState = remember {
                 mutableStateOf(0.dp)
             }
-            Row {
+            Row(
+                modifier = Modifier.layout { measurable, constraints ->
+                    val measure = measurable.measure(constraints.noMinConstraints())
+
+                    if (!state.expanded) {
+                        return@layout layout(0, 0) {}
+                    }
+
+                    layout(measure.width, measure.height) {
+                        measure.place(0, 0)
+                    }
+                }
+            ) {
                 WidthSpacer((14 - ((6 + (4*2)) / 2f)).dp)
                 Box(
                     modifier = Modifier

@@ -50,7 +50,7 @@ class PalsEditPanelState(
     var filteredPals by mutableStateOf<List<String>>(pals, neverEqualPolicy())
         private set
 
-    var palIndividualDataFlow = mutableMapOf<String, StateFlow<PalEditPanelState.PalIndividualData>>()
+    var palIndividualDataFlow = mutableMapOf<String, StateFlow<PalEditPanelState.PalIndividualData?>>()
         private set
 
     var editPal by mutableStateOf<String?>(null)
@@ -64,9 +64,11 @@ class PalsEditPanelState(
 
     }
 
-    fun observePalIndividualData(uid: String): Flow<PalEditPanelState.PalIndividualData> {
+    fun observePalIndividualData(uid: String): Flow<PalEditPanelState.PalIndividualData?> {
         return palIndividualDataFlow[uid] ?: flowOf()
     }
+
+    fun cachedPalIndividualData(uid: String) = palIndividualDataFlow[uid]?.value
 
     fun editPal(pal: String?) {
         this.editPal = pal
@@ -127,7 +129,7 @@ class PalsEditPanelState(
                     val data = PalEditPanelState.PalIndividualData(
                         attribute = PalEditPanelState.Attribute(
                             nickName = value["NickName"]?.jsonObject?.get("value")?.jsonPrimitive?.content,
-                            uid = key["InstanceId"]?.jsonObject?.get("value")?.jsonPrimitive?.content ?: error(""),
+                            uid = key["InstanceId"]?.jsonObject?.get("value")?.jsonPrimitive?.content?.let(UUIDUtil::stripSeparator) ?: error(""),
                             characterId = value["CharacterID"]?.jsonObject?.get("value")?.jsonPrimitive?.content ?: error(""),
                             gender = value["Gender"]?.jsonObject?.get("value")?.jsonObject?.get("value")?.jsonPrimitive?.content?.let(PalGender.Companion::parseOrNamed),
                             level = value["Level"]?.jsonObject?.get("value")?.jsonPrimitive?.content?.toInt(),
@@ -144,23 +146,31 @@ class PalsEditPanelState(
                             talentDefense = value["Talent_Defense"]?.jsonObject?.get("value")?.jsonPrimitive?.content?.toInt(),
                             craftSpeed = value["CraftSpeed"]?.jsonObject?.get("value")?.jsonPrimitive?.content?.toIntOrNull() ?: error(""),
                             // TODO
-                            craftSpeeds = emptyList(),
+                            craftSpeeds = value["CraftSpeeds"]?.jsonObject?.get("value")?.jsonObject?.get("values")?.jsonArray?.map {
+                                PalEditPanelState.CraftSpeed(
+                                    name = it.jsonObject["WorkSuitability"]?.jsonObject?.get("value")?.jsonObject?.get("value")?.jsonPrimitive?.content ?: error(""),
+                                    rank = it.jsonObject["Rank"]?.jsonObject?.get("value")?.jsonPrimitive?.content?.toIntOrNull() ?: error("")
+                                )
+                            } ?: error(""),
                             maxSp = value["MaxSP"]?.jsonObject?.get("value")?.jsonObject?.get("Value")?.jsonObject?.get("value")?.jsonPrimitive?.content?.toLong(),
                             isRarePal = value["IsRarePal"]?.jsonObject?.get("value")?.jsonPrimitive?.content?.toBoolean(),
                             rank = value["Rank"]?.jsonObject?.get("value")?.jsonPrimitive?.content?.toInt()
                         ),
                         ownership = PalEditPanelState.Ownership(
-                            ownedTime = value["OwnedTime"]?.jsonObject?.get("value")?.jsonPrimitive?.content?.toLongOrNull() ?: error(""),
-                            ownerPlayerUid = value["OwnerPlayerUId"]?.jsonObject?.get("value")?.jsonPrimitive?.content?.let(UUIDUtil::stripSeparator) ?: error(""),
+                            ownedTime = value["OwnedTime"]?.jsonObject?.get("value")?.jsonPrimitive?.content?.toLong(),
+                            ownerPlayerUid = value["OwnerPlayerUId"]?.jsonObject?.get("value")?.jsonPrimitive?.content?.let(UUIDUtil::stripSeparator),
                             oldOwnerUIds = value["OldOwnerPlayerUIds"]?.jsonObject?.get("value")?.jsonObject?.get("values")?.jsonArray?.mapNotNull {
                                 it.jsonPrimitive.content.let(UUIDUtil::stripSeparatorOrNull)
                             } ?: error(""),
                         ),
                         skills = PalEditPanelState.Skills(
                             // TODO
-                            equipWaza = emptyList(),
-                            masteredWaza = emptyList(),
-                            passiveSkills = emptyList()
+                            equipWaza = value["EquipWaza"]?.jsonObject?.get("value")?.jsonObject?.get("values")?.jsonArray
+                                ?.map { it.jsonPrimitive.content } ?: error(""),
+                            masteredWaza = value["MasteredWaza"]?.jsonObject?.get("value")?.jsonObject?.get("values")?.jsonArray
+                                ?.map { it.jsonPrimitive.content } ?: error(""),
+                            passiveSkills = value["PassiveSkillList"]?.jsonObject?.get("value")?.jsonObject?.get("values")?.jsonArray
+                                ?.map { it.jsonPrimitive.content }
                         ),
                         inventory = PalEditPanelState.Inventory(
                             equipItemContainerId = PalEditPanelState.Inventory.EquipItemContainerId(
@@ -169,7 +179,7 @@ class PalsEditPanelState(
                                     ?.let(UUIDUtil::stripSeparatorOrNull) ?: error("")
                             )
                         ),
-                        displayData = run {
+                        attributeDisplayData = run {
                             val characterId = value["CharacterID"]?.jsonObject?.get("value")?.jsonPrimitive?.content ?: error("")
                             val isAlpha = characterId.startsWith("BOSS_")
                             val normalizedCharacterId = if (isAlpha) characterId.drop(5) else characterId
@@ -178,13 +188,19 @@ class PalsEditPanelState(
                                     characterIdNameMap_B[normalizedCharacterId]?.jsonPrimitive?.content
                                         ?: normalizedCharacterId
                                 else normalizedCharacterId
-                            PalEditPanelState.AttributeDisplayData(
-                                displayName = value["NickName"]?.jsonObject?.get("value")?.jsonPrimitive?.content
-                                    ?: breed,
-                                breed = breed,
-                                isAlpha = isAlpha,
-                                isLucky = value["IsRarePal"]?.jsonObject?.get("value")?.jsonPrimitive?.content?.toBoolean() == true
-                            )
+
+                            run {
+                                val nickName = value["NickName"]?.jsonObject?.get("value")?.jsonPrimitive?.content
+                                PalEditPanelState.AttributeDisplayData(
+                                    displayName = nickName ?: breed,
+                                    isNamed = nickName != null,
+                                    dashSeparatedUid = key["InstanceId"]?.jsonObject?.get("value")?.jsonPrimitive?.content?.let(UUIDUtil::putSeparator) ?: error(""),
+                                    breed = breed,
+                                    isAlpha = isAlpha,
+                                    isLucky = value["IsRarePal"]?.jsonObject?.get("value")?.jsonPrimitive?.content?.toBoolean() == true
+                                )
+                            }
+
                         }
                     )
                     result.add(data)
@@ -200,9 +216,10 @@ class PalsEditPanelState(
 
 
         // TODO: create suitable save-data
-        private val MOCK_INDIVIDUAL_DATA = "mocks/PalsIndividualData2.json"
+        private val MOCK_INDIVIDUAL_DATA = "mocks/0.1.5.1/PalsIndividualData.json"
 
         private val PAL_BREED_NAME_MAP = "paldata/pal_en-US.json"
         private val PAL_BREED_NAME_MAP_B = "paldata/pal_b_en-US.json"
     }
 }
+

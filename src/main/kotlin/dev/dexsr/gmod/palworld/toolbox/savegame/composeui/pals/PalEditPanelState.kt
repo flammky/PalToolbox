@@ -14,6 +14,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 
 @Composable
@@ -64,14 +66,22 @@ class PalEditPanelState(
                 launch {
                     palsEditPanelState.observePalIndividualData(pal)
                         .collect { data ->
+                            if (data == null) {
+                                mutAttribute = null
+                                return@collect
+                            }
                             mutAttribute = MutAttribute(
-                                data.attribute
+                                data.attribute,
+                                data.attributeDisplayData
                             )
                         }
                 }
             }
         }
     }
+
+    fun observePalIndividualData(): Flow<PalIndividualData?> = palsEditPanelState.observePalIndividualData(pal)
+    fun cachedPalIndividualData() = palsEditPanelState.cachedPalIndividualData(pal)
 
     class PalIndividualData(
         val attribute: Attribute,
@@ -80,7 +90,7 @@ class PalEditPanelState(
         val inventory: Inventory,
 
         // val world: WorldData
-        val displayData: AttributeDisplayData
+        val attributeDisplayData: AttributeDisplayData
     )
 
     class Attribute(
@@ -108,18 +118,26 @@ class PalEditPanelState(
         val maxSp: Long?,
 
         val isRarePal: Boolean?,
-        val rank: Int?
+        val rank: Int?,
+    )
+
+    class AttributeUpdate(
+        val attribute: Attribute,
+        val version: Comparable<Any>
     )
 
     class AttributeDisplayData(
         val displayName: String,
+        val isNamed: Boolean,
+        val dashSeparatedUid: String,
         val breed: String,
         val isAlpha: Boolean,
         val isLucky: Boolean
     )
 
     class MutAttribute(
-        val attribute: Attribute
+        val attribute: Attribute,
+        val attributeDisplayData: AttributeDisplayData
     ) {
 
         var nickName by mutableStateOf<TextFieldValue?>(attribute.nickName?.let(::TextFieldValue))
@@ -135,12 +153,14 @@ class PalEditPanelState(
     class Skills(
         val equipWaza: List<String>,
         val masteredWaza: List<String>,
-        val passiveSkills: List<String>,
+        val passiveSkills: List<String>?,
     )
 
     class Ownership(
-        val ownedTime: Long,
-        val ownerPlayerUid: String,
+        // 0.1.5.1 - became nullable
+        val ownedTime: Long?,
+        // 0.1.5.1 - became nullable
+        val ownerPlayerUid: String?,
         val oldOwnerUIds: List<String>
     )
 

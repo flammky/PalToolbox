@@ -2,20 +2,24 @@ package dev.dexsr.gmod.palworld.toolbox.savegame.composeui.pals
 
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.defaultScrollbarStyle
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -68,54 +72,10 @@ fun PalsEditPanel(
             .defaultSurfaceGestureModifiers()
     ) {
 
-        Row {
-            val heightState = remember {
-                mutableStateOf(0.dp)
-            }
-            val scrollState = rememberLazyListState()
-            val density = LocalDensity.current
-            LazyColumn(
-                modifier = Modifier
-                    .weight(1f, fill = false)
-                    .onSizeChanged { size -> heightState.value = with(density) {
-                        size.height.toDp()
-                    } },
-                state = scrollState
-            ) {
-                val pals = state.filteredPals
-                items(
-                    pals.size,
-                    key = { i -> pals[i] }
-                ) { i ->
-                    val palUid = pals[i]
-                    val palData = state.observePalIndividualData(palUid).collectAsState(null)
-                    PalsEditPanelPalLazyListItem(
-                        Modifier,
-                        getName = { palData.value?.displayData?.displayName ?: "" },
-                        getUid = { palUid },
-                        getBreedName = { palData.value?.displayData?.breed ?: "" },
-                        getGender = { palData.value?.attribute?.gender },
-                        getLevel = { (palData.value?.attribute?.level ?: 0).toString() },
-                        isAlpha = palData.value?.displayData?.isAlpha == true,
-                        isLucky = palData.value?.displayData?.isLucky == true,
-                        onClick = { state.editPal(palUid) }
-                    )
-                    if (i < pals.lastIndex) {
-                        HeightSpacer(8.dp)
-                    }
-                }
-            }
-            WidthSpacer(4.dp)
-            VerticalScrollbar(
-                modifier = Modifier.height(heightState.value),
-                adapter = rememberScrollbarAdapter(scrollState),
-                style = remember {
-                    defaultScrollbarStyle().copy(
-                        unhoverColor = Color.White.copy(alpha = 0.12f),
-                        hoverColor = Color.White.copy(alpha = 0.50f)
-                    )
-                }
-            )
+        Column {
+            PalsTopBarActions(state)
+            HeightSpacer(MD3Spec.padding.incrementsDp(4).dp)
+            PalsContentColumn(state)
         }
 
         state.editPal?.let { pal ->
@@ -136,6 +96,7 @@ private fun PalsEditPanelPalLazyListItem(
     getBreedName: () -> String,
     getGender: () -> PalGender?,
     getLevel: () -> String,
+    isNamed: Boolean,
     isAlpha: Boolean,
     isLucky: Boolean,
     onClick: () -> Unit
@@ -148,9 +109,9 @@ private fun PalsEditPanelPalLazyListItem(
     ) {
 
         Text(
-            modifier = Modifier,
+            modifier = Modifier.width(125.dp),
             text = getName(),
-            color = Color(252, 252, 252),
+            color = Color(252, 252, 252).copy(alpha = if (isNamed) 1f else 0.68f),
             fontWeight = FontWeight.SemiBold,
             style = MaterialTheme.typography.caption,
             maxLines = 1
@@ -158,50 +119,54 @@ private fun PalsEditPanelPalLazyListItem(
 
         WidthSpacer(MD3Spec.padding.incrementsDp(1).dp)
 
-        Row(
+        Box(
             modifier = Modifier
-                .clip(RoundedCornerShape(12.dp))
-                .background(Color(0xFFAED285))
-                .padding(vertical = 2.dp, horizontal = 6.dp)
         ) {
-            Text(
-                modifier = Modifier,
-                text = getBreedName(),
-                color = Color(0xFF221728),
-                fontWeight = FontWeight.SemiBold,
-                style = Material3Theme.typography.labelMedium,
-                maxLines = 1
-            )
-            val gender = getGender()
-            if (gender != null && gender !is PalGender.Named) {
-                WidthSpacer(MD3Spec.padding.incrementsDp(1).dp)
-                Icon(
-                    modifier = Modifier.size(16.dp),
-                    painter = when(gender) {
-                        PalGender.Female -> painterResource("drawable/gender_female_16px.png")
-                        PalGender.Male -> painterResource("drawable/gender_male_16px.png")
-                        else -> NoOpPainter
-                    },
-                    contentDescription = null,
-                    tint = Color(10,10,10)
+            Row(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color(0xFFAED285))
+                    .padding(vertical = 2.dp, horizontal = 6.dp)
+            ) {
+                Text(
+                    modifier = Modifier,
+                    text = getBreedName(),
+                    color = Color(0xFF221728),
+                    fontWeight = FontWeight.SemiBold,
+                    style = Material3Theme.typography.labelMedium,
+                    maxLines = 1
                 )
-            }
-            if (isLucky) {
-                WidthSpacer(4.dp)
-                Icon(
-                    modifier = Modifier.size(14.dp),
-                    painter = painterResource("drawable/sparkle1_filled_16px.png"),
-                    contentDescription = null,
-                    tint = Color(0xFFd1831b)
-                )
-            } else if (isAlpha) {
-                WidthSpacer(4.dp)
-                Icon(
-                    modifier = Modifier.size(14.dp),
-                    painter = painterResource("drawable/devil_simple_16px.png"),
-                    contentDescription = null,
-                    tint = Color.Red
-                )
+                val gender = getGender()
+                if (gender != null && gender !is PalGender.Named) {
+                    WidthSpacer(MD3Spec.padding.incrementsDp(1).dp)
+                    Icon(
+                        modifier = Modifier.size(16.dp),
+                        painter = when(gender) {
+                            PalGender.Female -> painterResource("drawable/gender_female_16px.png")
+                            PalGender.Male -> painterResource("drawable/gender_male_16px.png")
+                            else -> NoOpPainter
+                        },
+                        contentDescription = null,
+                        tint = Color(10,10,10)
+                    )
+                }
+                if (isLucky) {
+                    WidthSpacer(4.dp)
+                    Icon(
+                        modifier = Modifier.size(14.dp),
+                        painter = painterResource("drawable/sparkle1_filled_16px.png"),
+                        contentDescription = null,
+                        tint = Color(0xFFd1831b)
+                    )
+                } else if (isAlpha) {
+                    WidthSpacer(4.dp)
+                    Icon(
+                        modifier = Modifier.size(14.dp),
+                        painter = painterResource("drawable/devil_simple_16px.png"),
+                        contentDescription = null,
+                        tint = Color.Red
+                    )
+                }
             }
         }
 
@@ -237,8 +202,126 @@ private fun PalsEditPanelPalLazyListItem(
                 color = Color(0xFF221728),
                 fontWeight = FontWeight.SemiBold,
                 style = Material3Theme.typography.labelMedium,
-                maxLines = 1
+                maxLines = 1,
+                softWrap = false
             )
         }
+    }
+}
+
+@Composable
+private fun PalsTopBarActions(
+    state: PalsEditPanelState
+) {
+
+    Column() {
+        val openFilter = remember {
+            mutableStateOf(false)
+        }
+        Row {
+
+            run {
+
+                Row(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(50))
+                        .clickable { openFilter.value = !openFilter.value }
+                        .border(
+                            width = 1.dp,
+                            color = Color(0xFF79747E),
+                            shape = RoundedCornerShape(50)
+                        )
+                        .padding(start = 12.dp, top = 4.dp, end = 16.dp, bottom = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        modifier = Modifier.size(16.dp),
+                        painter = painterResource("drawable/filter_sort_24px.png"),
+                        contentDescription = null,
+                        tint = if (openFilter.value) Color(0xFFD1BCFD) else Color.White
+                    )
+
+                    WidthSpacer(8.dp)
+
+                    Text(
+                        text = "Filter",
+                        color = Color(252, 252, 252),
+                        style = Material3Theme.typography.labelLarge,
+                        maxLines = 1,
+                        softWrap = false
+                    )
+                }
+            }
+
+        }
+
+        if (openFilter.value) {
+        }
+
+        HeightSpacer(8.dp)
+
+        HorizontalDivider(
+            modifier = Modifier.width(800.dp),
+            color = Color(0xFF978e98)
+        )
+    }
+}
+
+@Composable
+private fun PalsContentColumn(
+    state: PalsEditPanelState
+) {
+    Row {
+        val heightState = remember {
+            mutableStateOf(0.dp)
+        }
+        val scrollState = rememberLazyListState()
+        val density = LocalDensity.current
+        LazyColumn(
+            modifier = Modifier
+                .weight(1f, fill = false)
+                .width(800.dp)
+                .onSizeChanged { size -> heightState.value = with(density) {
+                    size.height.toDp()
+                } },
+            state = scrollState
+        ) {
+            val pals = state.filteredPals
+            items(
+                pals.size,
+                key = { i -> pals[i] }
+            ) { i ->
+                val palUid = pals[i]
+                val palData = state
+                    .observePalIndividualData(palUid)
+                    .collectAsState(state.cachedPalIndividualData(palUid))
+                PalsEditPanelPalLazyListItem(
+                    Modifier,
+                    getName = { palData.value?.attributeDisplayData?.displayName ?: "" },
+                    getUid = { palData.value?.attributeDisplayData?.dashSeparatedUid ?: "" },
+                    getBreedName = { palData.value?.attributeDisplayData?.breed ?: "" },
+                    getGender = { palData.value?.attribute?.gender },
+                    getLevel = { (palData.value?.attribute?.level ?: 0).toString() },
+                    isNamed = palData.value?.attributeDisplayData?.isNamed == true,
+                    isAlpha = palData.value?.attributeDisplayData?.isAlpha == true,
+                    isLucky = palData.value?.attributeDisplayData?.isLucky == true,
+                    onClick = { state.editPal(palUid) }
+                )
+                if (i < pals.lastIndex) {
+                    HeightSpacer(8.dp)
+                }
+            }
+        }
+        WidthSpacer(4.dp)
+        VerticalScrollbar(
+            modifier = Modifier.height(heightState.value),
+            adapter = rememberScrollbarAdapter(scrollState),
+            style = remember {
+                defaultScrollbarStyle().copy(
+                    unhoverColor = Color.White.copy(alpha = 0.12f),
+                    hoverColor = Color.White.copy(alpha = 0.50f)
+                )
+            }
+        )
     }
 }

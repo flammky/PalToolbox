@@ -49,4 +49,24 @@ object UUIDUtil {
         }
         else -> null
     }
+
+    fun putSeparator(uid: String): String = if (uid.length == 36) {
+        uid.forEachIndexed { i, c ->
+            if (i == 8 || i == 13 || i == 18 || i == 23) {
+                if (c != '-') illegalArgument("unexpected char on separator position (c=$c, i=$i)")
+                return@forEachIndexed
+            }
+            if (!c.isLetterOrDigit()) {
+                illegalArgument("unexpected char (c=$c, i=$i)")
+            }
+        }
+        uid
+    } else if (uid.length == 32) {
+        buildString { uid.forEachIndexed { i, c ->
+            if (i == 8 || i == 12 || i == 16 || i == 20) {
+                append('-')
+            }
+            append(c)
+        } }
+    } else illegalArgument("cannot put separator: Invalid UID length=${uid.length}")
 }

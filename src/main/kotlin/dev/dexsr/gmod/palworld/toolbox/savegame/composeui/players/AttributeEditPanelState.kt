@@ -37,6 +37,9 @@ class AttributeEditPanelState(
     private val lifetime = SupervisorJob()
     private val parser = SaveGameWorldFileParser(CoroutineScope(lifetime))
 
+    var opened by mutableStateOf(false)
+        private set
+
     var expanded by mutableStateOf(false)
         private set
 
@@ -93,6 +96,11 @@ class AttributeEditPanelState(
     var showEditor by mutableStateOf(false)
 
     fun userToggleExpand() {
+        if (!opened) {
+            opened = true
+            expanded = true
+            return
+        }
         expanded = !expanded
     }
 

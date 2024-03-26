@@ -37,6 +37,9 @@ class InventoryEditPanelState(
 
     var currentSlotIndex by mutableStateOf<Int>(0)
 
+    var opened by mutableStateOf(false)
+        private set
+
     var expanded by mutableStateOf(false)
         private set
 
@@ -54,7 +57,8 @@ class InventoryEditPanelState(
 
     private var _coroutineScope: CoroutineScope? = null
 
-    private var wasExpanded = false
+    var wasExpanded by mutableStateOf(false)
+        private set
 
     private val _slotUidMap = mutableStateOf(
         linkedMapOf<Slot, String>(),

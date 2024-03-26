@@ -36,6 +36,7 @@ import dev.dexsr.gmod.palworld.toolbox.theme.md3.composeui.Material3Theme
 import dev.dexsr.gmod.palworld.trainer.composeui.HeightSpacer
 import dev.dexsr.gmod.palworld.trainer.composeui.StableList
 import dev.dexsr.gmod.palworld.trainer.composeui.WidthSpacer
+import kotlin.math.round
 
 @Composable
 fun RevertibleTextField(
@@ -289,7 +290,7 @@ fun RevertibleNumberTextField(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun SingleLineSimpleTooltip(
+fun SingleLineSimpleTooltip(
     text: String,
     modifier: Modifier,
     content: @Composable () -> Unit
@@ -308,7 +309,7 @@ private fun SingleLineSimpleTooltip(
                 Text(
                     modifier = Modifier.align(Alignment.Center),
                     text = text,
-                    color = Color(50, 47, 53),
+                    color = Color(round(50 / 1.5f).toInt(), round(47 / 1.5f).toInt(), round(53 / 1.5f).toInt()),
                     style = Material3Theme.typography.labelMedium
                 )
             }
