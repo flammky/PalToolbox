@@ -10,7 +10,7 @@ class GvasFileHeader(
     val engineVersionMajor: UShort,
     val engineVersionMinor: UShort,
     val engineVersionPatch: UShort,
-    val engineVersionChangelist: Int,
+    val engineVersionChangelist: UInt,
     val engineVersionBranch: String,
     val customVersionFormat: Int,
     // todo(l): check if we can use HashMap

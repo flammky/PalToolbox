@@ -17,6 +17,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
+import java.math.BigInteger
 
 @Composable
 fun rememberPalEditPanelState(
@@ -169,8 +170,6 @@ class PalEditPanelState(
         val rank: Int
     )
 
-
-
     class SlotId(
         val containerId: String,
         val slotIndex: Int
@@ -192,6 +191,9 @@ class PalEditPanelState(
 
 
     inner class Mock() {
+
+        init {
+        }
 
         fun mockInit() {
             mockAttribute()

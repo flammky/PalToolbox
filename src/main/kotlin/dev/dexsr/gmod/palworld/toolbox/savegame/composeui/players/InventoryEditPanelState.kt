@@ -163,7 +163,10 @@ class InventoryEditPanelState(
     fun slotUid(slot: Slot) = _slotUidMap.value[slot]
 
     fun refresh() {
-
+        if (sourceNotFoundErr != null) {
+            sourceNotFoundErr = null
+            lazyInit()
+        }
     }
 
     private fun lazyInit() {
@@ -202,6 +205,7 @@ class InventoryEditPanelState(
 
             inventoryEditor.prepare()
             inventoryEditor.parseInventoryUIDMap()
+            if (commonErr != null || sourceNotFoundErr != null) return@launch
             _slotUidMap.value = linkedMapOf<Slot, String>()
                 .apply {
                     inventoryEditor.inventoriesUidMap?.entries?.forEach { (slot, uid) ->

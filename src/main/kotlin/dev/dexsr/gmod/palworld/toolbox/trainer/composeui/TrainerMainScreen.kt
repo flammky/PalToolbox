@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogWindow
 import androidx.compose.ui.window.rememberDialogState
+import dev.dexsr.gmod.palworld.toolbox.composeui.WorkInProgressScreen
 import dev.dexsr.gmod.palworld.trainer.composeui.HeightSpacer
 import dev.dexsr.gmod.palworld.trainer.composeui.StableList
 import dev.dexsr.gmod.palworld.trainer.composeui.WidthSpacer
@@ -51,7 +52,9 @@ fun TrainerMainScreen(
                 .defaultSurfaceGestureModifiers()
         ) {
 
-            TrainerProcessSelectPanel(
+            WorkInProgressScreen(Modifier)
+
+            /*TrainerProcessSelectPanel(
                 modifier = Modifier
                     .padding(
                         start = MD3Spec.padding.incrementsDp(2).dp,
@@ -69,7 +72,7 @@ fun TrainerMainScreen(
                     Modifier.padding(top = MD3Spec.padding.incrementsDp(3).dp),
                     proc
                 )
-            }
+            }*/
         }
     }
 }

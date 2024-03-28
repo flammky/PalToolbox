@@ -7,6 +7,7 @@ import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import dev.dexsr.gmod.palworld.toolbox.composeui.WorkInProgressScreen
 import dev.dexsr.gmod.palworld.trainer.composeui.gestures.defaultSurfaceGestureModifiers
 
 @Composable
@@ -30,5 +31,5 @@ fun PalDexMainScreen() {
 private fun PalDexContent(
     modifier: Modifier
 ) {
-
+    WorkInProgressScreen(modifier)
 }

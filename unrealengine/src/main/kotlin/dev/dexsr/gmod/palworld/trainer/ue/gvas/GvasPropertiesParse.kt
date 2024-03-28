@@ -366,7 +366,7 @@ private fun readGvasArrayValues(
     count: Int,
     size: Int,
     path: String
-): GvasTypedArray<*> {
+): GvasTypedArray<out Any> {
     return when (arrayType) {
         "EnumProperty" -> {
             GvasStringArrayValue(

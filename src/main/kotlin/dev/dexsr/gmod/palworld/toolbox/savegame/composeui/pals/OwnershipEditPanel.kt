@@ -20,6 +20,7 @@ import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.material.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -295,7 +296,9 @@ private fun OldOwnerUIDsEditField(
                         VerticalScrollbar(
                             modifier = Modifier.height(
                                 with(LocalDensity.current) {
-                                    scrollState.layoutInfo.viewportSize.height.toDp()
+                                    remember(this) {
+                                        derivedStateOf { scrollState.layoutInfo.viewportSize.height.toDp() }
+                                    }.value
                                 }
                             ),
                             adapter = rememberScrollbarAdapter(scrollState),

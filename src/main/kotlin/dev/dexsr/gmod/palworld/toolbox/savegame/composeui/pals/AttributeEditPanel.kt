@@ -31,6 +31,7 @@ import androidx.compose.material3.RadioButtonColors
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -176,16 +177,7 @@ private fun AttributeEditPanelContent(
             onRevert = mutAttr::uidRevert,
         )
 
-        HeightSpacer(12.dp)
-
-        PalGenderEditField(
-            modifier = Modifier,
-            value = mutAttr.mutGender,
-            onValueChange = mutAttr::genderChange,
-            onRevert = mutAttr::genderRevert
-        )
-
-        HeightSpacer(12.dp)
+        HeightSpacer(8.dp)
 
         RevertibleNumberTextField(
             modifier = Modifier.padding(top = 2.dp),
@@ -325,7 +317,17 @@ private fun AttributeEditPanelContent(
             onRevert = mutAttr::rankRevert,
         )
 
+        HeightSpacer(12.dp)
+
+        PalGenderEditField(
+            modifier = Modifier,
+            value = mutAttr.mutGender,
+            onValueChange = mutAttr::genderChange,
+            onRevert = mutAttr::genderRevert
+        )
+
         HeightSpacer(16.dp)
+
         WorkSuitabilitiesEditField(
             modifier = Modifier,
             mutCraftSpeeds = mutAttr.craftSpeeds
@@ -632,7 +634,9 @@ private fun WorkSuitabilitiesEditField(
                         VerticalScrollbar(
                             modifier = Modifier.height(
                                 with(LocalDensity.current) {
-                                    scrollState.layoutInfo.viewportSize.height.toDp()
+                                    remember(this) {
+                                        derivedStateOf { scrollState.layoutInfo.viewportSize.height.toDp() }
+                                    }.value
                                 }
                             ),
                             adapter = rememberScrollbarAdapter(scrollState),

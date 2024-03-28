@@ -12,9 +12,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastForEachIndexed
 import dev.dexsr.gmod.palworld.toolbox.savegame.composeui.RevertibleNumberTextField
 import dev.dexsr.gmod.palworld.toolbox.savegame.composeui.RevertibleTextField
 import dev.dexsr.gmod.palworld.toolbox.theme.md3.composeui.Material3Theme
+import dev.dexsr.gmod.palworld.toolbox.util.fastForEach
 import dev.dexsr.gmod.palworld.trainer.composeui.HeightSpacer
 import dev.dexsr.gmod.palworld.trainer.composeui.WidthSpacer
 import dev.dexsr.gmod.palworld.trainer.composeui.wrapStableList
@@ -27,13 +29,13 @@ fun PlayerInventoryCommonSlotEdit(
     modifier: Modifier,
     inventoryState: InventoryEditPanelState
 ) {
-
     val state = rememberPlayerInventoryCommonSlotEditState(inventoryState)
 
     Box(modifier.background(remember { Color(29, 24, 34) })) {
         val entries = state.mutableEntries.value ?: return@Box
         Row {
-            val scrollState = rememberLazyListState()
+
+            /*val scrollState = rememberLazyListState()
             LazyColumn(
                 modifier = Modifier
                     .weight(1f, fill = false)
@@ -67,6 +69,39 @@ fun PlayerInventoryCommonSlotEdit(
                         HeightSpacer(4.dp)
                     }
                 }
+            }*/
+
+            val scrollState = rememberScrollState()
+            Column(
+                modifier = Modifier
+                    .weight(1f, fill = false)
+                    .heightIn(max = 1000.dp)
+                    .verticalScroll(scrollState),
+            ) {
+                println("column recompose")
+                entries.fastForEachIndexed { i, e ->
+                    Row {
+                        PlayerInventoryDefaultSlotEntryIndexCell(
+                            Modifier.padding(horizontal = 8.dp).align(Alignment.CenterVertically),
+                            e.index.toString()
+                        )
+                        PlayerInventoryDefaultSlotEntryItemIdCell(
+                            Modifier.weight(1f, fill = false),
+                            e.itemId,
+                            e::itemIdChange,
+                            e::itemIdRevert
+                        )
+                        PlayerInventoryDefaultSlotEntryStackCountCell(
+                            Modifier,
+                            e.stackCount,
+                            e::stackCountChange,
+                            e::stackCountRevert
+                        )
+                    }
+                    if (i < entries.size-1) {
+                        HeightSpacer(4.dp)
+                    }
+                }
             }
 
             WidthSpacer(8.dp)
@@ -74,7 +109,9 @@ fun PlayerInventoryCommonSlotEdit(
             VerticalScrollbar(
                 modifier = Modifier.height(
                     with(LocalDensity.current) {
-                        scrollState.layoutInfo.viewportSize.height.toDp()
+                        remember(this) {
+                            derivedStateOf { scrollState.viewportSize.toDp() }
+                        }.value
                     }
                 ),
                 adapter = rememberScrollbarAdapter(scrollState),

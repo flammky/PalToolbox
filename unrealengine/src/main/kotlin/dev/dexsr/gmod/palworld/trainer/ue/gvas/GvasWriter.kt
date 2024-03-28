@@ -1,4 +1,3 @@
 package dev.dexsr.gmod.palworld.trainer.ue.gvas
 
-abstract class GvasWriter {
-}
+typealias GvasWriter = dev.dexsr.gmod.palworld.toolbox.savegame.gvas.GvasWriter

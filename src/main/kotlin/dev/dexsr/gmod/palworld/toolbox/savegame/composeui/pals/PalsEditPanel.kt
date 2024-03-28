@@ -27,6 +27,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
@@ -221,11 +222,14 @@ private fun PalsTopBarActions(
         Row {
 
             run {
-
+                val enabled = remember {
+                    mutableStateOf(false)
+                }
                 Row(
                     modifier = Modifier
+                        .alpha(if (enabled.value) 1f else 0.38f)
                         .clip(RoundedCornerShape(50))
-                        .clickable { openFilter.value = !openFilter.value }
+                        .clickable(enabled = enabled.value) { openFilter.value = !openFilter.value }
                         .border(
                             width = 1.dp,
                             color = Color(0xFF79747E),

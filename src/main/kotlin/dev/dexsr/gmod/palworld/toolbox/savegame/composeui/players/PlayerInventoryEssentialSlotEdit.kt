@@ -6,9 +6,12 @@ import androidx.compose.foundation.defaultScrollbarStyle
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.rememberScrollbarAdapter
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -16,10 +19,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastForEachIndexed
 import dev.dexsr.gmod.palworld.toolbox.savegame.composeui.RevertibleNumberTextField
 import dev.dexsr.gmod.palworld.toolbox.savegame.composeui.RevertibleTextField
 import dev.dexsr.gmod.palworld.toolbox.theme.md3.composeui.Material3Theme
 import dev.dexsr.gmod.palworld.trainer.composeui.HeightSpacer
+import dev.dexsr.gmod.palworld.trainer.composeui.StableList
 import dev.dexsr.gmod.palworld.trainer.composeui.WidthSpacer
 import dev.dexsr.gmod.palworld.trainer.composeui.wrapStableList
 
@@ -33,60 +38,136 @@ fun PlayerInventoryEssentialSlotEdit(
 
     Box(modifier.background(remember { Color(29, 24, 34) })) {
         val entries = state.mutableEntries.value ?: return@Box
-        Row {
-            val scrollState = rememberLazyListState()
-            LazyColumn(
-                modifier = Modifier
-                    .weight(1f, fill = false)
-                    .heightIn(max = 1000.dp),
-                state = scrollState
-            ) {
-                items(
-                    entries.size,
-                    key = { i -> entries[i].index.toString() }
-                ) { i ->
-                    val e = entries[i]
-                    Row {
-                        PlayerInventoryDefaultSlotEntryIndexCell(
-                            Modifier.padding(horizontal = 8.dp).align(Alignment.CenterVertically),
-                            e.index.toString()
-                        )
-                        PlayerInventoryDefaultSlotEntryItemIdCell(
-                            Modifier.weight(1f, fill = false),
-                            e.itemId,
-                            e::itemIdChange,
-                            e::itemIdRevert
-                        )
-                        PlayerInventoryDefaultSlotEntryStackCountCell(
-                            Modifier,
-                            e.stackCount,
-                            e::stackCountChange,
-                            e::stackCountRevert
-                        )
-                    }
-                    if (i < entries.size-1) {
-                        HeightSpacer(4.dp)
-                    }
-                }
-            }
-
-            WidthSpacer(8.dp)
-
-            VerticalScrollbar(
-                modifier = Modifier.height(
-                    with(LocalDensity.current) {
-                        scrollState.layoutInfo.viewportSize.height.toDp()
-                    }
-                ),
-                adapter = rememberScrollbarAdapter(scrollState),
-                style = remember {
-                    defaultScrollbarStyle().copy(
-                        unhoverColor = Color.White.copy(alpha = 0.12f),
-                        hoverColor = Color.White.copy(alpha = 0.50f)
-                    )
-                }
+        if (entries.size > 150) {
+            PlayerInventoryEssentialSlotLazyFieldsEdit(
+                entries.wrapStableList(),
+                Modifier.heightIn(max = 800.dp)
+            )
+        } else {
+            PlayerInventoryEssentialSlotFieldsEdit(
+                entries.wrapStableList(),
+                Modifier.heightIn(max = 800.dp)
             )
         }
+    }
+}
+
+@Composable
+private fun PlayerInventoryEssentialSlotFieldsEdit(
+    entries: StableList<PlayerInventoryEssentialSlotEditState.MutEntry>,
+    modifier: Modifier = Modifier
+) {
+    val scrollState = rememberScrollState()
+    Row(modifier) {
+        Column(
+            modifier = Modifier
+                .weight(1f, fill = false)
+                .verticalScroll(scrollState),
+        ) {
+            entries.fastForEachIndexed { i, e ->
+                Row {
+                    PlayerInventoryDefaultSlotEntryIndexCell(
+                        Modifier.padding(horizontal = 8.dp).align(Alignment.CenterVertically),
+                        e.index.toString()
+                    )
+                    PlayerInventoryDefaultSlotEntryItemIdCell(
+                        Modifier.weight(1f, fill = false),
+                        e.itemId,
+                        e::itemIdChange,
+                        e::itemIdRevert
+                    )
+                    PlayerInventoryDefaultSlotEntryStackCountCell(
+                        Modifier,
+                        e.stackCount,
+                        e::stackCountChange,
+                        e::stackCountRevert
+                    )
+                }
+                if (i < entries.size-1) {
+                    HeightSpacer(4.dp)
+                }
+            }
+        }
+
+        WidthSpacer(8.dp)
+
+        VerticalScrollbar(
+            modifier = Modifier.height(
+                with(LocalDensity.current) {
+                    remember(this) {
+                        derivedStateOf { scrollState.viewportSize.toDp() }
+                    }.value
+                }
+            ),
+            adapter = rememberScrollbarAdapter(scrollState),
+            style = remember {
+                defaultScrollbarStyle().copy(
+                    unhoverColor = Color.White.copy(alpha = 0.12f),
+                    hoverColor = Color.White.copy(alpha = 0.50f)
+                )
+            }
+        )
+    }
+}
+
+@Composable
+private fun PlayerInventoryEssentialSlotLazyFieldsEdit(
+    entries: StableList<PlayerInventoryEssentialSlotEditState.MutEntry>,
+    modifier: Modifier = Modifier
+) {
+    val scrollState = rememberLazyListState()
+    Row(modifier) {
+        LazyColumn(
+            modifier = Modifier
+                .weight(1f, fill = false),
+            state = scrollState
+        ) {
+            items(
+                entries.size,
+                key = { i -> entries[i].index.toString() }
+            ) { i ->
+                val e = entries[i]
+                Row {
+                    PlayerInventoryDefaultSlotEntryIndexCell(
+                        Modifier.padding(horizontal = 8.dp).align(Alignment.CenterVertically),
+                        e.index.toString()
+                    )
+                    PlayerInventoryDefaultSlotEntryItemIdCell(
+                        Modifier.weight(1f, fill = false),
+                        e.itemId,
+                        e::itemIdChange,
+                        e::itemIdRevert
+                    )
+                    PlayerInventoryDefaultSlotEntryStackCountCell(
+                        Modifier,
+                        e.stackCount,
+                        e::stackCountChange,
+                        e::stackCountRevert
+                    )
+                }
+                if (i < entries.size-1) {
+                    HeightSpacer(4.dp)
+                }
+            }
+        }
+        WidthSpacer(8.dp)
+
+        VerticalScrollbar(
+            modifier = Modifier.height(
+                with(LocalDensity.current) {
+                    remember(this) {
+                        derivedStateOf { scrollState.layoutInfo.viewportSize.height.toDp() }
+                    }.value
+                }
+            ),
+            adapter = rememberScrollbarAdapter(scrollState),
+            style = remember {
+                defaultScrollbarStyle().copy(
+                    unhoverColor = Color.White.copy(alpha = 0.12f),
+                    hoverColor = Color.White.copy(alpha = 0.50f)
+                )
+            }
+        )
     }
 }
 

@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -75,7 +76,9 @@ fun PlayerInventoryDropSlotEdit(
             VerticalScrollbar(
                 modifier = Modifier.height(
                     with(LocalDensity.current) {
-                        scrollState.layoutInfo.viewportSize.height.toDp()
+                        remember(this) {
+                            derivedStateOf { scrollState.layoutInfo.viewportSize.height.toDp() }
+                        }.value
                     }
                 ),
                 adapter = rememberScrollbarAdapter(scrollState),

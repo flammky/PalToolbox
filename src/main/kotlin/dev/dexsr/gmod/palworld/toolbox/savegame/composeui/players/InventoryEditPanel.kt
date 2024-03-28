@@ -249,7 +249,7 @@ private fun PlayerInventorySourceNotFound(
     val err = state.sourceNotFoundErr ?: return
 
     val labelMedium = Material3Theme.typography.labelMedium.nonFontScaled()
-    val color = Color(0xFF690005)
+    val color = Color(252, 252, 252)
     val msg = when(err) {
         is SaveGamePlayerInventoryEdit.Error.PlayerFileFNF -> buildAnnotatedString {
             withStyle(labelMedium.copy(color.copy(alpha = 0.80f)).toSpanStyle()) {
@@ -287,7 +287,7 @@ private fun PlayerInventorySaveFileNotFound(
     Column(
         modifier
             .clip(RoundedCornerShape(24.dp / 2))
-            .background(Color(0xFFffb4ab))
+            .background(Color(0xFFC62B40))
             .padding(16.dp)
     ) {
         Text(text = msg)
@@ -296,14 +296,15 @@ private fun PlayerInventorySaveFileNotFound(
 
         Button(
             onClick = refresh,
+            enabled = false,
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF93000a)
+                containerColor = Color(0xFF801235)
             )
         ) {
             Text(
                 text = "Refresh",
                 style = Material3Theme.typography.labelLarge,
-                color = Color(0xFFffdad6),
+                color = Color(252, 252, 252).copy(alpha = 0.68f),
                 maxLines = 1
             )
         }

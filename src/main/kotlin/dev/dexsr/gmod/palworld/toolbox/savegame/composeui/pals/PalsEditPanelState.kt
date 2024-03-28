@@ -207,8 +207,11 @@ class PalsEditPanelState(
                 }
                 result
             }
-            this@PalsEditPanelState.pals = pals.map { it.attribute.uid }
-            this@PalsEditPanelState.filteredPals = this@PalsEditPanelState.pals
+            this@PalsEditPanelState.pals = pals
+                .map { it.attribute.uid }
+            this@PalsEditPanelState.filteredPals = pals
+                .sortedBy { it.attributeDisplayData.displayName }
+                .map { it.attribute.uid }
             pals.forEach { e ->
                 palIndividualDataFlow[e.attribute.uid] = MutableStateFlow(e)
             }

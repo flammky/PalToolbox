@@ -1,6 +1,7 @@
 package dev.dexsr.gmod.palworld.toolbox.savegame.composeui.pals
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,16 +12,25 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Text
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MultiChoiceSegmentedButtonRow
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
@@ -49,6 +59,7 @@ fun PalEditPanel(
     rememberPalEditPanelState(palsEditPanelState, pal)
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PalEditPanel(
     modifier: Modifier,
@@ -64,41 +75,56 @@ fun PalEditPanel(
     ) {
         Column(modifier = Modifier.fillMaxHeight().verticalScroll(rememberScrollState())) {
 
-            Row(
-                modifier = Modifier
-                    .defaultMinSize(minHeight = 35.dp)
-                    .fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .clickable(onClick = state::exit)
-                        .padding(2.dp)
-                ) {
-                    Icon(
-                        modifier = Modifier.size(20.dp),
-                        painter = painterResource("drawable/arrow_left_simple_32px.png"),
-                        tint = Color(168, 140, 196),
-                        contentDescription = null
-                    )
-                }
+           Row {
+               Row(
+                   modifier = Modifier,
+                   verticalAlignment = Alignment.CenterVertically
+               ) {
+                   Box(
+                       modifier = Modifier
+                           .clickable(onClick = state::exit)
+                           .padding(vertical = 4.dp, horizontal = 4.dp)
+                   ) {
+                       Icon(
+                           modifier = Modifier.size(20.dp),
+                           painter = painterResource("drawable/arrow_left_simple_32px.png"),
+                           tint = Color(168, 140, 196),
+                           contentDescription = null
+                       )
+                   }
 
-                WidthSpacer(12.dp)
+                   WidthSpacer(8.dp)
 
-                Row {
-                    Text(
-                        "Editing Pal",
-                        style = Material3Theme.typography.labelMedium,
-                        color = Color(252, 252, 252)
-                    )
-                }
-            }
+                   Row {
+                       Text(
+                           "Editing Pal",
+                           style = Material3Theme.typography.labelMedium,
+                           color = Color(252, 252, 252)
+                       )
+                   }
+               }
 
-            HorizontalDivider(
-                color = Color(0xFF978e98)
-            )
+               WidthSpacer(16.dp)
 
-            HeightSpacer(8.dp)
+               Box(
+                   modifier = Modifier
+                       .alpha(0.38f)
+                       .padding(top = 4.dp)
+                       .clip(RoundedCornerShape(50))
+                       .background(Color(0xFF4E378B))
+                       .clickable(enabled = false) {  }
+                       .padding(vertical = 6.dp, horizontal = 12.dp)
+               ) {
+                   Text(
+                       modifier = Modifier.align(Alignment.Center).alpha(0.68f),
+                       text = "Commit",
+                       style = Material3Theme.typography.labelLarge,
+                       color = Color(252, 252, 252)
+                   )
+               }
+           }
+
+            HeightSpacer(12.dp)
 
             Column(modifier = Modifier.padding(start = 4.dp)) {
 

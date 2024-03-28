@@ -10,8 +10,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Icon
-import androidx.compose.material.Text
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,6 +22,7 @@ import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import dev.dexsr.gmod.palworld.toolbox.composeui.noMinConstraints
 import dev.dexsr.gmod.palworld.toolbox.savegame.composeui.RevertibleNumberTextField
 import dev.dexsr.gmod.palworld.toolbox.savegame.composeui.RevertibleUUIdTextField
 import dev.dexsr.gmod.palworld.toolbox.theme.md3.composeui.Material3Theme
@@ -133,8 +134,7 @@ fun PlayerSaveEditPanel(
 
                     val technologyNames = state.mutUnlockedTechnologyRecipe ?: return@Column
                     HeightSpacer(12.dp)
-                    PlayerSaveEditPanelUnlockedRecipeTechnologyNames(
-                        Modifier,
+                    UnlockedRecipeTechnologyNamesEditField(
                         technologyNames
                     )
 
@@ -147,8 +147,7 @@ fun PlayerSaveEditPanel(
 
                     val recordData = state.mutRecordData ?: return@Column
                     HeightSpacer(12.dp)
-                    PalRecordDataEditPanel(
-                        Modifier,
+                    PalRecordDataEditField(
                         recordData
                     )
                 }
@@ -269,128 +268,212 @@ private fun PlayerSaveEditPanelInventoryInfo(
 }
 
 @Composable
+private fun UnlockedRecipeTechnologyNamesEditField(
+    state: PlayerSaveEditPanelState.MutUnlockedTechnologyRecipe,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier
+    ) {
+        Row(
+            modifier = Modifier
+                .clickable(onClick = state::userToggleExpand)
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+
+            Icon(
+                modifier = Modifier.size(12.dp),
+                painter = if (state.expanded) {
+                    painterResource("drawable/simple_arrow_head_down_32px.png")
+                } else {
+                    painterResource("drawable/simple_arrow_head_right_32px.png")
+                },
+                contentDescription = null,
+                tint = Color.White
+            )
+
+            WidthSpacer(8.dp)
+
+            Column(
+                modifier = Modifier.width(IntrinsicSize.Max)
+            ) {
+                Text(
+                    modifier = Modifier.offset(y = -1.dp),
+                    text = "Unlocked Technologies",
+                    style = Material3Theme.typography.titleMedium,
+                    maxLines = 1,
+                    color = Color(252, 252, 252),
+                )
+            }
+        }
+
+        // TODO: we can do custom Layout placement instead of detaching
+        if (state.opened) {
+            val heightBarHeightState = remember {
+                mutableStateOf(0.dp)
+            }
+            Row(
+                modifier = Modifier.layout { measurable, constraints ->
+                    val measure = measurable.measure(constraints.noMinConstraints())
+
+                    if (!state.expanded) {
+                        return@layout layout(0, 0) {}
+                    }
+
+                    layout(measure.width, measure.height) {
+                        measure.place(0, 0)
+                    }
+                }
+            ) {
+                WidthSpacer((14 - ((6 + (4 * 2)) / 2f)).dp)
+                Box(
+                    modifier = Modifier
+                        // wait for public API on scroll focus
+                        .focusProperties {
+                            canFocus = false
+                        }
+                        .height(heightBarHeightState.value)
+                        .clickable(onClick = state::userToggleExpand)
+                        .padding(horizontal = 4.dp)
+                        .width(6.dp)
+                        .background(Color(0x40FFFFFF))
+                )
+                WidthSpacer((14 - ((6 + (4 * 2)) / 2f)).dp)
+                WidthSpacer(8.dp)
+                Column(
+                    modifier = Modifier.layout { measurable, constraints ->
+
+                        val measure = measurable.measure(constraints.noMinConstraints())
+
+                        heightBarHeightState.value = measure.height.toDp()
+
+                        layout(measure.width, measure.height) {
+                            measure.place(0, 0)
+                        }
+                    }
+                ) {
+                    PlayerSaveEditPanelUnlockedRecipeTechnologyNames(
+                        Modifier,
+                        state
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun PlayerSaveEditPanelUnlockedRecipeTechnologyNames(
     modifier: Modifier,
     mut: PlayerSaveEditPanelState.MutUnlockedTechnologyRecipe
 ) {
     val mutEntries = mut.mutEntries
-    Column(modifier) {
 
-        Text(
-            "Unlocked Technologies",
-            color = Color(252, 252, 252),
-            style = Material3Theme.typography.titleMedium
-        )
+    Column(modifier = modifier) {
+        Row {
+
+            Row(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(24.dp))
+                    .clickable {  }
+                    .background(Color(0xFF694fa3))
+                    .padding(start = 6.dp, top = 4.dp, end = 10.dp, bottom = 4.dp)
+            ) {
+                Icon(
+                    modifier = Modifier.align(Alignment.CenterVertically).padding(start = 4.dp).size(12.dp),
+                    painter = painterResource("drawable/plus_rounded_16px.png"),
+                    contentDescription = null,
+                    tint = Color(0xFFffffff)
+                )
+                WidthSpacer(8.dp)
+                Text(
+                    text = "Add",
+                    modifier = Modifier.align(Alignment.CenterVertically),
+                    color = Color(0xFFffffff),
+                    style = Material3Theme.typography.labelMedium
+                )
+            }
+
+            WidthSpacer(4.dp)
+
+            Row(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(24.dp))
+                    .clickable {  }
+                    .background(Color(0xFF694fa3))
+                    .padding(start = 6.dp, top = 4.dp, end = 10.dp, bottom = 4.dp)
+            ) {
+                Icon(
+                    modifier = Modifier.align(Alignment.CenterVertically).padding(start = 4.dp).size(12.dp),
+                    painter = painterResource("drawable/minus_rounded_16px.png"),
+                    contentDescription = null,
+                    tint = Color(0xFFffffff)
+                )
+                WidthSpacer(8.dp)
+                Text(
+                    text = "Remove",
+                    modifier = Modifier.align(Alignment.CenterVertically),
+                    color = Color(0xFFffffff),
+                    style = Material3Theme.typography.labelMedium
+                )
+            }
+        }
 
         HeightSpacer(8.dp)
 
-        Column(
-            modifier = Modifier.padding(
-                horizontal = 8.dp
-            )
-        ) {
-            Row {
-
-                Row(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(24.dp))
-                        .clickable {  }
-                        .background(Color(0xFF694fa3))
-                        .padding(start = 6.dp, top = 4.dp, end = 10.dp, bottom = 4.dp)
-                ) {
-                    Icon(
-                        modifier = Modifier.align(Alignment.CenterVertically).padding(start = 4.dp).size(12.dp),
-                        painter = painterResource("drawable/plus_rounded_16px.png"),
-                        contentDescription = null,
-                        tint = Color(0xFFffffff)
-                    )
-                    WidthSpacer(8.dp)
-                    Text(
-                        text = "Add",
-                        modifier = Modifier.align(Alignment.CenterVertically),
-                        color = Color(0xFFffffff),
-                        style = Material3Theme.typography.labelMedium
-                    )
-                }
-
-                WidthSpacer(4.dp)
-
-                Row(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(24.dp))
-                        .clickable {  }
-                        .background(Color(0xFF694fa3))
-                        .padding(start = 6.dp, top = 4.dp, end = 10.dp, bottom = 4.dp)
-                ) {
-                    Icon(
-                        modifier = Modifier.align(Alignment.CenterVertically).padding(start = 4.dp).size(12.dp),
-                        painter = painterResource("drawable/minus_rounded_16px.png"),
-                        contentDescription = null,
-                        tint = Color(0xFFffffff)
-                    )
-                    WidthSpacer(8.dp)
-                    Text(
-                        text = "Remove",
-                        modifier = Modifier.align(Alignment.CenterVertically),
-                        color = Color(0xFFffffff),
-                        style = Material3Theme.typography.labelMedium
-                    )
-                }
-            }
-
-            HeightSpacer(8.dp)
-
-            Row {
-                val scrollState = rememberLazyListState()
-                LazyColumn(
-                    modifier = Modifier.heightIn(max = 1000.dp),
-                    state = scrollState
-                ) {
-                    items(
-                        mutEntries.size,
-                        key = { i -> mutEntries[i].index }
-                    ) { i ->
-                        val entry = mutEntries[i]
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                modifier = Modifier.width(24.dp),
-                                text = entry.index.toString(),
-                                color = Color(252, 252, 252),
-                                style = Material3Theme.typography.labelMedium
-                            )
-                            WidthSpacer(4.dp)
-                            Text(
-                                modifier = Modifier.width(500.dp),
-                                text = entry.value,
-                                color = Color(252, 252, 252),
-                                style = Material3Theme.typography.labelMedium
-                            )
-                        }
-                        if (i < mutEntries.lastIndex) {
-                            HeightSpacer(4.dp)
-                        }
-                    }
-                }
-
-                WidthSpacer(4.dp)
-
-                VerticalScrollbar(
-                    modifier = Modifier.height(
-                        with(LocalDensity.current) {
-                            scrollState.layoutInfo.viewportSize.height.toDp()
-                        }
-                    ),
-                    adapter = rememberScrollbarAdapter(scrollState),
-                    style = remember {
-                        defaultScrollbarStyle().copy(
-                            unhoverColor = Color.White.copy(alpha = 0.12f),
-                            hoverColor = Color.White.copy(alpha = 0.50f)
+        Row {
+            val scrollState = rememberLazyListState()
+            LazyColumn(
+                modifier = Modifier.heightIn(max = 1000.dp),
+                state = scrollState
+            ) {
+                items(
+                    mutEntries.size,
+                    key = { i -> mutEntries[i].index }
+                ) { i ->
+                    val entry = mutEntries[i]
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            modifier = Modifier.width(24.dp),
+                            text = entry.index.toString(),
+                            color = Color(252, 252, 252),
+                            style = Material3Theme.typography.labelMedium
+                        )
+                        WidthSpacer(4.dp)
+                        Text(
+                            modifier = Modifier.width(500.dp),
+                            text = entry.value,
+                            color = Color(252, 252, 252),
+                            style = Material3Theme.typography.labelMedium
                         )
                     }
-                )
+                    if (i < mutEntries.lastIndex) {
+                        HeightSpacer(4.dp)
+                    }
+                }
             }
+
+            WidthSpacer(4.dp)
+
+            VerticalScrollbar(
+                modifier = Modifier.height(
+                    with(LocalDensity.current) {
+                        remember(this) {
+                            derivedStateOf { scrollState.layoutInfo.viewportSize.height.toDp() }
+                        }.value
+                    }
+                ),
+                adapter = rememberScrollbarAdapter(scrollState),
+                style = remember {
+                    defaultScrollbarStyle().copy(
+                        unhoverColor = Color.White.copy(alpha = 0.12f),
+                        hoverColor = Color.White.copy(alpha = 0.50f)
+                    )
+                }
+            )
         }
     }
 }
@@ -412,49 +495,129 @@ private fun PalStorageContainerIdEditTextField(
 }
 
 @Composable
+private fun PalRecordDataEditField(
+    state: PlayerSaveEditPanelState.MutRecordData,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier
+    ) {
+        Row(
+            modifier = Modifier
+                .clickable(onClick = state::userToggleExpand)
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+
+            Icon(
+                modifier = Modifier.size(12.dp),
+                painter = if (state.expanded) {
+                    painterResource("drawable/simple_arrow_head_down_32px.png")
+                } else {
+                    painterResource("drawable/simple_arrow_head_right_32px.png")
+                },
+                contentDescription = null,
+                tint = Color.White
+            )
+
+            WidthSpacer(8.dp)
+
+            Column(
+                modifier = Modifier.width(IntrinsicSize.Max)
+            ) {
+                Text(
+                    modifier = Modifier.offset(y = -1.dp),
+                    text = "RecordData",
+                    style = Material3Theme.typography.titleMedium,
+                    maxLines = 1,
+                    color = Color(252, 252, 252),
+                )
+            }
+        }
+
+        // TODO: we can do custom Layout placement instead of detaching
+        if (state.opened) {
+            val heightBarHeightState = remember {
+                mutableStateOf(0.dp)
+            }
+            Row(
+                modifier = Modifier.layout { measurable, constraints ->
+                    val measure = measurable.measure(constraints.noMinConstraints())
+
+                    if (!state.expanded) {
+                        return@layout layout(0, 0) {}
+                    }
+
+                    layout(measure.width, measure.height) {
+                        measure.place(0, 0)
+                    }
+                }
+            ) {
+                WidthSpacer((14 - ((6 + (4 * 2)) / 2f)).dp)
+                Box(
+                    modifier = Modifier
+                        // wait for public API on scroll focus
+                        .focusProperties {
+                            canFocus = false
+                        }
+                        .height(heightBarHeightState.value)
+                        .clickable(onClick = state::userToggleExpand)
+                        .padding(horizontal = 4.dp)
+                        .width(6.dp)
+                        .background(Color(0x40FFFFFF))
+                )
+                WidthSpacer((14 - ((6 + (4 * 2)) / 2f)).dp)
+                WidthSpacer(8.dp)
+                Column(
+                    modifier = Modifier.layout { measurable, constraints ->
+
+                        val measure = measurable.measure(constraints.noMinConstraints())
+
+                        heightBarHeightState.value = measure.height.toDp()
+
+                        layout(measure.width, measure.height) {
+                            measure.place(0, 0)
+                        }
+                    }
+                ) {
+                    PalRecordDataEditPanel(
+                        Modifier,
+                        state
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun PalRecordDataEditPanel(
     modifier: Modifier,
     mut: PlayerSaveEditPanelState.MutRecordData
 ) {
-    Column(modifier) {
-        Text(
-            "RecordData",
-            color = Color(252, 252, 252),
-            style = Material3Theme.typography.titleMedium
+    Column(
+        modifier = modifier
+    ) {
+        PalRecordDataTribeCountTextField(
+            Modifier,
+            mut.mutTribeCaptureCount
         )
-
+        HeightSpacer(4.dp)
+        PalRecordDataPalCaptureCountField(
+            mut.mutPalCaptureCount
+        )
         HeightSpacer(8.dp)
-
-        Column(
-            modifier = Modifier.padding(
-                horizontal = 8.dp
-            )
-        ) {
-            PalRecordDataTribeCountTextField(
-                Modifier,
-                mut.mutTribeCaptureCount
-            )
-            HeightSpacer(4.dp)
-            PalRecordDataPalCaptureCountColumn(
-                Modifier,
-                mut.mutPalCaptureCount
-            )
-            HeightSpacer(8.dp)
-            PalRecordDataMapColumn(
-                Modifier,
-                mut.mutPaldeckUnlockFlag
-            )
-            HeightSpacer(8.dp)
-            PalRecordDataMapColumn(
-                Modifier,
-                mut.mutNoteObtainForInstanceFlag
-            )
-            HeightSpacer(8.dp)
-            PalRecordDataMapColumn(
-                Modifier,
-                mut.mutFastTravelPointUnlockFlag
-            )
-        }
+        PalRecordDataMapField(
+            mut.mutPaldeckUnlockFlag
+        )
+        HeightSpacer(8.dp)
+        PalRecordDataMapField(
+            mut.mutNoteObtainForInstanceFlag
+        )
+        HeightSpacer(8.dp)
+        PalRecordDataMapField(
+            mut.mutFastTravelPointUnlockFlag
+        )
     }
 }
 
@@ -469,8 +632,104 @@ private fun PalRecordDataTribeCountTextField(
             value = mut.mutValue,
             onValueChange = mut::mutValueChange,
             onRevert = mut::mutValueReset,
-            labelText = "PalStorageContainerId"
+            labelText = "TribeCaptureCount"
         )
+    }
+}
+
+@Composable
+private fun PalRecordDataPalCaptureCountField(
+    state: PlayerSaveEditPanelState.MutRecordData.MutPalCaptureCount,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier
+    ) {
+        Row(
+            modifier = Modifier
+                .clickable(onClick = state::userToggleExpand)
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+
+            Icon(
+                modifier = Modifier.size(12.dp),
+                painter = if (state.expanded) {
+                    painterResource("drawable/simple_arrow_head_down_32px.png")
+                } else {
+                    painterResource("drawable/simple_arrow_head_right_32px.png")
+                },
+                contentDescription = null,
+                tint = Color.White
+            )
+
+            WidthSpacer(8.dp)
+
+            Column(
+                modifier = Modifier.width(IntrinsicSize.Max)
+            ) {
+                Text(
+                    modifier = Modifier.offset(y = -1.dp),
+                    text = "PalCaptureCount",
+                    style = Material3Theme.typography.titleMedium,
+                    maxLines = 1,
+                    color = Color(252, 252, 252),
+                )
+            }
+        }
+
+        // TODO: we can do custom Layout placement instead of detaching
+        if (state.opened) {
+            val heightBarHeightState = remember {
+                mutableStateOf(0.dp)
+            }
+            Row(
+                modifier = Modifier.layout { measurable, constraints ->
+                    val measure = measurable.measure(constraints.noMinConstraints())
+
+                    if (!state.expanded) {
+                        return@layout layout(0, 0) {}
+                    }
+
+                    layout(measure.width, measure.height) {
+                        measure.place(0, 0)
+                    }
+                }
+            ) {
+                WidthSpacer((14 - ((6 + (4 * 2)) / 2f)).dp)
+                Box(
+                    modifier = Modifier
+                        // wait for public API on scroll focus
+                        .focusProperties {
+                            canFocus = false
+                        }
+                        .height(heightBarHeightState.value)
+                        .clickable(onClick = state::userToggleExpand)
+                        .padding(horizontal = 4.dp)
+                        .width(6.dp)
+                        .background(Color(0x40FFFFFF))
+                )
+                WidthSpacer((14 - ((6 + (4 * 2)) / 2f)).dp)
+                WidthSpacer(8.dp)
+                Column(
+                    modifier = Modifier.layout { measurable, constraints ->
+
+                        val measure = measurable.measure(constraints.noMinConstraints())
+
+                        heightBarHeightState.value = measure.height.toDp()
+
+                        layout(measure.width, measure.height) {
+                            measure.place(0, 0)
+                        }
+                    }
+                ) {
+                    PalRecordDataPalCaptureCountColumn(
+                        Modifier,
+                        state
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -479,129 +738,216 @@ private fun PalRecordDataPalCaptureCountColumn(
     modifier: Modifier,
     mut: PlayerSaveEditPanelState.MutRecordData.MutPalCaptureCount
 ) {
-    Column(modifier) {
-        val mutEntries = mut.mutEntries
-        Text(
-            "PalCaptureCount",
-            color = Color(252, 252, 252),
-            style = Material3Theme.typography.titleMedium
-        )
+    val mutEntries = mut.mutEntries
+    Column(
+        modifier = modifier
+    ) {
+        Row {
+
+            Row(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(24.dp))
+                    .clickable {  }
+                    .background(Color(0xFF694fa3))
+                    .padding(start = 6.dp, top = 4.dp, end = 10.dp, bottom = 4.dp)
+            ) {
+                Icon(
+                    modifier = Modifier.align(Alignment.CenterVertically).padding(start = 4.dp).size(12.dp),
+                    painter = painterResource("drawable/plus_rounded_16px.png"),
+                    contentDescription = null,
+                    tint = Color(0xFFffffff)
+                )
+                WidthSpacer(8.dp)
+                Text(
+                    text = "Add",
+                    modifier = Modifier.align(Alignment.CenterVertically),
+                    color = Color(0xFFffffff),
+                    style = Material3Theme.typography.labelMedium
+                )
+            }
+
+            WidthSpacer(4.dp)
+
+            Row(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(24.dp))
+                    .clickable {  }
+                    .background(Color(0xFF694fa3))
+                    .padding(start = 6.dp, top = 4.dp, end = 10.dp, bottom = 4.dp)
+            ) {
+                Icon(
+                    modifier = Modifier.align(Alignment.CenterVertically).padding(start = 4.dp).size(12.dp),
+                    painter = painterResource("drawable/minus_rounded_16px.png"),
+                    contentDescription = null,
+                    tint = Color(0xFFffffff)
+                )
+                WidthSpacer(8.dp)
+                Text(
+                    text = "Remove",
+                    modifier = Modifier.align(Alignment.CenterVertically),
+                    color = Color(0xFFffffff),
+                    style = Material3Theme.typography.labelMedium
+                )
+            }
+        }
 
         HeightSpacer(8.dp)
 
-        Column(
-            modifier = Modifier.padding(
-                horizontal = 8.dp
-            )
-        ) {
-            Row {
-
-                Row(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(24.dp))
-                        .clickable {  }
-                        .background(Color(0xFF694fa3))
-                        .padding(start = 6.dp, top = 4.dp, end = 10.dp, bottom = 4.dp)
-                ) {
-                    Icon(
-                        modifier = Modifier.align(Alignment.CenterVertically).padding(start = 4.dp).size(12.dp),
-                        painter = painterResource("drawable/plus_rounded_16px.png"),
-                        contentDescription = null,
-                        tint = Color(0xFFffffff)
-                    )
-                    WidthSpacer(8.dp)
-                    Text(
-                        text = "Add",
-                        modifier = Modifier.align(Alignment.CenterVertically),
-                        color = Color(0xFFffffff),
-                        style = Material3Theme.typography.labelMedium
-                    )
-                }
-
-                WidthSpacer(4.dp)
-
-                Row(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(24.dp))
-                        .clickable {  }
-                        .background(Color(0xFF694fa3))
-                        .padding(start = 6.dp, top = 4.dp, end = 10.dp, bottom = 4.dp)
-                ) {
-                    Icon(
-                        modifier = Modifier.align(Alignment.CenterVertically).padding(start = 4.dp).size(12.dp),
-                        painter = painterResource("drawable/minus_rounded_16px.png"),
-                        contentDescription = null,
-                        tint = Color(0xFFffffff)
-                    )
-                    WidthSpacer(8.dp)
-                    Text(
-                        text = "Remove",
-                        modifier = Modifier.align(Alignment.CenterVertically),
-                        color = Color(0xFFffffff),
-                        style = Material3Theme.typography.labelMedium
-                    )
+        Row {
+            val scrollState = rememberLazyListState()
+            LazyColumn(
+                modifier = Modifier.heightIn(max = 1000.dp),
+                state = scrollState
+            ) {
+                items(
+                    mutEntries.size,
+                    key = { i -> mutEntries[i].first }
+                ) { i ->
+                    val entry = mutEntries[i]
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            modifier = Modifier.width(24.dp),
+                            text = i.toString(),
+                            color = Color(252, 252, 252),
+                            style = Material3Theme.typography.labelMedium
+                        )
+                        WidthSpacer(4.dp)
+                        Text(
+                            modifier = Modifier.width(500.dp).weight(1f, fill = false),
+                            text = entry.first,
+                            color = Color(252, 252, 252),
+                            style = Material3Theme.typography.labelMedium
+                        )
+                        WidthSpacer(4.dp)
+                        Text(
+                            modifier = Modifier.width(80.dp),
+                            text = entry.second.toString(),
+                            color = Color(252, 252, 252),
+                            style = Material3Theme.typography.labelMedium
+                        )
+                    }
+                    if (i < mutEntries.lastIndex) {
+                        HeightSpacer(4.dp)
+                    }
                 }
             }
 
-            HeightSpacer(8.dp)
+            WidthSpacer(4.dp)
 
-            Row {
-                val scrollState = rememberLazyListState()
-                LazyColumn(
-                    modifier = Modifier.heightIn(max = 1000.dp),
-                    state = scrollState
-                ) {
-                    items(
-                        mutEntries.size,
-                        key = { i -> mutEntries[i].first }
-                    ) { i ->
-                        val entry = mutEntries[i]
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                modifier = Modifier.width(24.dp),
-                                text = i.toString(),
-                                color = Color(252, 252, 252),
-                                style = Material3Theme.typography.labelMedium
-                            )
-                            WidthSpacer(4.dp)
-                            Text(
-                                modifier = Modifier.width(500.dp).weight(1f, fill = false),
-                                text = entry.first,
-                                color = Color(252, 252, 252),
-                                style = Material3Theme.typography.labelMedium
-                            )
-                            WidthSpacer(4.dp)
-                            Text(
-                                modifier = Modifier.width(80.dp),
-                                text = entry.second.toString(),
-                                color = Color(252, 252, 252),
-                                style = Material3Theme.typography.labelMedium
-                            )
-                        }
-                        if (i < mutEntries.lastIndex) {
-                            HeightSpacer(4.dp)
-                        }
+            VerticalScrollbar(
+                modifier = Modifier.height(
+                    with(LocalDensity.current) {
+                        remember(this) {
+                            derivedStateOf { scrollState.layoutInfo.viewportSize.height.toDp() }
+                        }.value
+                    }
+                ),
+                adapter = rememberScrollbarAdapter(scrollState),
+                style = remember {
+                    defaultScrollbarStyle().copy(
+                        unhoverColor = Color.White.copy(alpha = 0.12f),
+                        hoverColor = Color.White.copy(alpha = 0.50f)
+                    )
+                }
+            )
+        }
+    }
+
+}
+
+@Composable
+private fun PalRecordDataMapField(
+    state: PlayerSaveEditPanelState.MutRecordData.MutNoteObtainForInstanceFlag,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier
+    ) {
+        Row(
+            modifier = Modifier
+                .clickable(onClick = state::userToggleExpand)
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+
+            Icon(
+                modifier = Modifier.size(12.dp),
+                painter = if (state.expanded) {
+                    painterResource("drawable/simple_arrow_head_down_32px.png")
+                } else {
+                    painterResource("drawable/simple_arrow_head_right_32px.png")
+                },
+                contentDescription = null,
+                tint = Color.White
+            )
+
+            WidthSpacer(8.dp)
+
+            Column(
+                modifier = Modifier.width(IntrinsicSize.Max)
+            ) {
+                Text(
+                    modifier = Modifier.offset(y = -1.dp),
+                    text = "NoteObtainForInstanceFlag",
+                    style = Material3Theme.typography.titleMedium,
+                    maxLines = 1,
+                    color = Color(252, 252, 252),
+                )
+            }
+        }
+
+        // TODO: we can do custom Layout placement instead of detaching
+        if (state.opened) {
+            val heightBarHeightState = remember {
+                mutableStateOf(0.dp)
+            }
+            Row(
+                modifier = Modifier.layout { measurable, constraints ->
+                    val measure = measurable.measure(constraints.noMinConstraints())
+
+                    if (!state.expanded) {
+                        return@layout layout(0, 0) {}
+                    }
+
+                    layout(measure.width, measure.height) {
+                        measure.place(0, 0)
                     }
                 }
-
-                WidthSpacer(4.dp)
-
-                VerticalScrollbar(
-                    modifier = Modifier.height(
-                        with(LocalDensity.current) {
-                            scrollState.layoutInfo.viewportSize.height.toDp()
+            ) {
+                WidthSpacer((14 - ((6 + (4 * 2)) / 2f)).dp)
+                Box(
+                    modifier = Modifier
+                        // wait for public API on scroll focus
+                        .focusProperties {
+                            canFocus = false
                         }
-                    ),
-                    adapter = rememberScrollbarAdapter(scrollState),
-                    style = remember {
-                        defaultScrollbarStyle().copy(
-                            unhoverColor = Color.White.copy(alpha = 0.12f),
-                            hoverColor = Color.White.copy(alpha = 0.50f)
-                        )
-                    }
+                        .height(heightBarHeightState.value)
+                        .clickable(onClick = state::userToggleExpand)
+                        .padding(horizontal = 4.dp)
+                        .width(6.dp)
+                        .background(Color(0x40FFFFFF))
                 )
+                WidthSpacer((14 - ((6 + (4 * 2)) / 2f)).dp)
+                WidthSpacer(8.dp)
+                Column(
+                    modifier = Modifier.layout { measurable, constraints ->
+
+                        val measure = measurable.measure(constraints.noMinConstraints())
+
+                        heightBarHeightState.value = measure.height.toDp()
+
+                        layout(measure.width, measure.height) {
+                            measure.place(0, 0)
+                        }
+                    }
+                ) {
+                    PalRecordDataMapColumn(
+                        Modifier,
+                        state
+                    )
+                }
             }
         }
     }
@@ -612,129 +958,215 @@ private fun PalRecordDataMapColumn(
     modifier: Modifier,
     mut: PlayerSaveEditPanelState.MutRecordData.MutNoteObtainForInstanceFlag
 ) {
-    Column(modifier) {
-        val mutEntries = mut.mutEntries
-        Text(
-            "NoteObtainForInstanceFlag",
-            color = Color(252, 252, 252),
-            style = Material3Theme.typography.titleMedium
-        )
+    val mutEntries = mut.mutEntries
+    Column(
+        modifier = modifier
+    ) {
+        Row {
+
+            Row(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(24.dp))
+                    .clickable {  }
+                    .background(Color(0xFF694fa3))
+                    .padding(start = 6.dp, top = 4.dp, end = 10.dp, bottom = 4.dp)
+            ) {
+                Icon(
+                    modifier = Modifier.align(Alignment.CenterVertically).padding(start = 4.dp).size(12.dp),
+                    painter = painterResource("drawable/plus_rounded_16px.png"),
+                    contentDescription = null,
+                    tint = Color(0xFFffffff)
+                )
+                WidthSpacer(8.dp)
+                Text(
+                    text = "Add",
+                    modifier = Modifier.align(Alignment.CenterVertically),
+                    color = Color(0xFFffffff),
+                    style = Material3Theme.typography.labelMedium
+                )
+            }
+
+            WidthSpacer(4.dp)
+
+            Row(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(24.dp))
+                    .clickable {  }
+                    .background(Color(0xFF694fa3))
+                    .padding(start = 6.dp, top = 4.dp, end = 10.dp, bottom = 4.dp)
+            ) {
+                Icon(
+                    modifier = Modifier.align(Alignment.CenterVertically).padding(start = 4.dp).size(12.dp),
+                    painter = painterResource("drawable/minus_rounded_16px.png"),
+                    contentDescription = null,
+                    tint = Color(0xFFffffff)
+                )
+                WidthSpacer(8.dp)
+                Text(
+                    text = "Remove",
+                    modifier = Modifier.align(Alignment.CenterVertically),
+                    color = Color(0xFFffffff),
+                    style = Material3Theme.typography.labelMedium
+                )
+            }
+        }
 
         HeightSpacer(8.dp)
 
-        Column(
-            modifier = Modifier.padding(
-                horizontal = 8.dp
-            )
-        ) {
-            Row {
-
-                Row(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(24.dp))
-                        .clickable {  }
-                        .background(Color(0xFF694fa3))
-                        .padding(start = 6.dp, top = 4.dp, end = 10.dp, bottom = 4.dp)
-                ) {
-                    Icon(
-                        modifier = Modifier.align(Alignment.CenterVertically).padding(start = 4.dp).size(12.dp),
-                        painter = painterResource("drawable/plus_rounded_16px.png"),
-                        contentDescription = null,
-                        tint = Color(0xFFffffff)
-                    )
-                    WidthSpacer(8.dp)
-                    Text(
-                        text = "Add",
-                        modifier = Modifier.align(Alignment.CenterVertically),
-                        color = Color(0xFFffffff),
-                        style = Material3Theme.typography.labelMedium
-                    )
-                }
-
-                WidthSpacer(4.dp)
-
-                Row(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(24.dp))
-                        .clickable {  }
-                        .background(Color(0xFF694fa3))
-                        .padding(start = 6.dp, top = 4.dp, end = 10.dp, bottom = 4.dp)
-                ) {
-                    Icon(
-                        modifier = Modifier.align(Alignment.CenterVertically).padding(start = 4.dp).size(12.dp),
-                        painter = painterResource("drawable/minus_rounded_16px.png"),
-                        contentDescription = null,
-                        tint = Color(0xFFffffff)
-                    )
-                    WidthSpacer(8.dp)
-                    Text(
-                        text = "Remove",
-                        modifier = Modifier.align(Alignment.CenterVertically),
-                        color = Color(0xFFffffff),
-                        style = Material3Theme.typography.labelMedium
-                    )
+        Row {
+            val scrollState = rememberLazyListState()
+            LazyColumn(
+                modifier = Modifier.heightIn(max = 1000.dp),
+                state = scrollState
+            ) {
+                items(
+                    mutEntries.size,
+                    key = { i -> mutEntries[i].first }
+                ) { i ->
+                    val entry = mutEntries[i]
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            modifier = Modifier.width(24.dp),
+                            text = i.toString(),
+                            color = Color(252, 252, 252),
+                            style = Material3Theme.typography.labelMedium
+                        )
+                        WidthSpacer(4.dp)
+                        Text(
+                            modifier = Modifier.width(500.dp).weight(1f, fill = false),
+                            text = entry.first,
+                            color = Color(252, 252, 252),
+                            style = Material3Theme.typography.labelMedium
+                        )
+                        WidthSpacer(4.dp)
+                        Text(
+                            modifier = Modifier.width(80.dp),
+                            text = entry.second.toString(),
+                            color = Color(252, 252, 252),
+                            style = Material3Theme.typography.labelMedium
+                        )
+                    }
+                    if (i < mutEntries.lastIndex) {
+                        HeightSpacer(4.dp)
+                    }
                 }
             }
 
-            HeightSpacer(8.dp)
+            WidthSpacer(4.dp)
 
-            Row {
-                val scrollState = rememberLazyListState()
-                LazyColumn(
-                    modifier = Modifier.heightIn(max = 1000.dp),
-                    state = scrollState
-                ) {
-                    items(
-                        mutEntries.size,
-                        key = { i -> mutEntries[i].first }
-                    ) { i ->
-                        val entry = mutEntries[i]
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                modifier = Modifier.width(24.dp),
-                                text = i.toString(),
-                                color = Color(252, 252, 252),
-                                style = Material3Theme.typography.labelMedium
-                            )
-                            WidthSpacer(4.dp)
-                            Text(
-                                modifier = Modifier.width(500.dp).weight(1f, fill = false),
-                                text = entry.first,
-                                color = Color(252, 252, 252),
-                                style = Material3Theme.typography.labelMedium
-                            )
-                            WidthSpacer(4.dp)
-                            Text(
-                                modifier = Modifier.width(80.dp),
-                                text = entry.second.toString(),
-                                color = Color(252, 252, 252),
-                                style = Material3Theme.typography.labelMedium
-                            )
-                        }
-                        if (i < mutEntries.lastIndex) {
-                            HeightSpacer(4.dp)
-                        }
+            VerticalScrollbar(
+                modifier = Modifier.height(
+                    with(LocalDensity.current) {
+                        remember(this) {
+                            derivedStateOf { scrollState.layoutInfo.viewportSize.height.toDp() }
+                        }.value
+                    }
+                ),
+                adapter = rememberScrollbarAdapter(scrollState),
+                style = remember {
+                    defaultScrollbarStyle().copy(
+                        unhoverColor = Color.White.copy(alpha = 0.12f),
+                        hoverColor = Color.White.copy(alpha = 0.50f)
+                    )
+                }
+            )
+        }
+    }
+}
+
+@Composable
+private fun PalRecordDataMapField(
+    state: PlayerSaveEditPanelState.MutRecordData.MutFastTravelPointUnlockFlag,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier
+    ) {
+        Row(
+            modifier = Modifier
+                .clickable(onClick = state::userToggleExpand)
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+
+            Icon(
+                modifier = Modifier.size(12.dp),
+                painter = if (state.expanded) {
+                    painterResource("drawable/simple_arrow_head_down_32px.png")
+                } else {
+                    painterResource("drawable/simple_arrow_head_right_32px.png")
+                },
+                contentDescription = null,
+                tint = Color.White
+            )
+
+            WidthSpacer(8.dp)
+
+            Column(
+                modifier = Modifier.width(IntrinsicSize.Max)
+            ) {
+                Text(
+                    modifier = Modifier.offset(y = -1.dp),
+                    text = "FastTravelPointUnlockFlag",
+                    style = Material3Theme.typography.titleMedium,
+                    maxLines = 1,
+                    color = Color(252, 252, 252),
+                )
+            }
+        }
+
+        // TODO: we can do custom Layout placement instead of detaching
+        if (state.opened) {
+            val heightBarHeightState = remember {
+                mutableStateOf(0.dp)
+            }
+            Row(
+                modifier = Modifier.layout { measurable, constraints ->
+                    val measure = measurable.measure(constraints.noMinConstraints())
+
+                    if (!state.expanded) {
+                        return@layout layout(0, 0) {}
+                    }
+
+                    layout(measure.width, measure.height) {
+                        measure.place(0, 0)
                     }
                 }
-
-                WidthSpacer(4.dp)
-
-                VerticalScrollbar(
-                    modifier = Modifier.height(
-                        with(LocalDensity.current) {
-                            scrollState.layoutInfo.viewportSize.height.toDp()
+            ) {
+                WidthSpacer((14 - ((6 + (4 * 2)) / 2f)).dp)
+                Box(
+                    modifier = Modifier
+                        // wait for public API on scroll focus
+                        .focusProperties {
+                            canFocus = false
                         }
-                    ),
-                    adapter = rememberScrollbarAdapter(scrollState),
-                    style = remember {
-                        defaultScrollbarStyle().copy(
-                            unhoverColor = Color.White.copy(alpha = 0.12f),
-                            hoverColor = Color.White.copy(alpha = 0.50f)
-                        )
-                    }
+                        .height(heightBarHeightState.value)
+                        .clickable(onClick = state::userToggleExpand)
+                        .padding(horizontal = 4.dp)
+                        .width(6.dp)
+                        .background(Color(0x40FFFFFF))
                 )
+                WidthSpacer((14 - ((6 + (4 * 2)) / 2f)).dp)
+                WidthSpacer(8.dp)
+                Column(
+                    modifier = Modifier.layout { measurable, constraints ->
+
+                        val measure = measurable.measure(constraints.noMinConstraints())
+
+                        heightBarHeightState.value = measure.height.toDp()
+
+                        layout(measure.width, measure.height) {
+                            measure.place(0, 0)
+                        }
+                    }
+                ) {
+                    PalRecordDataMapColumn(
+                        Modifier,
+                        state
+                    )
+                }
             }
         }
     }
@@ -745,129 +1177,216 @@ private fun PalRecordDataMapColumn(
     modifier: Modifier,
     mut: PlayerSaveEditPanelState.MutRecordData.MutFastTravelPointUnlockFlag
 ) {
-    Column(modifier) {
-        val mutEntries = mut.mutEntries
-        Text(
-            "FastTravelPointUnlockFlag",
-            color = Color(252, 252, 252),
-            style = Material3Theme.typography.titleMedium
-        )
+    val mutEntries = mut.mutEntries
+    Column(
+        modifier = modifier
+    ) {
+        Row {
+
+            Row(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(24.dp))
+                    .clickable {  }
+                    .background(Color(0xFF694fa3))
+                    .padding(start = 6.dp, top = 4.dp, end = 10.dp, bottom = 4.dp)
+            ) {
+                Icon(
+                    modifier = Modifier.align(Alignment.CenterVertically).padding(start = 4.dp).size(12.dp),
+                    painter = painterResource("drawable/plus_rounded_16px.png"),
+                    contentDescription = null,
+                    tint = Color(0xFFffffff)
+                )
+                WidthSpacer(8.dp)
+                Text(
+                    text = "Add",
+                    modifier = Modifier.align(Alignment.CenterVertically),
+                    color = Color(0xFFffffff),
+                    style = Material3Theme.typography.labelMedium
+                )
+            }
+
+            WidthSpacer(4.dp)
+
+            Row(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(24.dp))
+                    .clickable {  }
+                    .background(Color(0xFF694fa3))
+                    .padding(start = 6.dp, top = 4.dp, end = 10.dp, bottom = 4.dp)
+            ) {
+                Icon(
+                    modifier = Modifier.align(Alignment.CenterVertically).padding(start = 4.dp).size(12.dp),
+                    painter = painterResource("drawable/minus_rounded_16px.png"),
+                    contentDescription = null,
+                    tint = Color(0xFFffffff)
+                )
+                WidthSpacer(8.dp)
+                Text(
+                    text = "Remove",
+                    modifier = Modifier.align(Alignment.CenterVertically),
+                    color = Color(0xFFffffff),
+                    style = Material3Theme.typography.labelMedium
+                )
+            }
+        }
 
         HeightSpacer(8.dp)
 
-        Column(
-            modifier = Modifier.padding(
-                horizontal = 8.dp
-            )
-        ) {
-            Row {
-
-                Row(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(24.dp))
-                        .clickable {  }
-                        .background(Color(0xFF694fa3))
-                        .padding(start = 6.dp, top = 4.dp, end = 10.dp, bottom = 4.dp)
-                ) {
-                    Icon(
-                        modifier = Modifier.align(Alignment.CenterVertically).padding(start = 4.dp).size(12.dp),
-                        painter = painterResource("drawable/plus_rounded_16px.png"),
-                        contentDescription = null,
-                        tint = Color(0xFFffffff)
-                    )
-                    WidthSpacer(8.dp)
-                    Text(
-                        text = "Add",
-                        modifier = Modifier.align(Alignment.CenterVertically),
-                        color = Color(0xFFffffff),
-                        style = Material3Theme.typography.labelMedium
-                    )
-                }
-
-                WidthSpacer(4.dp)
-
-                Row(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(24.dp))
-                        .clickable {  }
-                        .background(Color(0xFF694fa3))
-                        .padding(start = 6.dp, top = 4.dp, end = 10.dp, bottom = 4.dp)
-                ) {
-                    Icon(
-                        modifier = Modifier.align(Alignment.CenterVertically).padding(start = 4.dp).size(12.dp),
-                        painter = painterResource("drawable/minus_rounded_16px.png"),
-                        contentDescription = null,
-                        tint = Color(0xFFffffff)
-                    )
-                    WidthSpacer(8.dp)
-                    Text(
-                        text = "Remove",
-                        modifier = Modifier.align(Alignment.CenterVertically),
-                        color = Color(0xFFffffff),
-                        style = Material3Theme.typography.labelMedium
-                    )
+        Row {
+            val scrollState = rememberLazyListState()
+            LazyColumn(
+                modifier = Modifier.heightIn(max = 1000.dp),
+                state = scrollState
+            ) {
+                items(
+                    mutEntries.size,
+                    key = { i -> mutEntries[i].first }
+                ) { i ->
+                    val entry = mutEntries[i]
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            modifier = Modifier.width(24.dp),
+                            text = i.toString(),
+                            color = Color(252, 252, 252),
+                            style = Material3Theme.typography.labelMedium
+                        )
+                        WidthSpacer(4.dp)
+                        Text(
+                            modifier = Modifier.width(500.dp).weight(1f, fill = false),
+                            text = entry.first,
+                            color = Color(252, 252, 252),
+                            style = Material3Theme.typography.labelMedium
+                        )
+                        WidthSpacer(4.dp)
+                        Text(
+                            modifier = Modifier.width(80.dp),
+                            text = entry.second.toString(),
+                            color = Color(252, 252, 252),
+                            style = Material3Theme.typography.labelMedium
+                        )
+                    }
+                    if (i < mutEntries.lastIndex) {
+                        HeightSpacer(4.dp)
+                    }
                 }
             }
 
-            HeightSpacer(8.dp)
+            WidthSpacer(4.dp)
 
-            Row {
-                val scrollState = rememberLazyListState()
-                LazyColumn(
-                    modifier = Modifier.heightIn(max = 1000.dp),
-                    state = scrollState
-                ) {
-                    items(
-                        mutEntries.size,
-                        key = { i -> mutEntries[i].first }
-                    ) { i ->
-                        val entry = mutEntries[i]
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                modifier = Modifier.width(24.dp),
-                                text = i.toString(),
-                                color = Color(252, 252, 252),
-                                style = Material3Theme.typography.labelMedium
-                            )
-                            WidthSpacer(4.dp)
-                            Text(
-                                modifier = Modifier.width(500.dp).weight(1f, fill = false),
-                                text = entry.first,
-                                color = Color(252, 252, 252),
-                                style = Material3Theme.typography.labelMedium
-                            )
-                            WidthSpacer(4.dp)
-                            Text(
-                                modifier = Modifier.width(80.dp),
-                                text = entry.second.toString(),
-                                color = Color(252, 252, 252),
-                                style = Material3Theme.typography.labelMedium
-                            )
-                        }
-                        if (i < mutEntries.lastIndex) {
-                            HeightSpacer(4.dp)
-                        }
+            VerticalScrollbar(
+                modifier = Modifier.height(
+                    with(LocalDensity.current) {
+                        remember(this) {
+                            derivedStateOf { scrollState.layoutInfo.viewportSize.height.toDp() }
+                        }.value
+                    }
+                ),
+                adapter = rememberScrollbarAdapter(scrollState),
+                style = remember {
+                    defaultScrollbarStyle().copy(
+                        unhoverColor = Color.White.copy(alpha = 0.12f),
+                        hoverColor = Color.White.copy(alpha = 0.50f)
+                    )
+                }
+            )
+        }
+    }
+
+}
+
+@Composable
+private fun PalRecordDataMapField(
+    state: PlayerSaveEditPanelState.MutRecordData.MutPaldeckUnlockFlag,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier
+    ) {
+        Row(
+            modifier = Modifier
+                .clickable(onClick = state::userToggleExpand)
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+
+            Icon(
+                modifier = Modifier.size(12.dp),
+                painter = if (state.expanded) {
+                    painterResource("drawable/simple_arrow_head_down_32px.png")
+                } else {
+                    painterResource("drawable/simple_arrow_head_right_32px.png")
+                },
+                contentDescription = null,
+                tint = Color.White
+            )
+
+            WidthSpacer(8.dp)
+
+            Column(
+                modifier = Modifier.width(IntrinsicSize.Max)
+            ) {
+                Text(
+                    modifier = Modifier.offset(y = -1.dp),
+                    text = "PaldeckUnlockFlag",
+                    style = Material3Theme.typography.titleMedium,
+                    maxLines = 1,
+                    color = Color(252, 252, 252),
+                )
+            }
+        }
+
+        // TODO: we can do custom Layout placement instead of detaching
+        if (state.opened) {
+            val heightBarHeightState = remember {
+                mutableStateOf(0.dp)
+            }
+            Row(
+                modifier = Modifier.layout { measurable, constraints ->
+                    val measure = measurable.measure(constraints.noMinConstraints())
+
+                    if (!state.expanded) {
+                        return@layout layout(0, 0) {}
+                    }
+
+                    layout(measure.width, measure.height) {
+                        measure.place(0, 0)
                     }
                 }
-
-                WidthSpacer(4.dp)
-
-                VerticalScrollbar(
-                    modifier = Modifier.height(
-                        with(LocalDensity.current) {
-                            scrollState.layoutInfo.viewportSize.height.toDp()
+            ) {
+                WidthSpacer((14 - ((6 + (4 * 2)) / 2f)).dp)
+                Box(
+                    modifier = Modifier
+                        // wait for public API on scroll focus
+                        .focusProperties {
+                            canFocus = false
                         }
-                    ),
-                    adapter = rememberScrollbarAdapter(scrollState),
-                    style = remember {
-                        defaultScrollbarStyle().copy(
-                            unhoverColor = Color.White.copy(alpha = 0.12f),
-                            hoverColor = Color.White.copy(alpha = 0.50f)
-                        )
-                    }
+                        .height(heightBarHeightState.value)
+                        .clickable(onClick = state::userToggleExpand)
+                        .padding(horizontal = 4.dp)
+                        .width(6.dp)
+                        .background(Color(0x40FFFFFF))
                 )
+                WidthSpacer((14 - ((6 + (4 * 2)) / 2f)).dp)
+                WidthSpacer(8.dp)
+                Column(
+                    modifier = Modifier.layout { measurable, constraints ->
+
+                        val measure = measurable.measure(constraints.noMinConstraints())
+
+                        heightBarHeightState.value = measure.height.toDp()
+
+                        layout(measure.width, measure.height) {
+                            measure.place(0, 0)
+                        }
+                    }
+                ) {
+                    PalRecordDataMapColumn(
+                        Modifier,
+                        state
+                    )
+                }
             }
         }
     }
@@ -878,130 +1397,120 @@ private fun PalRecordDataMapColumn(
     modifier: Modifier,
     mut: PlayerSaveEditPanelState.MutRecordData.MutPaldeckUnlockFlag
 ) {
-    Column(modifier) {
-        val mutEntries = mut.mutEntries
-        Text(
-            "PaldeckUnlockFlag",
-            color = Color(252, 252, 252),
-            style = Material3Theme.typography.titleMedium
-        )
+    val mutEntries = mut.mutEntries
+    Column(
+        modifier = modifier
+    ) {
+        Row {
+
+            Row(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(24.dp))
+                    .clickable {  }
+                    .background(Color(0xFF694fa3))
+                    .padding(start = 6.dp, top = 4.dp, end = 10.dp, bottom = 4.dp)
+            ) {
+                Icon(
+                    modifier = Modifier.align(Alignment.CenterVertically).padding(start = 4.dp).size(12.dp),
+                    painter = painterResource("drawable/plus_rounded_16px.png"),
+                    contentDescription = null,
+                    tint = Color(0xFFffffff)
+                )
+                WidthSpacer(8.dp)
+                Text(
+                    text = "Add",
+                    modifier = Modifier.align(Alignment.CenterVertically),
+                    color = Color(0xFFffffff),
+                    style = Material3Theme.typography.labelMedium
+                )
+            }
+
+            WidthSpacer(4.dp)
+
+            Row(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(24.dp))
+                    .clickable {  }
+                    .background(Color(0xFF694fa3))
+                    .padding(start = 6.dp, top = 4.dp, end = 10.dp, bottom = 4.dp)
+            ) {
+                Icon(
+                    modifier = Modifier.align(Alignment.CenterVertically).padding(start = 4.dp).size(12.dp),
+                    painter = painterResource("drawable/minus_rounded_16px.png"),
+                    contentDescription = null,
+                    tint = Color(0xFFffffff)
+                )
+                WidthSpacer(8.dp)
+                Text(
+                    text = "Remove",
+                    modifier = Modifier.align(Alignment.CenterVertically),
+                    color = Color(0xFFffffff),
+                    style = Material3Theme.typography.labelMedium
+                )
+            }
+        }
 
         HeightSpacer(8.dp)
 
-        Column(
-            modifier = Modifier.padding(
-                horizontal = 8.dp
-            )
-        ) {
-            Row {
-
-                Row(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(24.dp))
-                        .clickable {  }
-                        .background(Color(0xFF694fa3))
-                        .padding(start = 6.dp, top = 4.dp, end = 10.dp, bottom = 4.dp)
-                ) {
-                    Icon(
-                        modifier = Modifier.align(Alignment.CenterVertically).padding(start = 4.dp).size(12.dp),
-                        painter = painterResource("drawable/plus_rounded_16px.png"),
-                        contentDescription = null,
-                        tint = Color(0xFFffffff)
-                    )
-                    WidthSpacer(8.dp)
-                    Text(
-                        text = "Add",
-                        modifier = Modifier.align(Alignment.CenterVertically),
-                        color = Color(0xFFffffff),
-                        style = Material3Theme.typography.labelMedium
-                    )
-                }
-
-                WidthSpacer(4.dp)
-
-                Row(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(24.dp))
-                        .clickable {  }
-                        .background(Color(0xFF694fa3))
-                        .padding(start = 6.dp, top = 4.dp, end = 10.dp, bottom = 4.dp)
-                ) {
-                    Icon(
-                        modifier = Modifier.align(Alignment.CenterVertically).padding(start = 4.dp).size(12.dp),
-                        painter = painterResource("drawable/minus_rounded_16px.png"),
-                        contentDescription = null,
-                        tint = Color(0xFFffffff)
-                    )
-                    WidthSpacer(8.dp)
-                    Text(
-                        text = "Remove",
-                        modifier = Modifier.align(Alignment.CenterVertically),
-                        color = Color(0xFFffffff),
-                        style = Material3Theme.typography.labelMedium
-                    )
-                }
-            }
-
-            HeightSpacer(8.dp)
-
-            Row {
-                val scrollState = rememberLazyListState()
-                LazyColumn(
-                    modifier = Modifier.heightIn(max = 1000.dp),
-                    state = scrollState
-                ) {
-                    items(
-                        mutEntries.size,
-                        key = { i -> mutEntries[i].first }
-                    ) { i ->
-                        val entry = mutEntries[i]
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                modifier = Modifier.width(24.dp),
-                                text = i.toString(),
-                                color = Color(252, 252, 252),
-                                style = Material3Theme.typography.labelMedium
-                            )
-                            WidthSpacer(4.dp)
-                            Text(
-                                modifier = Modifier.width(500.dp).weight(1f, fill = false),
-                                text = entry.first,
-                                color = Color(252, 252, 252),
-                                style = Material3Theme.typography.labelMedium
-                            )
-                            WidthSpacer(4.dp)
-                            Text(
-                                modifier = Modifier.width(80.dp),
-                                text = entry.second.toString(),
-                                color = Color(252, 252, 252),
-                                style = Material3Theme.typography.labelMedium
-                            )
-                        }
-                        if (i < mutEntries.lastIndex) {
-                            HeightSpacer(4.dp)
-                        }
-                    }
-                }
-
-                WidthSpacer(4.dp)
-
-                VerticalScrollbar(
-                    modifier = Modifier.height(
-                        with(LocalDensity.current) {
-                            scrollState.layoutInfo.viewportSize.height.toDp()
-                        }
-                    ),
-                    adapter = rememberScrollbarAdapter(scrollState),
-                    style = remember {
-                        defaultScrollbarStyle().copy(
-                            unhoverColor = Color.White.copy(alpha = 0.12f),
-                            hoverColor = Color.White.copy(alpha = 0.50f)
+        Row {
+            val scrollState = rememberLazyListState()
+            LazyColumn(
+                modifier = Modifier.heightIn(max = 1000.dp),
+                state = scrollState
+            ) {
+                items(
+                    mutEntries.size,
+                    key = { i -> mutEntries[i].first }
+                ) { i ->
+                    val entry = mutEntries[i]
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            modifier = Modifier.width(24.dp),
+                            text = i.toString(),
+                            color = Color(252, 252, 252),
+                            style = Material3Theme.typography.labelMedium
+                        )
+                        WidthSpacer(4.dp)
+                        Text(
+                            modifier = Modifier.width(500.dp).weight(1f, fill = false),
+                            text = entry.first,
+                            color = Color(252, 252, 252),
+                            style = Material3Theme.typography.labelMedium
+                        )
+                        WidthSpacer(4.dp)
+                        Text(
+                            modifier = Modifier.width(80.dp),
+                            text = entry.second.toString(),
+                            color = Color(252, 252, 252),
+                            style = Material3Theme.typography.labelMedium
                         )
                     }
-                )
+                    if (i < mutEntries.lastIndex) {
+                        HeightSpacer(4.dp)
+                    }
+                }
             }
+
+            WidthSpacer(4.dp)
+
+            VerticalScrollbar(
+                modifier = Modifier.height(
+                    with(LocalDensity.current) {
+                        remember(this) {
+                            derivedStateOf { scrollState.layoutInfo.viewportSize.height.toDp() }
+                        }.value
+                    }
+                ),
+                adapter = rememberScrollbarAdapter(scrollState),
+                style = remember {
+                    defaultScrollbarStyle().copy(
+                        unhoverColor = Color.White.copy(alpha = 0.12f),
+                        hoverColor = Color.White.copy(alpha = 0.50f)
+                    )
+                }
+            )
         }
     }
 }

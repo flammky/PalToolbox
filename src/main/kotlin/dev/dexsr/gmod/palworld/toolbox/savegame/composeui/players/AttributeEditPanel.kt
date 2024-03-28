@@ -122,10 +122,7 @@ fun AttributeEditPanel(
                     }
                 ) {
                     HeightSpacer(MD3Spec.padding.incrementsDp(1).dp)
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
+                    Column {
                         RevertibleTextField(
                             modifier = Modifier.padding(top = 2.dp),
                             value = remember(state) { derivedStateOf(neverEqualPolicy()) {
@@ -135,6 +132,8 @@ fun AttributeEditPanel(
                             onRevert = state::revertNickName,
                             labelText = "Nickname"
                         )
+
+                        HeightSpacer(8.dp)
 
                         RevertibleUUIdTextField(
                             modifier = Modifier.padding(top = 2.dp),
@@ -146,6 +145,9 @@ fun AttributeEditPanel(
                             labelText = "UID"
                         )
 
+                        HeightSpacer(8.dp)
+                        HeightSpacer(4.dp)
+
                         RevertibleNumberTextField(
                             modifier = Modifier.padding(top = 2.dp),
                             value = remember(state) { derivedStateOf(neverEqualPolicy()) {
@@ -155,6 +157,8 @@ fun AttributeEditPanel(
                             onRevert = state::revertLevel,
                             labelText = "Level"
                         )
+
+                        HeightSpacer(8.dp)
 
                         RevertibleNumberTextField(
                             modifier = Modifier.padding(top = 2.dp),
@@ -166,6 +170,8 @@ fun AttributeEditPanel(
                             labelText = "Exp"
                         )
 
+                        HeightSpacer(8.dp)
+
                         RevertibleNumberTextField(
                             modifier = Modifier.padding(top = 2.dp),
                             value = remember(state) { derivedStateOf(neverEqualPolicy()) {
@@ -175,6 +181,8 @@ fun AttributeEditPanel(
                             onRevert = state::revertHp,
                             labelText = "HP"
                         )
+
+                        HeightSpacer(8.dp)
 
                         RevertibleNumberTextField(
                             modifier = Modifier.padding(top = 2.dp),
@@ -186,6 +194,8 @@ fun AttributeEditPanel(
                             labelText = "MaxHP"
                         )
 
+                        HeightSpacer(8.dp)
+
                         RevertibleNumberTextField(
                             modifier = Modifier.padding(top = 2.dp),
                             value = remember(state) { derivedStateOf(neverEqualPolicy()) {
@@ -195,6 +205,8 @@ fun AttributeEditPanel(
                             onRevert = state::revertFullStomach,
                             labelText = "FullStomach"
                         )
+
+                        HeightSpacer(8.dp)
 
                         RevertibleNumberTextField(
                             modifier = Modifier.padding(top = 2.dp),
@@ -206,6 +218,8 @@ fun AttributeEditPanel(
                             labelText = "Support"
                         )
 
+                        HeightSpacer(8.dp)
+
                         RevertibleNumberTextField(
                             modifier = Modifier.padding(top = 2.dp),
                             value = remember(state) { derivedStateOf(neverEqualPolicy()) {
@@ -215,6 +229,8 @@ fun AttributeEditPanel(
                             onRevert = state::revertCraftSpeed,
                             labelText = "CraftSpeed"
                         )
+
+                        HeightSpacer(8.dp)
 
                         RevertibleNumberTextField(
                             modifier = Modifier.padding(top = 2.dp),
@@ -226,6 +242,8 @@ fun AttributeEditPanel(
                             labelText = "MaxSP"
                         )
 
+                        HeightSpacer(8.dp)
+
                         RevertibleNumberTextField(
                             modifier = Modifier.padding(top = 2.dp),
                             value = remember(state) { derivedStateOf(neverEqualPolicy()) {
@@ -235,6 +253,8 @@ fun AttributeEditPanel(
                             onRevert = state::revertSanityValue,
                             labelText = "SanityValue"
                         )
+
+                        HeightSpacer(8.dp)
 
                         RevertibleNumberTextField(
                             modifier = Modifier.padding(top = 2.dp),

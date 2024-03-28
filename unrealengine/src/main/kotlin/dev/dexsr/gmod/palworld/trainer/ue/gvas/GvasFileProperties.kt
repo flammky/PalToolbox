@@ -44,7 +44,10 @@ sealed class GvasDict {
 
 }
 
+// TODO: move
 open class OpenGvasDict : GvasDict()
+
+open class CustomGvasDict : OpenGvasDict()
 
 // TODO: should all extend GvasAny ?
 
@@ -168,7 +171,7 @@ class GvasArrayDict(
     }
 }
 
-
+// TODO: think of something better
 sealed class GvasArrayPropertyValue
 
 class GvasStructArrayPropertyValue(

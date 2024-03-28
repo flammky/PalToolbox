@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Icon
@@ -22,6 +24,8 @@ import androidx.compose.ui.unit.dp
 import dev.dexsr.gmod.palworld.toolbox.game.composeui.gameMainScreenDrawItem
 import dev.dexsr.gmod.palworld.toolbox.gametools.composeui.gameToolsMainScreenDrawItem
 import dev.dexsr.gmod.palworld.toolbox.paldex.composeui.palDexMainScreenDrawerItem
+import dev.dexsr.gmod.palworld.toolbox.savegame.composeui.RevertibleTextField
+import dev.dexsr.gmod.palworld.toolbox.savegame.composeui.players.ITEM_ID_SELECTIONS
 import dev.dexsr.gmod.palworld.toolbox.savegame.composeui.saveGameMainScreenDrawerItem
 import dev.dexsr.gmod.palworld.toolbox.server.composeui.serverMainScreenDrawerItem
 import dev.dexsr.gmod.palworld.toolbox.trainer.composeui.trainerMainScreenDrawerItem
@@ -29,6 +33,7 @@ import dev.dexsr.gmod.palworld.trainer.composeui.StableList
 import dev.dexsr.gmod.palworld.trainer.composeui.gestures.defaultSurfaceGestureModifiers
 import dev.dexsr.gmod.palworld.trainer.composeui.text.nonFontScaled
 import dev.dexsr.gmod.palworld.trainer.composeui.text.nonScaledFontSize
+import dev.dexsr.gmod.palworld.trainer.composeui.wrapStableList
 import dev.dexsr.gmod.palworld.trainer.uifoundation.themes.md3.*
 import dev.dexsr.gmod.palworld.trainer.utilskt.fastForEach
 

@@ -221,7 +221,7 @@ class PlayerSaveEditPanelState {
 
         // TODO: look into mutableStateList
         var mutEntries by mutableStateOf(
-            unlockedTechnologyRecipe.entries,
+            emptyList<UnlockedTechnologyRecipe.Entry>(),
             neverEqualPolicy()
         )
             private set
@@ -233,6 +233,26 @@ class PlayerSaveEditPanelState {
                 add(UnlockedTechnologyRecipe.Entry(current.lastIndex + 1, value))
             }
             mutEntries = new
+        }
+
+        var opened by mutableStateOf(
+            false
+        )
+            private set
+
+        var expanded by mutableStateOf(
+            false
+        )
+            private set
+
+        fun userToggleExpand() {
+            if (!opened) {
+                opened = true
+                expanded = true
+                mutEntries = unlockedTechnologyRecipe.entries
+                return
+            }
+            expanded = !expanded
         }
     }
 
@@ -292,6 +312,25 @@ class PlayerSaveEditPanelState {
         val mutNoteObtainForInstanceFlag = MutNoteObtainForInstanceFlag(recordData.noteObtainForInstanceFlag)
         val mutFastTravelPointUnlockFlag = MutFastTravelPointUnlockFlag(recordData.fastTravelPointUnlockFlag)
 
+        var opened by mutableStateOf(
+            false
+        )
+            private set
+
+        var expanded by mutableStateOf(
+            false
+        )
+            private set
+
+        fun userToggleExpand() {
+            if (!opened) {
+                opened = true
+                expanded = true
+                return
+            }
+            expanded = !expanded
+        }
+
         class MutTribeCaptureCount(
             val tribeCaptureCount: RecordData.TribeCaptureCount
         ) {
@@ -311,7 +350,7 @@ class PlayerSaveEditPanelState {
             val palCaptureCount: RecordData.PalCaptureCount
         ) {
             var mutEntries by mutableStateOf(
-                palCaptureCount.value,
+                emptyList<Pair<String, Int>>(),
                 neverEqualPolicy()
             )
                 private set
@@ -324,13 +363,33 @@ class PlayerSaveEditPanelState {
                 }
                 mutEntries = new
             }
+
+            var opened by mutableStateOf(
+                false
+            )
+                private set
+
+            var expanded by mutableStateOf(
+                false
+            )
+                private set
+
+            fun userToggleExpand() {
+                if (!opened) {
+                    opened = true
+                    expanded = true
+                    mutEntries = palCaptureCount.value
+                    return
+                }
+                expanded = !expanded
+            }
         }
 
         class MutPaldeckUnlockFlag(
             val paldeckUnlockFlag: RecordData.PaldeckUnlockFlag
         ) {
             var mutEntries by mutableStateOf(
-                paldeckUnlockFlag.entries,
+                emptyList<Pair<String, Boolean>>(),
                 neverEqualPolicy()
             )
                 private set
@@ -342,6 +401,26 @@ class PlayerSaveEditPanelState {
                     add(Pair(key, value))
                 }
                 mutEntries = new
+            }
+
+            var opened by mutableStateOf(
+                false
+            )
+                private set
+
+            var expanded by mutableStateOf(
+                false
+            )
+                private set
+
+            fun userToggleExpand() {
+                if (!opened) {
+                    opened = true
+                    expanded = true
+                    mutEntries = paldeckUnlockFlag.entries
+                    return
+                }
+                expanded = !expanded
             }
         }
 
@@ -349,7 +428,7 @@ class PlayerSaveEditPanelState {
             val noteObtainForInstanceFlag: RecordData.NoteObtainForInstanceFlag
         ) {
             var mutEntries by mutableStateOf(
-                noteObtainForInstanceFlag.entries,
+                emptyList<Pair<String, Boolean>>(),
                 neverEqualPolicy()
             )
                 private set
@@ -362,13 +441,33 @@ class PlayerSaveEditPanelState {
                 }
                 mutEntries = new
             }
+
+            var opened by mutableStateOf(
+                false
+            )
+                private set
+
+            var expanded by mutableStateOf(
+                false
+            )
+                private set
+
+            fun userToggleExpand() {
+                if (!opened) {
+                    opened = true
+                    expanded = true
+                    mutEntries = noteObtainForInstanceFlag.entries
+                    return
+                }
+                expanded = !expanded
+            }
         }
 
         class MutFastTravelPointUnlockFlag(
             val fastTravelPointUnlockFlag: RecordData.FastTravelPointUnlockFlag
         ) {
             var mutEntries by mutableStateOf(
-                fastTravelPointUnlockFlag.entries,
+                emptyList<Pair<String, Boolean>>(),
                 neverEqualPolicy()
             )
                 private set
@@ -380,6 +479,26 @@ class PlayerSaveEditPanelState {
                     add(Pair(key, value))
                 }
                 mutEntries = new
+            }
+
+            var opened by mutableStateOf(
+                false
+            )
+                private set
+
+            var expanded by mutableStateOf(
+                false
+            )
+                private set
+
+            fun userToggleExpand() {
+                if (!opened) {
+                    opened = true
+                    expanded = true
+                    mutEntries = fastTravelPointUnlockFlag.entries
+                    return
+                }
+                expanded = !expanded
             }
         }
     }

@@ -96,7 +96,7 @@ fun ParseGvasHeader(buf: ByteBuffer): GvasHeaderParseResult {
         engineVersionMajor = buf.getShort().toUShort(),
         engineVersionMinor = buf.getShort().toUShort(),
         engineVersionPatch = buf.getShort().toUShort(),
-        engineVersionChangelist = buf.getInt(),
+        engineVersionChangelist = buf.getInt().toUInt(),
         engineVersionBranch = readGvasHeaderStr(buf),
         customVersionFormat = run {
             val customVersionFormat = buf.getInt()

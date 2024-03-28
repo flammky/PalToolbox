@@ -385,7 +385,10 @@ private fun GvasDict?.toJsonElement(): JsonElement {
         is OpenGvasDict -> {
             // TODO: seal
             when (this) {
-                is CustomRawData -> toJsonElement()
+                is CustomGvasDict -> when(this) {
+                    is CustomRawData -> toJsonElement()
+                    else -> TODO("no JsonElement serializer for type=${this::class.qualifiedName}, (CustomGvasDict)")
+                }
                 is CharacterDict -> toJsonElement()
                 is GvasGroupDict -> toJsonElement()
                 is GvasItemContainerData -> toJsonElement()
